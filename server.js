@@ -40,6 +40,7 @@ app.post('/send', async (req, res) => {
   res.json({ success: true, translated });
 });
 
-app.listen(3000, () => {
-  console.log('BaanTask running at http://localhost:3000');
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`BaanTask running on port ${PORT}`);
 });
