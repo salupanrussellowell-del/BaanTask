@@ -2,90 +2,239 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BaanTask Chat</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>BaanTask Group Chat</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: Arial, sans-serif; background: #f0f0f0; height: 100vh; display: flex; flex-direction: column; }
-  #header { background: #00897B; color: white; padding: 16px; text-align: center; font-size: 1.2rem; font-weight: bold; }
-  #role-select { background: #fff; padding: 12px; display: flex; gap: 8px; justify-content: center; border-bottom: 1px solid #ddd; }
-  #role-select button { padding: 8px 24px; border: none; border-radius: 20px; cursor: pointer; font-size: 1rem; }
-  #btn-owner { background: #00897B; color: white; }
-  #btn-driver { background: #E65100; color: white; }
-  #messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
-  .msg { max-width: 75%; padding: 10px 14px; border-radius: 16px; }
-  .msg.owner { align-self: flex-end; background: #00897B; color: white; border-bottom-right-radius: 4px; }
-  .msg.driver { align-self: flex-start; background: white; color: #333; border-bottom-left-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-  .msg .original { font-size: 0.95rem; }
-  .msg .translation { font-size: 0.8rem; opacity: 0.75; margin-top: 4px; font-style: italic; }
-  .msg .time { font-size: 0.7rem; opacity: 0.6; margin-top: 4px; }
-  #input-area { background: white; padding: 12px; display: flex; gap: 8px; border-top: 1px solid #ddd; }
-  #msg-input { flex: 1; padding: 10px 14px; border: 1px solid #ddd; border-radius: 24px; font-size: 1rem; outline: none; }
-  #send-btn { background: #00897B; color: white; border: none; border-radius: 50%; width: 44px; height: 44px; font-size: 1.3rem; cursor: pointer; }
-  #role-label { text-align: center; padding: 6px; font-size: 0.85rem; color: #666; background: #fff8; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; height: 100vh; height: 100dvh; display: flex; flex-direction: column; background: #e5ddd5; }
+
+  /* Header */
+  #header { background: #075e54; color: white; padding: 12px 16px; display: flex; align-items: center; gap: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.2); z-index: 10; }
+  #header-title { font-size: 1.1rem; font-weight: 600; }
+  #header-subtitle { font-size: 0.75rem; opacity: 0.85; }
+  #header-icon { width: 40px; height: 40px; border-radius: 50%; background: #25d366; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0; }
+
+  /* Join screen */
+  #join-screen { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; background: #fff; }
+  #join-screen h2 { color: #075e54; margin-bottom: 8px; font-size: 1.4rem; }
+  #join-screen p { color: #667; margin-bottom: 24px; font-size: 0.9rem; }
+  #join-screen input { width: 100%; max-width: 320px; padding: 12px 16px; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem; margin-bottom: 16px; outline: none; }
+  #join-screen input:focus { border-color: #075e54; }
+  .lang-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 100%; max-width: 320px; margin-bottom: 24px; }
+  .lang-btn { padding: 12px 8px; border: 2px solid #ddd; border-radius: 10px; background: #fff; cursor: pointer; font-size: 0.9rem; text-align: center; transition: all 0.2s; }
+  .lang-btn:hover { border-color: #25d366; }
+  .lang-btn.selected { border-color: #25d366; background: #dcf8c6; }
+  .lang-flag { font-size: 1.5rem; display: block; margin-bottom: 4px; }
+  #join-btn { width: 100%; max-width: 320px; padding: 14px; background: #25d366; color: white; border: none; border-radius: 8px; font-size: 1.05rem; font-weight: 600; cursor: pointer; }
+  #join-btn:disabled { background: #ccc; cursor: default; }
+
+  /* Chat screen */
+  #chat-screen { flex: 1; display: none; flex-direction: column; }
+  #messages { flex: 1; overflow-y: auto; padding: 8px 12px; display: flex; flex-direction: column; gap: 2px; background: url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23c9dbd2' fill-opacity='0.08'%3E%3Cpath d='M30 0L60 30L30 60L0 30z'/%3E%3C/g%3E%3C/svg%3E"), #e5ddd5; }
+
+  /* Message bubbles */
+  .msg { max-width: 80%; padding: 6px 10px 6px 10px; border-radius: 8px; position: relative; margin-top: 2px; word-wrap: break-word; box-shadow: 0 1px 1px rgba(0,0,0,0.1); }
+  .msg.mine { align-self: flex-end; background: #dcf8c6; border-top-right-radius: 0; }
+  .msg.other { align-self: flex-start; background: #fff; border-top-left-radius: 0; }
+  .msg-sender { font-size: 0.78rem; font-weight: 600; margin-bottom: 2px; }
+  .msg-text { font-size: 0.95rem; line-height: 1.35; }
+  .msg-translation { font-size: 0.8rem; color: #555; font-style: italic; margin-top: 4px; padding-top: 4px; border-top: 1px solid rgba(0,0,0,0.08); line-height: 1.3; }
+  .msg-time { font-size: 0.68rem; color: #999; text-align: right; margin-top: 2px; }
+  .msg.mine .msg-sender { display: none; }
+
+  /* Sender name colors */
+  .sender-0 { color: #e91e63; }
+  .sender-1 { color: #9c27b0; }
+  .sender-2 { color: #3f51b5; }
+  .sender-3 { color: #00897b; }
+  .sender-4 { color: #e65100; }
+  .sender-5 { color: #2e7d32; }
+  .sender-6 { color: #c62828; }
+  .sender-7 { color: #6a1b9a; }
+
+  /* New group indicator */
+  .msg-group-first { margin-top: 10px; }
+
+  /* Input area */
+  #input-area { background: #f0f0f0; padding: 6px 8px; display: flex; gap: 6px; align-items: flex-end; }
+  #msg-input { flex: 1; padding: 10px 14px; border: none; border-radius: 24px; font-size: 1rem; outline: none; background: #fff; max-height: 100px; resize: none; line-height: 1.4; }
+  #send-btn { background: #075e54; color: white; border: none; border-radius: 50%; width: 44px; height: 44px; font-size: 1.3rem; cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+  #send-btn:disabled { background: #a0b8b3; cursor: default; }
+
+  /* System messages */
+  .sys-msg { align-self: center; background: #e1f2fb; padding: 4px 14px; border-radius: 8px; font-size: 0.78rem; color: #555; box-shadow: 0 1px 1px rgba(0,0,0,0.05); margin: 6px 0; }
 </style>
 </head>
 <body>
-<div id="header">🏠 BaanTask Chat</div>
-<div id="role-select">
-  <button id="btn-owner" onclick="setRole('owner')">👔 I am the Owner</button>
-  <button id="btn-driver" onclick="setRole('driver')">🚗 I am the Driver</button>
+
+<div id="header">
+  <div id="header-icon">🏠</div>
+  <div>
+    <div id="header-title">BaanTask Group Chat</div>
+    <div id="header-subtitle">Multilingual auto-translate</div>
+  </div>
 </div>
-<div id="role-label">Please select your role above</div>
-<div id="messages"></div>
-<div id="input-area">
-  <input id="msg-input" placeholder="Type a message..." onkeydown="if(event.key==='Enter') sendMsg()"/>
-  <button id="send-btn" onclick="sendMsg()">➤</button>
+
+<div id="join-screen">
+  <h2>Welcome to BaanTask</h2>
+  <p>Enter your name and pick your language</p>
+  <input id="name-input" type="text" placeholder="Your name" maxlength="30" autocomplete="off" />
+  <div class="lang-grid">
+    <button class="lang-btn" data-lang="Russian" onclick="pickLang(this)"><span class="lang-flag">🇷🇺</span>Russian</button>
+    <button class="lang-btn" data-lang="Thai" onclick="pickLang(this)"><span class="lang-flag">🇹🇭</span>Thai</button>
+    <button class="lang-btn" data-lang="English" onclick="pickLang(this)"><span class="lang-flag">🇬🇧</span>English</button>
+    <button class="lang-btn" data-lang="Filipino" onclick="pickLang(this)"><span class="lang-flag">🇵🇭</span>Filipino</button>
+    <button class="lang-btn" data-lang="Myanmar" onclick="pickLang(this)"><span class="lang-flag">🇲🇲</span>Myanmar</button>
+    <button class="lang-btn" data-lang="Chinese" onclick="pickLang(this)"><span class="lang-flag">🇨🇳</span>Chinese</button>
+  </div>
+  <button id="join-btn" disabled onclick="joinChat()">Join Chat</button>
+</div>
+
+<div id="chat-screen">
+  <div id="messages"></div>
+  <div id="input-area">
+    <input id="msg-input" type="text" placeholder="Type a message..." autocomplete="off" />
+    <button id="send-btn" onclick="sendMsg()">
+      <svg viewBox="0 0 24 24" width="24" height="24" fill="white"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+    </button>
+  </div>
 </div>
 
 <script>
-let role = null;
+let myName = null;
+let myLang = null;
 let polling = null;
 let lastCount = 0;
+let sending = false;
+const senderColors = {};
+let colorIdx = 0;
 
-function setRole(r) {
-  role = r;
-  document.getElementById('role-label').textContent =
-    r === 'owner' ? '👔 You are the Owner — type in Russian' : '🚗 You are the Driver — type in Thai';
-  document.getElementById('btn-owner').style.opacity = r === 'owner' ? '1' : '0.4';
-  document.getElementById('btn-driver').style.opacity = r === 'driver' ? '1' : '0.4';
-  if (!polling) polling = setInterval(loadMessages, 2000);
+function pickLang(el) {
+  document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  myLang = el.dataset.lang;
+  checkJoinReady();
 }
 
-async function sendMsg() {
-  if (!role) { alert('Please select your role first!'); return; }
-  const input = document.getElementById('msg-input');
-  const text = input.value.trim();
-  if (!text) return;
-  input.value = '';
-  await fetch('/send', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ text, sender: role })
-  });
+function checkJoinReady() {
+  const name = document.getElementById('name-input').value.trim();
+  document.getElementById('join-btn').disabled = !(name && myLang);
+}
+
+document.getElementById('name-input').addEventListener('input', checkJoinReady);
+
+function joinChat() {
+  myName = document.getElementById('name-input').value.trim();
+  if (!myName || !myLang) return;
+
+  document.getElementById('join-screen').style.display = 'none';
+  document.getElementById('chat-screen').style.display = 'flex';
+  document.getElementById('header-subtitle').textContent = `${myName} · ${myLang}`;
+
   loadMessages();
+  polling = setInterval(loadMessages, 2000);
+
+  document.getElementById('msg-input').focus();
+}
+
+function getSenderColor(name) {
+  if (!senderColors[name]) {
+    senderColors[name] = 'sender-' + (colorIdx++ % 8);
+  }
+  return senderColors[name];
+}
+
+function formatTime(iso) {
+  const d = new Date(iso);
+  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
 }
 
 async function loadMessages() {
-  const res = await fetch('/messages');
-  const msgs = await res.json();
-  if (msgs.length === lastCount) return;
-  lastCount = msgs.length;
-  const container = document.getElementById('messages');
-  container.innerHTML = '';
-  msgs.forEach(m => {
-    const div = document.createElement('div');
-    div.className = 'msg ' + m.sender;
-    const showTranslation = (role === 'owner' && m.sender === 'driver') || (role === 'driver' && m.sender === 'owner');
-    div.innerHTML = `
-      <div class="original">${m.text}</div>
-      ${showTranslation && m.translated ? `<div class="translation">🌐 ${m.translated}</div>` : ''}
-      <div class="time">${m.time}</div>
-    `;
-    container.appendChild(div);
-  });
-  container.scrollTop = container.scrollHeight;
+  try {
+    const res = await fetch('/messages?lang=' + encodeURIComponent(myLang));
+    const msgs = await res.json();
+    if (msgs.length === lastCount) return;
+
+    const wasAtBottom = isScrolledToBottom();
+    lastCount = msgs.length;
+    const container = document.getElementById('messages');
+    container.innerHTML = '';
+
+    let prevSender = null;
+    msgs.forEach(m => {
+      const isMine = m.sender === myName;
+      const isNewGroup = m.sender !== prevSender;
+      prevSender = m.sender;
+
+      const div = document.createElement('div');
+      div.className = 'msg ' + (isMine ? 'mine' : 'other') + (isNewGroup ? ' msg-group-first' : '');
+
+      let html = '';
+      if (!isMine) {
+        html += `<div class="msg-sender ${getSenderColor(m.sender)}">${escapeHtml(m.sender)}</div>`;
+      }
+      html += `<div class="msg-text">${escapeHtml(m.text)}</div>`;
+      if (m.translation) {
+        html += `<div class="msg-translation">🌐 ${escapeHtml(m.translation)}</div>`;
+      }
+      html += `<div class="msg-time">${formatTime(m.time)}</div>`;
+
+      div.innerHTML = html;
+      container.appendChild(div);
+    });
+
+    if (wasAtBottom || lastCount <= msgs.length) {
+      container.scrollTop = container.scrollHeight;
+    }
+  } catch (e) {
+    console.error('Failed to load messages:', e);
+  }
 }
+
+function isScrolledToBottom() {
+  const el = document.getElementById('messages');
+  return el.scrollHeight - el.scrollTop - el.clientHeight < 60;
+}
+
+async function sendMsg() {
+  if (sending) return;
+  const input = document.getElementById('msg-input');
+  const text = input.value.trim();
+  if (!text) return;
+
+  sending = true;
+  document.getElementById('send-btn').disabled = true;
+  input.value = '';
+
+  try {
+    await fetch('/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, sender: myName, lang: myLang })
+    });
+    await loadMessages();
+  } catch (e) {
+    console.error('Send failed:', e);
+    input.value = text;
+  } finally {
+    sending = false;
+    document.getElementById('send-btn').disabled = false;
+    input.focus();
+  }
+}
+
+document.getElementById('msg-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMsg();
+  }
+});
 </script>
 </body>
 </html>
