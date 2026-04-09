@@ -78,11 +78,14 @@ Message: "${text}"`
       }]
     });
 
-    const parsed = JSON.parse(response.content[0].text);
+    let raw = response.content[0].text.trim();
+    // Strip markdown code fences if present
+    raw = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/,'').trim();
+    const parsed = JSON.parse(raw);
     msg.translations = parsed;
   } catch (e) {
     console.error('Translation error:', e.message);
-    // Store message even if translation fails
+    console.error('Raw API response:', e.raw || 'N/A');
   }
 
   messages.push(msg);
