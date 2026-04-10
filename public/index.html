@@ -108,6 +108,8 @@
   <div class="login-form">
     <label>Your Name</label>
     <input id="login-name" type="text" placeholder="Enter your name" maxlength="30" autocomplete="off" />
+    <label>Phone or Email</label>
+    <input id="login-contact" type="text" placeholder="Phone number or email" maxlength="60" autocomplete="off" />
     <label>Your Language</label>
     <div class="lang-grid">
       <button class="lang-btn" data-lang="Russian" onclick="pickLang(this)"><span class="lang-flag">🇷🇺</span>Russian</button>
@@ -164,6 +166,7 @@ document.getElementById('login-name').addEventListener('input', checkLoginReady)
 
 async function doLogin() {
   myName = document.getElementById('login-name').value.trim();
+  const contact = document.getElementById('login-contact').value.trim();
   if (!myName || !myLang) return;
 
   document.getElementById('login-btn').disabled = true;
@@ -173,12 +176,13 @@ async function doLogin() {
     await fetch('/api/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: myName, lang: myLang })
+      body: JSON.stringify({ name: myName, contact, lang: myLang })
     });
   } catch (e) { /* continue anyway */ }
 
-  // Save to localStorage for quick re-login
+  // Save to localStorage so fields are pre-filled on next visit
   localStorage.setItem('bt_name', myName);
+  localStorage.setItem('bt_contact', contact);
   localStorage.setItem('bt_lang', myLang);
 
   enterChat();
@@ -193,14 +197,19 @@ function enterChat() {
   document.getElementById('msg-input').focus();
 }
 
-// Auto-login if saved
-(function autoLogin() {
-  const n = localStorage.getItem('bt_name');
-  const l = localStorage.getItem('bt_lang');
-  if (n && l) {
-    myName = n; myLang = l;
-    enterChat();
+// Pre-fill login from localStorage so returning users just tap Join Chat
+(function prefillLogin() {
+  const savedName = localStorage.getItem('bt_name');
+  const savedContact = localStorage.getItem('bt_contact');
+  const savedLang = localStorage.getItem('bt_lang');
+
+  if (savedName) document.getElementById('login-name').value = savedName;
+  if (savedContact) document.getElementById('login-contact').value = savedContact;
+  if (savedLang) {
+    const btn = document.querySelector(`.lang-btn[data-lang="${savedLang}"]`);
+    if (btn) { btn.classList.add('selected'); myLang = savedLang; }
   }
+  checkLoginReady();
 })();
 
 // ── Helpers ──
