@@ -16,6 +16,9 @@ const LANGUAGES = ['Russian', 'Thai', 'English', 'Filipino', 'Myanmar', 'Chinese
 let messages = [];
 
 console.log('[STARTUP] BaanTask server starting...');
+console.log('[STARTUP] ANTHROPIC_API_KEY set:', !!process.env.ANTHROPIC_API_KEY);
+console.log('[STARTUP] ANTHROPIC_API_KEY length:', process.env.ANTHROPIC_API_KEY ? process.env.ANTHROPIC_API_KEY.length : 0);
+console.log('[STARTUP] ANTHROPIC_API_KEY prefix:', process.env.ANTHROPIC_API_KEY ? process.env.ANTHROPIC_API_KEY.substring(0, 7) + '...' : 'MISSING');
 console.log('[STARTUP] Supported languages:', LANGUAGES.join(', '));
 
 // Translate a single message to a single target language
@@ -35,7 +38,9 @@ async function translateOne(text, fromLang, toLang) {
     return result;
   } catch (e) {
     console.error(`[TRANSLATE ERROR] ${fromLang}->${toLang}:`, e.message);
-    return null;
+    console.error(`[TRANSLATE ERROR] Full error:`, JSON.stringify(e, Object.getOwnPropertyNames(e)));
+    console.error(`[TRANSLATE ERROR] Returning original text as fallback`);
+    return `[${toLang}] ${text}`;
   }
 }
 
