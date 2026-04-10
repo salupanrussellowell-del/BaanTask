@@ -23,25 +23,54 @@ console.log('[STARTUP] Supported languages:', LANGUAGES.join(', '));
 
 // Translate a single message to a single target language
 async function translateOne(text, fromLang, toLang) {
-  console.log(`[TRANSLATE] "${text.substring(0, 40)}..." from ${fromLang} to ${toLang}`);
+  console.log(`[TRANSLATE START] "${text.substring(0, 40)}" | ${fromLang} -> ${toLang}`);
+
+  if (!process.env.ANTHROPIC_API_KEY) {
+    console.error('[TRANSLATE FAIL] No ANTHROPIC_API_KEY in environment!');
+    return null;
+  }
+
   try {
+    console.log('[TRANSLATE] Calling Anthropic API...');
     const response = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 500,
       messages: [{
         role: 'user',
-        content: `Translate from ${fromLang} to ${toLang}. Reply with ONLY the translation, nothing else.\n\n${text}`
+        content: `You are a translator. Translate the following text from ${fromLang} to ${toLang}. Output ONLY the translated text, nothing else. No quotes, no labels, no explanations.\n\nText to translate: ${text}`
       }]
     });
-    const result = response.content[0].text.trim();
-    console.log(`[TRANSLATE] Result (${toLang}): "${result.substring(0, 60)}"`);
-    return result;
+
+    console.log('[TRANSLATE] API responded. Stop reason:', response.stop_reason);
+    console.log('[TRANSLATE] Content blocks:', response.content.length);
+    console.log('[TRANSLATE] Raw response:', JSON.stringify(response.content));
+
+    const translated = response.content[0].text.trim();
+
+    console.log(`[TRANSLATE OK] Input (${fromLang}): "${text}"`);
+    console.log(`[TRANSLATE OK] Output (${toLang}): "${translated}"`);
+
+    // Sanity check: if the "translation" is identical to the input, something went wrong
+    if (translated === text) {
+      console.error('[TRANSLATE WARN] Output identical to input! API may have echoed the text back.');
+    }
+
+    return translated;
   } catch (e) {
-    console.error(`[TRANSLATE ERROR] ${fromLang}->${toLang}:`, e.message);
-    console.error(`[TRANSLATE ERROR] Full error:`, JSON.stringify(e, Object.getOwnPropertyNames(e)));
-    return null; // Return null so it is NOT cached and will retry next fetch
+    console.error(`[TRANSLATE FAIL] ${fromLang}->${toLang}: ${e.message}`);
+    console.error(`[TRANSLATE FAIL] Error type: ${e.constructor.name}`);
+    console.error(`[TRANSLATE FAIL] Full:`, JSON.stringify(e, Object.getOwnPropertyNames(e)));
+    return null;
   }
 }
+
+// Clear all messages and bad cached translations - visit /clear to reset
+app.get('/clear', (req, res) => {
+  const count = messages.length;
+  messages = [];
+  console.log(`[CLEAR] Wiped ${count} messages`);
+  res.json({ cleared: count });
+});
 
 // Health check - visit /status to verify API key works
 app.get('/status', async (req, res) => {
@@ -75,6 +104,13 @@ app.get('/messages', async (req, res) => {
   // Translate any messages that need it for this language
   for (const m of messages) {
     if (m.senderLang === lang) continue; // Same language, no translation needed
+
+    // Scrub bad cached translations from old buggy fallback (e.g. "[Russian] original text")
+    if (m.translations[lang] && m.translations[lang].startsWith('[')) {
+      console.log(`[SCRUB] Removing bad cached translation for msg ${m.id} lang ${lang}: "${m.translations[lang].substring(0, 40)}"`);
+      delete m.translations[lang];
+    }
+
     if (m.translations[lang]) continue;  // Already translated and cached
 
     console.log(`[GET /messages] Need translation for msg ${m.id} (${m.senderLang} -> ${lang})`);
