@@ -14,55 +14,81 @@
   #header-subtitle { font-size: 0.75rem; opacity: 0.85; }
   #header-icon { width: 40px; height: 40px; border-radius: 50%; background: #25d366; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0; }
 
-  /* Join screen */
-  #join-screen { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; background: #fff; }
-  #join-screen h2 { color: #075e54; margin-bottom: 8px; font-size: 1.4rem; }
-  #join-screen p { color: #667; margin-bottom: 24px; font-size: 0.9rem; }
-  #join-screen input { width: 100%; max-width: 320px; padding: 12px 16px; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem; margin-bottom: 16px; outline: none; }
-  #join-screen input:focus { border-color: #075e54; }
-  .lang-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 100%; max-width: 320px; margin-bottom: 24px; }
-  .lang-btn { padding: 12px 8px; border: 2px solid #ddd; border-radius: 10px; background: #fff; cursor: pointer; font-size: 0.9rem; text-align: center; transition: all 0.2s; }
+  /* Login screen */
+  #login-screen { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; background: #fff; }
+  #login-screen h2 { color: #075e54; margin-bottom: 4px; font-size: 1.4rem; }
+  #login-screen p { color: #667; margin-bottom: 20px; font-size: 0.88rem; }
+  .login-form { width: 100%; max-width: 340px; }
+  .login-form input { width: 100%; padding: 12px 16px; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem; margin-bottom: 12px; outline: none; }
+  .login-form input:focus { border-color: #075e54; }
+  .login-form label { font-size: 0.82rem; color: #555; margin-bottom: 4px; display: block; font-weight: 500; }
+  .lang-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 20px; }
+  .lang-btn { padding: 10px 6px; border: 2px solid #ddd; border-radius: 10px; background: #fff; cursor: pointer; font-size: 0.85rem; text-align: center; transition: all 0.2s; }
   .lang-btn:hover { border-color: #25d366; }
   .lang-btn.selected { border-color: #25d366; background: #dcf8c6; }
-  .lang-flag { font-size: 1.5rem; display: block; margin-bottom: 4px; }
-  #join-btn { width: 100%; max-width: 320px; padding: 14px; background: #25d366; color: white; border: none; border-radius: 8px; font-size: 1.05rem; font-weight: 600; cursor: pointer; }
-  #join-btn:disabled { background: #ccc; cursor: default; }
+  .lang-flag { font-size: 1.4rem; display: block; margin-bottom: 2px; }
+  #login-btn { width: 100%; padding: 14px; background: #25d366; color: white; border: none; border-radius: 8px; font-size: 1.05rem; font-weight: 600; cursor: pointer; }
+  #login-btn:disabled { background: #ccc; cursor: default; }
 
   /* Chat screen */
   #chat-screen { flex: 1; display: none; flex-direction: column; }
-  #messages { flex: 1; overflow-y: auto; padding: 8px 12px; display: flex; flex-direction: column; gap: 2px; background: url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23c9dbd2' fill-opacity='0.08'%3E%3Cpath d='M30 0L60 30L30 60L0 30z'/%3E%3C/g%3E%3C/svg%3E"), #e5ddd5; }
+  #messages { flex: 1; overflow-y: auto; padding: 8px 12px; display: flex; flex-direction: column; gap: 2px; background: #e5ddd5; }
 
-  /* Message bubbles */
-  .msg { max-width: 80%; padding: 6px 10px 6px 10px; border-radius: 8px; position: relative; margin-top: 2px; word-wrap: break-word; box-shadow: 0 1px 1px rgba(0,0,0,0.1); }
+  /* Bubbles */
+  .msg { max-width: 82%; padding: 6px 10px; border-radius: 8px; position: relative; margin-top: 2px; word-wrap: break-word; box-shadow: 0 1px 1px rgba(0,0,0,0.1); }
   .msg.mine { align-self: flex-end; background: #dcf8c6; border-top-right-radius: 0; }
   .msg.other { align-self: flex-start; background: #fff; border-top-left-radius: 0; }
   .msg-sender { font-size: 0.78rem; font-weight: 600; margin-bottom: 2px; }
   .msg-text { font-size: 0.95rem; line-height: 1.35; }
-  .msg-translation { font-size: 0.8rem; color: #555; font-style: italic; margin-top: 4px; padding-top: 4px; border-top: 1px solid rgba(0,0,0,0.08); line-height: 1.3; }
+  .msg-translation { font-size: 0.82rem; color: #555; font-style: italic; margin-top: 4px; padding-top: 4px; border-top: 1px solid rgba(0,0,0,0.08); }
   .msg-time { font-size: 0.68rem; color: #999; text-align: right; margin-top: 2px; }
   .msg.mine .msg-sender { display: none; }
-
-  /* Sender name colors */
-  .sender-0 { color: #e91e63; }
-  .sender-1 { color: #9c27b0; }
-  .sender-2 { color: #3f51b5; }
-  .sender-3 { color: #00897b; }
-  .sender-4 { color: #e65100; }
-  .sender-5 { color: #2e7d32; }
-  .sender-6 { color: #c62828; }
-  .sender-7 { color: #6a1b9a; }
-
-  /* New group indicator */
   .msg-group-first { margin-top: 10px; }
+
+  /* Reply preview inside bubble */
+  .msg-reply-preview { background: rgba(0,0,0,0.05); border-left: 3px solid #25d366; padding: 4px 8px; border-radius: 4px; margin-bottom: 4px; font-size: 0.8rem; }
+  .msg-reply-preview .rp-sender { font-weight: 600; font-size: 0.75rem; }
+  .msg-reply-preview .rp-text { color: #555; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px; }
+
+  /* Sender colors */
+  .sc0 { color: #e91e63; } .sc1 { color: #9c27b0; } .sc2 { color: #3f51b5; }
+  .sc3 { color: #00897b; } .sc4 { color: #e65100; } .sc5 { color: #2e7d32; }
+  .sc6 { color: #c62828; } .sc7 { color: #6a1b9a; }
+
+  /* Action bar (reply + reactions trigger) */
+  .msg-actions { display: none; position: absolute; top: -14px; right: 4px; background: #fff; border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.2); padding: 2px 4px; gap: 2px; z-index: 5; }
+  .msg.other .msg-actions { left: 4px; right: auto; }
+  .msg:hover .msg-actions, .msg.touched .msg-actions { display: flex; }
+  .msg-actions button { background: none; border: none; cursor: pointer; font-size: 0.9rem; padding: 2px 5px; border-radius: 8px; }
+  .msg-actions button:hover { background: #f0f0f0; }
+
+  /* Emoji picker bar */
+  .emoji-picker { display: none; position: absolute; top: -38px; right: 4px; background: #fff; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.18); padding: 4px 6px; gap: 2px; z-index: 6; }
+  .msg.other .emoji-picker { left: 4px; right: auto; }
+  .emoji-picker.show { display: flex; }
+  .emoji-picker button { background: none; border: none; cursor: pointer; font-size: 1.2rem; padding: 3px 5px; border-radius: 8px; }
+  .emoji-picker button:hover { background: #f0f0f0; transform: scale(1.2); }
+
+  /* Reactions display */
+  .msg-reactions { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 3px; }
+  .reaction-chip { display: inline-flex; align-items: center; gap: 2px; background: #e8f5e9; border: 1px solid #c8e6c9; border-radius: 12px; padding: 1px 7px; font-size: 0.75rem; cursor: pointer; }
+  .reaction-chip.mine { background: #c8e6c9; }
+  .reaction-chip .r-emoji { font-size: 0.85rem; }
+  .reaction-chip .r-count { font-size: 0.7rem; color: #555; }
+
+  /* Reply bar above input */
+  #reply-bar { display: none; background: #f0f0f0; border-top: 1px solid #ddd; padding: 8px 12px; align-items: center; gap: 8px; }
+  #reply-bar.show { display: flex; }
+  #reply-bar .rb-content { flex: 1; border-left: 3px solid #25d366; padding-left: 8px; }
+  #reply-bar .rb-sender { font-size: 0.78rem; font-weight: 600; color: #075e54; }
+  #reply-bar .rb-text { font-size: 0.82rem; color: #555; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #reply-bar .rb-close { background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #999; padding: 4px; }
 
   /* Input area */
   #input-area { background: #f0f0f0; padding: 6px 8px; display: flex; gap: 6px; align-items: flex-end; }
   #msg-input { flex: 1; padding: 10px 14px; border: none; border-radius: 24px; font-size: 1rem; outline: none; background: #fff; max-height: 100px; resize: none; line-height: 1.4; }
-  #send-btn { background: #075e54; color: white; border: none; border-radius: 50%; width: 44px; height: 44px; font-size: 1.3rem; cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
-  #send-btn:disabled { background: #a0b8b3; cursor: default; }
-
-  /* System messages */
-  .sys-msg { align-self: center; background: #e1f2fb; padding: 4px 14px; border-radius: 8px; font-size: 0.78rem; color: #555; box-shadow: 0 1px 1px rgba(0,0,0,0.05); margin: 6px 0; }
+  #send-btn { background: #075e54; color: white; border: none; border-radius: 50%; width: 44px; height: 44px; cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+  #send-btn:disabled { background: #a0b8b3; }
 </style>
 </head>
 <body>
@@ -75,23 +101,38 @@
   </div>
 </div>
 
-<div id="join-screen">
+<!-- Login Screen -->
+<div id="login-screen">
   <h2>Welcome to BaanTask</h2>
-  <p>Enter your name and pick your language</p>
-  <input id="name-input" type="text" placeholder="Your name" maxlength="30" autocomplete="off" />
-  <div class="lang-grid">
-    <button class="lang-btn" data-lang="Russian" onclick="pickLang(this)"><span class="lang-flag">🇷🇺</span>Russian</button>
-    <button class="lang-btn" data-lang="Thai" onclick="pickLang(this)"><span class="lang-flag">🇹🇭</span>Thai</button>
-    <button class="lang-btn" data-lang="English" onclick="pickLang(this)"><span class="lang-flag">🇬🇧</span>English</button>
-    <button class="lang-btn" data-lang="Filipino" onclick="pickLang(this)"><span class="lang-flag">🇵🇭</span>Filipino</button>
-    <button class="lang-btn" data-lang="Myanmar" onclick="pickLang(this)"><span class="lang-flag">🇲🇲</span>Myanmar</button>
-    <button class="lang-btn" data-lang="Chinese" onclick="pickLang(this)"><span class="lang-flag">🇨🇳</span>Chinese</button>
+  <p>Sign in to start chatting</p>
+  <div class="login-form">
+    <label>Your Name</label>
+    <input id="login-name" type="text" placeholder="Enter your name" maxlength="30" autocomplete="off" />
+    <label>Phone or Email (optional)</label>
+    <input id="login-contact" type="text" placeholder="Phone number or email" maxlength="60" autocomplete="off" />
+    <label>Your Language</label>
+    <div class="lang-grid">
+      <button class="lang-btn" data-lang="Russian" onclick="pickLang(this)"><span class="lang-flag">🇷🇺</span>Russian</button>
+      <button class="lang-btn" data-lang="Thai" onclick="pickLang(this)"><span class="lang-flag">🇹🇭</span>Thai</button>
+      <button class="lang-btn" data-lang="English" onclick="pickLang(this)"><span class="lang-flag">🇬🇧</span>English</button>
+      <button class="lang-btn" data-lang="Filipino" onclick="pickLang(this)"><span class="lang-flag">🇵🇭</span>Filipino</button>
+      <button class="lang-btn" data-lang="Myanmar" onclick="pickLang(this)"><span class="lang-flag">🇲🇲</span>Myanmar</button>
+      <button class="lang-btn" data-lang="Chinese" onclick="pickLang(this)"><span class="lang-flag">🇨🇳</span>Chinese</button>
+    </div>
+    <button id="login-btn" disabled onclick="doLogin()">Join Chat</button>
   </div>
-  <button id="join-btn" disabled onclick="joinChat()">Join Chat</button>
 </div>
 
+<!-- Chat Screen -->
 <div id="chat-screen">
   <div id="messages"></div>
+  <div id="reply-bar">
+    <div class="rb-content">
+      <div class="rb-sender" id="rb-sender"></div>
+      <div class="rb-text" id="rb-text"></div>
+    </div>
+    <button class="rb-close" onclick="cancelReply()">&times;</button>
+  </div>
   <div id="input-area">
     <input id="msg-input" type="text" placeholder="Type a message..." autocomplete="off" />
     <button id="send-btn" onclick="sendMsg()">
@@ -101,105 +142,197 @@
 </div>
 
 <script>
-let myName = null;
-let myLang = null;
-let polling = null;
-let lastCount = 0;
-let sending = false;
+const EMOJIS = ['👍','❤️','😂','😮','😢','👏'];
+let myName = null, myLang = null;
+let polling = null, lastHash = '', sending = false;
+let replyToId = null, replyToSender = null, replyToText = null;
 const senderColors = {};
 let colorIdx = 0;
+
+// ── Login ──
 
 function pickLang(el) {
   document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('selected'));
   el.classList.add('selected');
   myLang = el.dataset.lang;
-  checkJoinReady();
+  checkLoginReady();
 }
 
-function checkJoinReady() {
-  const name = document.getElementById('name-input').value.trim();
-  document.getElementById('join-btn').disabled = !(name && myLang);
+function checkLoginReady() {
+  const name = document.getElementById('login-name').value.trim();
+  document.getElementById('login-btn').disabled = !(name && myLang);
 }
+document.getElementById('login-name').addEventListener('input', checkLoginReady);
 
-document.getElementById('name-input').addEventListener('input', checkJoinReady);
-
-function joinChat() {
-  myName = document.getElementById('name-input').value.trim();
+async function doLogin() {
+  myName = document.getElementById('login-name').value.trim();
+  const contact = document.getElementById('login-contact').value.trim();
   if (!myName || !myLang) return;
 
-  document.getElementById('join-screen').style.display = 'none';
+  document.getElementById('login-btn').disabled = true;
+  document.getElementById('login-btn').textContent = 'Joining...';
+
+  try {
+    await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: myName, contact, lang: myLang })
+    });
+  } catch (e) { /* continue anyway */ }
+
+  // Save to localStorage for quick re-login
+  localStorage.setItem('bt_name', myName);
+  localStorage.setItem('bt_contact', contact);
+  localStorage.setItem('bt_lang', myLang);
+
+  enterChat();
+}
+
+function enterChat() {
+  document.getElementById('login-screen').style.display = 'none';
   document.getElementById('chat-screen').style.display = 'flex';
   document.getElementById('header-subtitle').textContent = `${myName} · ${myLang}`;
-
   loadMessages();
-  polling = setInterval(loadMessages, 2000);
-
+  polling = setInterval(loadMessages, 2500);
   document.getElementById('msg-input').focus();
 }
 
-function getSenderColor(name) {
-  if (!senderColors[name]) {
-    senderColors[name] = 'sender-' + (colorIdx++ % 8);
+// Auto-login if saved
+(function autoLogin() {
+  const n = localStorage.getItem('bt_name');
+  const l = localStorage.getItem('bt_lang');
+  if (n && l) {
+    myName = n; myLang = l;
+    enterChat();
   }
+})();
+
+// ── Helpers ──
+
+function sc(name) {
+  if (!senderColors[name]) senderColors[name] = 'sc' + (colorIdx++ % 8);
   return senderColors[name];
 }
+function ftime(iso) { return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); }
+function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
-function formatTime(iso) {
-  const d = new Date(iso);
-  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+// ── Reply ──
+
+function setReply(id, sender, text) {
+  replyToId = id; replyToSender = sender; replyToText = text;
+  document.getElementById('rb-sender').textContent = sender;
+  document.getElementById('rb-text').textContent = text.length > 80 ? text.substring(0, 80) + '...' : text;
+  document.getElementById('reply-bar').classList.add('show');
+  document.getElementById('msg-input').focus();
+}
+function cancelReply() {
+  replyToId = null; replyToSender = null; replyToText = null;
+  document.getElementById('reply-bar').classList.remove('show');
 }
 
-function escapeHtml(str) {
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
+// ── Reactions ──
+
+async function toggleReaction(msgId, emoji) {
+  // Close picker
+  document.querySelectorAll('.emoji-picker.show').forEach(e => e.classList.remove('show'));
+  try {
+    await fetch('/api/react', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messageId: msgId, emoji, userName: myName })
+    });
+    await loadMessages();
+  } catch (e) { console.error('React failed:', e); }
+}
+
+function showEmojiPicker(msgId) {
+  // Close all other pickers
+  document.querySelectorAll('.emoji-picker.show').forEach(e => e.classList.remove('show'));
+  const picker = document.getElementById('ep-' + msgId);
+  if (picker) picker.classList.toggle('show');
+}
+
+// ── Messages ──
+
+function isAtBottom() {
+  const el = document.getElementById('messages');
+  return el.scrollHeight - el.scrollTop - el.clientHeight < 80;
 }
 
 async function loadMessages() {
   try {
-    const res = await fetch('/messages?lang=' + encodeURIComponent(myLang));
+    const res = await fetch('/api/messages?lang=' + encodeURIComponent(myLang));
     const msgs = await res.json();
-    if (msgs.length === lastCount) return;
 
-    const wasAtBottom = isScrolledToBottom();
-    lastCount = msgs.length;
+    // Hash check to avoid re-rendering
+    const hash = JSON.stringify(msgs.map(m => [m.id, m.translation, JSON.stringify(m.reactions)]));
+    if (hash === lastHash) return;
+    lastHash = hash;
+
+    const atBottom = isAtBottom();
     const container = document.getElementById('messages');
     container.innerHTML = '';
-
     let prevSender = null;
+
     msgs.forEach(m => {
-      const isMine = m.sender === myName;
-      const isNewGroup = m.sender !== prevSender;
+      const mine = m.sender === myName;
+      const newGroup = m.sender !== prevSender;
       prevSender = m.sender;
 
       const div = document.createElement('div');
-      div.className = 'msg ' + (isMine ? 'mine' : 'other') + (isNewGroup ? ' msg-group-first' : '');
+      div.className = 'msg ' + (mine ? 'mine' : 'other') + (newGroup ? ' msg-group-first' : '');
+      div.id = 'msg-' + m.id;
 
-      let html = '';
-      if (!isMine) {
-        html += `<div class="msg-sender ${getSenderColor(m.sender)}">${escapeHtml(m.sender)}</div>`;
-      }
-      html += `<div class="msg-text">${escapeHtml(m.text)}</div>`;
-      if (m.translation) {
-        html += `<div class="msg-translation">🌐 ${escapeHtml(m.translation)}</div>`;
-      }
-      html += `<div class="msg-time">${formatTime(m.time)}</div>`;
+      let h = '';
 
-      div.innerHTML = html;
+      // Reply preview
+      if (m.replyTo) {
+        h += `<div class="msg-reply-preview"><div class="rp-sender ${sc(m.replyTo.sender)}">${esc(m.replyTo.sender)}</div><div class="rp-text">${esc(m.replyTo.text)}</div></div>`;
+      }
+
+      // Sender
+      if (!mine) h += `<div class="msg-sender ${sc(m.sender)}">${esc(m.sender)}</div>`;
+
+      // Text + translation
+      h += `<div class="msg-text">${esc(m.text)}</div>`;
+      if (m.translation) h += `<div class="msg-translation">🌐 ${esc(m.translation)}</div>`;
+
+      // Reactions
+      const reactions = m.reactions || {};
+      const rKeys = Object.keys(reactions).filter(k => reactions[k].length > 0);
+      if (rKeys.length > 0) {
+        h += '<div class="msg-reactions">';
+        rKeys.forEach(emoji => {
+          const users = reactions[emoji];
+          const isMine = users.includes(myName);
+          h += `<span class="reaction-chip${isMine ? ' mine' : ''}" onclick="toggleReaction('${m.id}','${emoji}')"><span class="r-emoji">${emoji}</span><span class="r-count">${users.length}</span></span>`;
+        });
+        h += '</div>';
+      }
+
+      h += `<div class="msg-time">${ftime(m.time)}</div>`;
+
+      // Action buttons
+      const displayText = m.translation || m.text;
+      const safeText = esc(displayText).replace(/'/g, '&#39;');
+      h += `<div class="msg-actions"><button onclick="setReply('${m.id}','${esc(m.sender)}','${safeText}')" title="Reply">↩</button><button onclick="showEmojiPicker('${m.id}')" title="React">☺</button></div>`;
+
+      // Emoji picker
+      h += `<div class="emoji-picker" id="ep-${m.id}">`;
+      EMOJIS.forEach(e => { h += `<button onclick="toggleReaction('${m.id}','${e}')">${e}</button>`; });
+      h += '</div>';
+
+      div.innerHTML = h;
+
+      // Touch support for actions
+      div.addEventListener('touchstart', () => { div.classList.add('touched'); });
+      div.addEventListener('touchend', () => { setTimeout(() => div.classList.remove('touched'), 2000); });
+
       container.appendChild(div);
     });
 
-    if (wasAtBottom || lastCount <= msgs.length) {
-      container.scrollTop = container.scrollHeight;
-    }
-  } catch (e) {
-    console.error('Failed to load messages:', e);
-  }
-}
-
-function isScrolledToBottom() {
-  const el = document.getElementById('messages');
-  return el.scrollHeight - el.scrollTop - el.clientHeight < 60;
+    if (atBottom) container.scrollTop = container.scrollHeight;
+  } catch (e) { console.error('Load failed:', e); }
 }
 
 async function sendMsg() {
@@ -212,12 +345,16 @@ async function sendMsg() {
   document.getElementById('send-btn').disabled = true;
   input.value = '';
 
+  const body = { text, sender: myName, lang: myLang };
+  if (replyToId) body.replyTo = replyToId;
+
   try {
-    await fetch('/send', {
+    await fetch('/api/send', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text, sender: myName, lang: myLang })
+      body: JSON.stringify(body)
     });
+    cancelReply();
     await loadMessages();
   } catch (e) {
     console.error('Send failed:', e);
@@ -230,9 +367,14 @@ async function sendMsg() {
 }
 
 document.getElementById('msg-input').addEventListener('keydown', e => {
-  if (e.key === 'Enter' && !e.shiftKey) {
-    e.preventDefault();
-    sendMsg();
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); }
+});
+
+// Logout (hold header icon)
+document.getElementById('header-icon').addEventListener('dblclick', () => {
+  if (confirm('Log out?')) {
+    localStorage.clear();
+    location.reload();
   }
 });
 </script>

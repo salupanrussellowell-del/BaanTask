@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const Anthropic = require('@anthropic-ai/sdk');
+const mongoose = require('mongoose');
 const path = require('path');
 
 const app = express();
@@ -11,27 +12,59 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 const LANGUAGES = ['Russian', 'Thai', 'English', 'Filipino', 'Myanmar', 'Chinese'];
 
-// In-memory message store
-// Each message: { id, sender, senderLang, text, translations: { "Russian": "...", ... }, time }
-let messages = [];
-
 console.log('[STARTUP] BaanTask server starting...');
 console.log('[STARTUP] ANTHROPIC_API_KEY set:', !!process.env.ANTHROPIC_API_KEY);
-console.log('[STARTUP] ANTHROPIC_API_KEY length:', process.env.ANTHROPIC_API_KEY ? process.env.ANTHROPIC_API_KEY.length : 0);
-console.log('[STARTUP] ANTHROPIC_API_KEY prefix:', process.env.ANTHROPIC_API_KEY ? process.env.ANTHROPIC_API_KEY.substring(0, 7) + '...' : 'MISSING');
-console.log('[STARTUP] Supported languages:', LANGUAGES.join(', '));
+console.log('[STARTUP] MONGODB_URI set:', !!process.env.MONGODB_URI);
 
-// Translate a single message to a single target language
+// ── Mongoose schemas ──
+
+const userSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  contact: { type: String, default: '' },
+  lang: { type: String, required: true },
+  createdAt: { type: Date, default: Date.now }
+});
+
+const messageSchema = new mongoose.Schema({
+  sender: { type: String, required: true },
+  senderLang: { type: String, required: true },
+  text: { type: String, required: true },
+  replyTo: { type: mongoose.Schema.Types.ObjectId, default: null, ref: 'Message' },
+  translations: { type: Map, of: String, default: {} },
+  reactions: { type: Map, of: [String], default: {} },
+  createdAt: { type: Date, default: Date.now }
+});
+
+const User = mongoose.model('User', userSchema);
+const Message = mongoose.model('Message', messageSchema);
+
+// ── Connect to MongoDB ──
+
+async function connectDB() {
+  const uri = process.env.MONGODB_URI;
+  if (!uri) {
+    console.error('[DB] MONGODB_URI not set! Messages will not persist.');
+    return;
+  }
+  try {
+    await mongoose.connect(uri);
+    console.log('[DB] Connected to MongoDB Atlas');
+    const count = await Message.countDocuments();
+    console.log(`[DB] ${count} messages in database`);
+  } catch (e) {
+    console.error('[DB] Connection failed:', e.message);
+  }
+}
+
+// ── Translate ──
+
 async function translateOne(text, fromLang, toLang) {
-  console.log(`[TRANSLATE START] "${text.substring(0, 40)}" | ${fromLang} -> ${toLang}`);
-
+  console.log(`[TRANSLATE] "${text.substring(0, 40)}" | ${fromLang} -> ${toLang}`);
   if (!process.env.ANTHROPIC_API_KEY) {
-    console.error('[TRANSLATE FAIL] No ANTHROPIC_API_KEY in environment!');
+    console.error('[TRANSLATE FAIL] No ANTHROPIC_API_KEY');
     return null;
   }
-
   try {
-    console.log('[TRANSLATE] Calling Anthropic API...');
     const response = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 500,
@@ -40,124 +73,178 @@ async function translateOne(text, fromLang, toLang) {
         content: `You are a translator. Translate the following text from ${fromLang} to ${toLang}. Output ONLY the translated text, nothing else. No quotes, no labels, no explanations.\n\nText to translate: ${text}`
       }]
     });
-
-    console.log('[TRANSLATE] API responded. Stop reason:', response.stop_reason);
-    console.log('[TRANSLATE] Content blocks:', response.content.length);
-    console.log('[TRANSLATE] Raw response:', JSON.stringify(response.content));
-
     const translated = response.content[0].text.trim();
-
-    console.log(`[TRANSLATE OK] Input (${fromLang}): "${text}"`);
-    console.log(`[TRANSLATE OK] Output (${toLang}): "${translated}"`);
-
-    // Sanity check: if the "translation" is identical to the input, something went wrong
-    if (translated === text) {
-      console.error('[TRANSLATE WARN] Output identical to input! API may have echoed the text back.');
-    }
-
+    console.log(`[TRANSLATE OK] ${toLang}: "${translated.substring(0, 60)}"`);
     return translated;
   } catch (e) {
     console.error(`[TRANSLATE FAIL] ${fromLang}->${toLang}: ${e.message}`);
-    console.error(`[TRANSLATE FAIL] Error type: ${e.constructor.name}`);
-    console.error(`[TRANSLATE FAIL] Full:`, JSON.stringify(e, Object.getOwnPropertyNames(e)));
     return null;
   }
 }
 
-// Clear all messages and bad cached translations - visit /clear to reset
-app.get('/clear', (req, res) => {
-  const count = messages.length;
-  messages = [];
-  console.log(`[CLEAR] Wiped ${count} messages`);
-  res.json({ cleared: count });
-});
+// ── API Routes ──
 
-// Health check - visit /status to verify API key works
-app.get('/status', async (req, res) => {
-  const hasKey = !!process.env.ANTHROPIC_API_KEY;
-  console.log('[STATUS] Checking API key...');
-  if (!hasKey) {
-    console.error('[STATUS] ANTHROPIC_API_KEY is NOT set!');
-    return res.json({ ok: false, error: 'ANTHROPIC_API_KEY not set' });
-  }
+// Register / login user
+app.post('/api/login', async (req, res) => {
+  const { name, contact, lang } = req.body;
+  if (!name || !lang) return res.status(400).json({ error: 'Name and language required' });
+
+  console.log(`[LOGIN] ${name} (${lang}) contact: ${contact || 'none'}`);
   try {
-    const response = await client.messages.create({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 10,
-      messages: [{ role: 'user', content: 'Say "ok"' }]
-    });
-    console.log('[STATUS] API call succeeded:', response.content[0].text);
-    res.json({ ok: true, apiWorks: true, messages: messages.length });
+    let user = await User.findOne({ name });
+    if (user) {
+      user.contact = contact || user.contact;
+      user.lang = lang;
+      await user.save();
+      console.log(`[LOGIN] Updated existing user: ${name}`);
+    } else {
+      user = await User.create({ name, contact: contact || '', lang });
+      console.log(`[LOGIN] Created new user: ${name}`);
+    }
+    res.json({ ok: true, user: { name: user.name, contact: user.contact, lang: user.lang } });
   } catch (e) {
-    console.error('[STATUS] API call FAILED:', e.message);
-    res.json({ ok: false, error: e.message });
+    console.error('[LOGIN ERROR]', e.message);
+    res.json({ ok: true, user: { name, contact, lang } });
   }
 });
 
-// Get messages - translate on the fly for the requesting user's language
-app.get('/messages', async (req, res) => {
+// Get messages with translations for a language
+app.get('/api/messages', async (req, res) => {
   const lang = req.query.lang;
   if (!lang) return res.json([]);
 
-  console.log(`[GET /messages] User requesting in ${lang}, ${messages.length} messages total`);
+  try {
+    const msgs = await Message.find().sort({ createdAt: 1 }).lean();
+    console.log(`[GET /api/messages] ${msgs.length} msgs for ${lang}`);
 
-  // Translate any messages that need it for this language
-  for (const m of messages) {
-    if (m.senderLang === lang) continue; // Same language, no translation needed
+    // Translate any that need it
+    for (const m of msgs) {
+      if (m.senderLang === lang) continue;
+      const translations = m.translations instanceof Map ? Object.fromEntries(m.translations) : (m.translations || {});
+      if (translations[lang]) continue;
 
-    // Scrub bad cached translations from old buggy fallback (e.g. "[Russian] original text")
-    if (m.translations[lang] && m.translations[lang].startsWith('[')) {
-      console.log(`[SCRUB] Removing bad cached translation for msg ${m.id} lang ${lang}: "${m.translations[lang].substring(0, 40)}"`);
-      delete m.translations[lang];
+      console.log(`[GET /api/messages] Translating msg ${m._id} (${m.senderLang} -> ${lang})`);
+      const translated = await translateOne(m.text, m.senderLang, lang);
+      if (translated) {
+        await Message.updateOne({ _id: m._id }, { $set: { [`translations.${lang}`]: translated } });
+        m.translations = m.translations || {};
+        if (m.translations instanceof Map) m.translations.set(lang, translated);
+        else m.translations[lang] = translated;
+      }
     }
 
-    if (m.translations[lang]) continue;  // Already translated and cached
+    // Build reply lookup
+    const byId = {};
+    msgs.forEach(m => { byId[m._id.toString()] = m; });
 
-    console.log(`[GET /messages] Need translation for msg ${m.id} (${m.senderLang} -> ${lang})`);
-    const translated = await translateOne(m.text, m.senderLang, lang);
-    if (translated) {
-      m.translations[lang] = translated;
-    }
+    const result = msgs.map(m => {
+      const translations = m.translations instanceof Map ? Object.fromEntries(m.translations) : (m.translations || {});
+      const reactions = m.reactions instanceof Map ? Object.fromEntries(m.reactions) : (m.reactions || {});
+
+      // Build reply preview
+      let replyPreview = null;
+      if (m.replyTo) {
+        const orig = byId[m.replyTo.toString()];
+        if (orig) {
+          const origTranslations = orig.translations instanceof Map ? Object.fromEntries(orig.translations) : (orig.translations || {});
+          replyPreview = {
+            sender: orig.sender,
+            text: orig.senderLang === lang ? orig.text : (origTranslations[lang] || orig.text)
+          };
+        }
+      }
+
+      return {
+        id: m._id.toString(),
+        sender: m.sender,
+        senderLang: m.senderLang,
+        text: m.text,
+        translation: m.senderLang === lang ? null : (translations[lang] || null),
+        reactions,
+        replyTo: replyPreview,
+        time: m.createdAt
+      };
+    });
+
+    res.json(result);
+  } catch (e) {
+    console.error('[GET /api/messages ERROR]', e.message);
+    res.json([]);
   }
-
-  const result = messages.map(m => ({
-    id: m.id,
-    sender: m.sender,
-    senderLang: m.senderLang,
-    text: m.text,
-    translation: m.senderLang === lang ? null : (m.translations[lang] || null),
-    time: m.time
-  }));
-
-  console.log(`[GET /messages] Returning ${result.length} messages for ${lang}`);
-  res.json(result);
 });
 
-// Send a message - just store it, no translation here
-app.post('/send', (req, res) => {
-  const { text, sender, lang } = req.body;
+// Send a message
+app.post('/api/send', async (req, res) => {
+  const { text, sender, lang, replyTo } = req.body;
   if (!text || !sender || !lang) {
-    console.log('[POST /send] Missing fields:', { text: !!text, sender: !!sender, lang: !!lang });
     return res.status(400).json({ error: 'Missing text, sender, or lang' });
   }
 
-  const msg = {
-    id: Date.now(),
-    sender,
-    senderLang: lang,
-    text,
-    translations: {},
-    time: new Date().toISOString()
-  };
-
-  messages.push(msg);
-  console.log(`[POST /send] Stored message ${msg.id} from ${sender} (${lang}): "${text.substring(0, 50)}"`);
-  console.log(`[POST /send] Total messages now: ${messages.length}`);
-
-  res.json({ success: true, id: msg.id });
+  try {
+    const msg = await Message.create({
+      sender,
+      senderLang: lang,
+      text,
+      replyTo: replyTo || null
+    });
+    console.log(`[SEND] ${sender} (${lang}): "${text.substring(0, 50)}" id=${msg._id}${replyTo ? ' replyTo=' + replyTo : ''}`);
+    res.json({ ok: true, id: msg._id.toString() });
+  } catch (e) {
+    console.error('[SEND ERROR]', e.message);
+    res.status(500).json({ error: 'Failed to save message' });
+  }
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`[STARTUP] BaanTask running on port ${PORT}`);
+// Add/toggle reaction
+app.post('/api/react', async (req, res) => {
+  const { messageId, emoji, userName } = req.body;
+  if (!messageId || !emoji || !userName) {
+    return res.status(400).json({ error: 'Missing messageId, emoji, or userName' });
+  }
+
+  try {
+    const msg = await Message.findById(messageId);
+    if (!msg) return res.status(404).json({ error: 'Message not found' });
+
+    const users = msg.reactions.get(emoji) || [];
+    const idx = users.indexOf(userName);
+    if (idx >= 0) {
+      users.splice(idx, 1);
+      if (users.length === 0) msg.reactions.delete(emoji);
+      else msg.reactions.set(emoji, users);
+    } else {
+      users.push(userName);
+      msg.reactions.set(emoji, users);
+    }
+    await msg.save();
+    console.log(`[REACT] ${userName} ${idx >= 0 ? 'removed' : 'added'} ${emoji} on ${messageId}`);
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('[REACT ERROR]', e.message);
+    res.status(500).json({ error: 'Failed to update reaction' });
+  }
+});
+
+// Health check
+app.get('/status', async (req, res) => {
+  const dbOk = mongoose.connection.readyState === 1;
+  const hasKey = !!process.env.ANTHROPIC_API_KEY;
+  let apiOk = false;
+  if (hasKey) {
+    try {
+      await client.messages.create({ model: 'claude-haiku-4-5-20251001', max_tokens: 5, messages: [{ role: 'user', content: 'Say ok' }] });
+      apiOk = true;
+    } catch (e) { /* */ }
+  }
+  const msgCount = dbOk ? await Message.countDocuments() : 0;
+  res.json({ db: dbOk, api: apiOk, messages: msgCount });
+});
+
+// ── Start ──
+
+connectDB().then(() => {
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => {
+    console.log(`[STARTUP] BaanTask running on port ${PORT}`);
+  });
 });
