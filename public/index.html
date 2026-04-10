@@ -108,8 +108,6 @@
   <div class="login-form">
     <label>Your Name</label>
     <input id="login-name" type="text" placeholder="Enter your name" maxlength="30" autocomplete="off" />
-    <label>Phone or Email (optional)</label>
-    <input id="login-contact" type="text" placeholder="Phone number or email" maxlength="60" autocomplete="off" />
     <label>Your Language</label>
     <div class="lang-grid">
       <button class="lang-btn" data-lang="Russian" onclick="pickLang(this)"><span class="lang-flag">🇷🇺</span>Russian</button>
@@ -166,7 +164,6 @@ document.getElementById('login-name').addEventListener('input', checkLoginReady)
 
 async function doLogin() {
   myName = document.getElementById('login-name').value.trim();
-  const contact = document.getElementById('login-contact').value.trim();
   if (!myName || !myLang) return;
 
   document.getElementById('login-btn').disabled = true;
@@ -176,13 +173,12 @@ async function doLogin() {
     await fetch('/api/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: myName, contact, lang: myLang })
+      body: JSON.stringify({ name: myName, lang: myLang })
     });
   } catch (e) { /* continue anyway */ }
 
   // Save to localStorage for quick re-login
   localStorage.setItem('bt_name', myName);
-  localStorage.setItem('bt_contact', contact);
   localStorage.setItem('bt_lang', myLang);
 
   enterChat();
@@ -260,6 +256,7 @@ function isAtBottom() {
 }
 
 async function loadMessages() {
+  if (!myName || !myLang) return;
   try {
     const res = await fetch('/api/messages?lang=' + encodeURIComponent(myLang));
     const msgs = await res.json();
@@ -349,11 +346,17 @@ async function sendMsg() {
   if (replyToId) body.replyTo = replyToId;
 
   try {
-    await fetch('/api/send', {
+    const res = await fetch('/api/send', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
     });
+    const data = await res.json();
+    if (!res.ok || !data.ok) {
+      console.error('Send error:', data);
+      input.value = text;
+      return;
+    }
     cancelReply();
     await loadMessages();
   } catch (e) {
