@@ -39,10 +39,31 @@ async function translateOne(text, fromLang, toLang) {
   } catch (e) {
     console.error(`[TRANSLATE ERROR] ${fromLang}->${toLang}:`, e.message);
     console.error(`[TRANSLATE ERROR] Full error:`, JSON.stringify(e, Object.getOwnPropertyNames(e)));
-    console.error(`[TRANSLATE ERROR] Returning original text as fallback`);
-    return `[${toLang}] ${text}`;
+    return null; // Return null so it is NOT cached and will retry next fetch
   }
 }
+
+// Health check - visit /status to verify API key works
+app.get('/status', async (req, res) => {
+  const hasKey = !!process.env.ANTHROPIC_API_KEY;
+  console.log('[STATUS] Checking API key...');
+  if (!hasKey) {
+    console.error('[STATUS] ANTHROPIC_API_KEY is NOT set!');
+    return res.json({ ok: false, error: 'ANTHROPIC_API_KEY not set' });
+  }
+  try {
+    const response = await client.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 10,
+      messages: [{ role: 'user', content: 'Say "ok"' }]
+    });
+    console.log('[STATUS] API call succeeded:', response.content[0].text);
+    res.json({ ok: true, apiWorks: true, messages: messages.length });
+  } catch (e) {
+    console.error('[STATUS] API call FAILED:', e.message);
+    res.json({ ok: false, error: e.message });
+  }
+});
 
 // Get messages - translate on the fly for the requesting user's language
 app.get('/messages', async (req, res) => {
