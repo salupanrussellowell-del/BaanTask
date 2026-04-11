@@ -45,13 +45,30 @@ const Message = mongoose.model('Message', messageSchema);
 let dbConnected = false;
 
 async function connectDB() {
-  const uri = process.env.MONGODB_URI;
+  let uri = process.env.MONGODB_URI;
   if (!uri) {
     console.error('[DB] MONGODB_URI not set! App will not work.');
     return;
   }
+
+  // Ensure the URI has the database name 'baantask'
   try {
-    await mongoose.connect(uri);
+    const url = new URL(uri);
+    if (!url.pathname || url.pathname === '/' || url.pathname === '') {
+      url.pathname = '/baantask';
+      uri = url.toString();
+      console.log('[DB] Added database name to URI: /baantask');
+    }
+    console.log(`[DB] Connecting to database: ${url.pathname.substring(1) || '(none)'}`);
+  } catch (e) {
+    console.warn('[DB] Could not parse URI to check db name:', e.message);
+  }
+
+  try {
+    await mongoose.connect(uri, {
+      serverSelectionTimeoutMS: 30000,
+      socketTimeoutMS: 45000
+    });
     dbConnected = true;
     console.log('[DB] Connected to MongoDB Atlas');
     const users = await User.countDocuments();
