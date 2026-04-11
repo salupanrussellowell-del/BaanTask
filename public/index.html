@@ -14,21 +14,27 @@
   #header-subtitle { font-size: 0.75rem; opacity: 0.85; }
   #header-icon { width: 40px; height: 40px; border-radius: 50%; background: #25d366; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0; }
 
-  /* Login screen */
-  #login-screen { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; background: #fff; }
-  #login-screen h2 { color: #075e54; margin-bottom: 4px; font-size: 1.4rem; }
-  #login-screen p { color: #667; margin-bottom: 20px; font-size: 0.88rem; }
-  .login-form { width: 100%; max-width: 340px; }
-  .login-form input { width: 100%; padding: 12px 16px; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem; margin-bottom: 12px; outline: none; }
-  .login-form input:focus { border-color: #075e54; }
-  .login-form label { font-size: 0.82rem; color: #555; margin-bottom: 4px; display: block; font-weight: 500; }
+  /* Screens */
+  .screen { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; background: #fff; }
+  .screen.hidden { display: none; }
+  .screen h2 { color: #075e54; margin-bottom: 4px; font-size: 1.4rem; }
+  .screen p { color: #667; margin-bottom: 20px; font-size: 0.88rem; text-align: center; }
+  .form-box { width: 100%; max-width: 340px; }
+  .form-box input { width: 100%; padding: 12px 16px; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem; margin-bottom: 12px; outline: none; }
+  .form-box input:focus { border-color: #075e54; }
+  .form-box label { font-size: 0.82rem; color: #555; margin-bottom: 4px; display: block; font-weight: 500; }
+  .btn-primary { width: 100%; padding: 14px; background: #25d366; color: white; border: none; border-radius: 8px; font-size: 1.05rem; font-weight: 600; cursor: pointer; }
+  .btn-primary:disabled { background: #ccc; cursor: default; }
+  .btn-link { background: none; border: none; color: #075e54; font-size: 0.88rem; cursor: pointer; margin-top: 12px; text-decoration: underline; }
+  .error-msg { color: #c62828; font-size: 0.85rem; margin-bottom: 10px; display: none; }
   .lang-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 20px; }
   .lang-btn { padding: 10px 6px; border: 2px solid #ddd; border-radius: 10px; background: #fff; cursor: pointer; font-size: 0.85rem; text-align: center; transition: all 0.2s; }
   .lang-btn:hover { border-color: #25d366; }
   .lang-btn.selected { border-color: #25d366; background: #dcf8c6; }
   .lang-flag { font-size: 1.4rem; display: block; margin-bottom: 2px; }
-  #login-btn { width: 100%; padding: 14px; background: #25d366; color: white; border: none; border-radius: 8px; font-size: 1.05rem; font-weight: 600; cursor: pointer; }
-  #login-btn:disabled { background: #ccc; cursor: default; }
+
+  /* OTP input */
+  #otp-input { text-align: center; font-size: 1.8rem; letter-spacing: 12px; font-weight: 700; padding: 14px; }
 
   /* Chat screen */
   #chat-screen { flex: 1; display: none; flex-direction: column; }
@@ -55,28 +61,28 @@
   .sc3 { color: #00897b; } .sc4 { color: #e65100; } .sc5 { color: #2e7d32; }
   .sc6 { color: #c62828; } .sc7 { color: #6a1b9a; }
 
-  /* Action bar (reply + reactions trigger) */
+  /* Action bar */
   .msg-actions { display: none; position: absolute; top: -14px; right: 4px; background: #fff; border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.2); padding: 2px 4px; gap: 2px; z-index: 5; }
   .msg.other .msg-actions { left: 4px; right: auto; }
   .msg:hover .msg-actions, .msg.touched .msg-actions { display: flex; }
   .msg-actions button { background: none; border: none; cursor: pointer; font-size: 0.9rem; padding: 2px 5px; border-radius: 8px; }
   .msg-actions button:hover { background: #f0f0f0; }
 
-  /* Emoji picker bar */
+  /* Emoji picker */
   .emoji-picker { display: none; position: absolute; top: -38px; right: 4px; background: #fff; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.18); padding: 4px 6px; gap: 2px; z-index: 6; }
   .msg.other .emoji-picker { left: 4px; right: auto; }
   .emoji-picker.show { display: flex; }
   .emoji-picker button { background: none; border: none; cursor: pointer; font-size: 1.2rem; padding: 3px 5px; border-radius: 8px; }
   .emoji-picker button:hover { background: #f0f0f0; transform: scale(1.2); }
 
-  /* Reactions display */
+  /* Reactions */
   .msg-reactions { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 3px; }
   .reaction-chip { display: inline-flex; align-items: center; gap: 2px; background: #e8f5e9; border: 1px solid #c8e6c9; border-radius: 12px; padding: 1px 7px; font-size: 0.75rem; cursor: pointer; }
   .reaction-chip.mine { background: #c8e6c9; }
   .reaction-chip .r-emoji { font-size: 0.85rem; }
   .reaction-chip .r-count { font-size: 0.7rem; color: #555; }
 
-  /* Reply bar above input */
+  /* Reply bar */
   #reply-bar { display: none; background: #f0f0f0; border-top: 1px solid #ddd; padding: 8px 12px; align-items: center; gap: 8px; }
   #reply-bar.show { display: flex; }
   #reply-bar .rb-content { flex: 1; border-left: 3px solid #25d366; padding-left: 8px; }
@@ -101,15 +107,15 @@
   </div>
 </div>
 
-<!-- Login Screen -->
-<div id="login-screen">
+<!-- Screen 1: Login -->
+<div id="login-screen" class="screen">
   <h2>Welcome to BaanTask</h2>
   <p>Sign in to start chatting</p>
-  <div class="login-form">
+  <div class="form-box">
     <label>Your Name</label>
-    <input id="login-name" type="text" placeholder="Enter your name" maxlength="30" autocomplete="off" />
+    <input id="login-name" type="text" placeholder="Enter your name" maxlength="30" autocomplete="name" />
     <label>Phone or Email</label>
-    <input id="login-contact" type="text" placeholder="Phone number or email" maxlength="60" autocomplete="off" />
+    <input id="login-contact" type="text" placeholder="Phone number or email" maxlength="60" autocomplete="email" />
     <label>Your Language</label>
     <div class="lang-grid">
       <button class="lang-btn" data-lang="Russian" onclick="pickLang(this)"><span class="lang-flag">🇷🇺</span>Russian</button>
@@ -119,11 +125,25 @@
       <button class="lang-btn" data-lang="Myanmar" onclick="pickLang(this)"><span class="lang-flag">🇲🇲</span>Myanmar</button>
       <button class="lang-btn" data-lang="Chinese" onclick="pickLang(this)"><span class="lang-flag">🇨🇳</span>Chinese</button>
     </div>
-    <button id="login-btn" disabled onclick="doLogin()">Join Chat</button>
+    <div id="login-error" class="error-msg"></div>
+    <button id="login-btn" class="btn-primary" disabled onclick="sendOTP()">Send Code</button>
   </div>
 </div>
 
-<!-- Chat Screen -->
+<!-- Screen 2: OTP Verification -->
+<div id="otp-screen" class="screen hidden">
+  <h2>Verify Your Identity</h2>
+  <p id="otp-prompt">Enter the 6-digit code we sent</p>
+  <div class="form-box">
+    <input id="otp-input" type="text" placeholder="000000" maxlength="6" inputmode="numeric" autocomplete="one-time-code" />
+    <div id="otp-error" class="error-msg"></div>
+    <button id="otp-btn" class="btn-primary" disabled onclick="verifyOTP()">Verify &amp; Join Chat</button>
+    <button class="btn-link" onclick="resendOTP()">Resend code</button>
+    <button class="btn-link" onclick="backToLogin()">Back</button>
+  </div>
+</div>
+
+<!-- Screen 3: Chat -->
 <div id="chat-screen">
   <div id="messages"></div>
   <div id="reply-bar">
@@ -143,13 +163,31 @@
 
 <script>
 const EMOJIS = ['👍','❤️','😂','😮','😢','👏'];
-let myName = null, myLang = null;
+let myName = null, myLang = null, myContact = null;
 let polling = null, lastHash = '', sending = false;
 let replyToId = null, replyToSender = null, replyToText = null;
 const senderColors = {};
 let colorIdx = 0;
 
-// ── Login ──
+// ── Screen helpers ──
+
+function showScreen(id) {
+  document.querySelectorAll('.screen, #chat-screen').forEach(s => {
+    s.style.display = 'none';
+    s.classList.add('hidden');
+  });
+  const el = document.getElementById(id);
+  el.style.display = id === 'chat-screen' ? 'flex' : 'flex';
+  el.classList.remove('hidden');
+}
+
+function showError(elId, msg) {
+  const el = document.getElementById(elId);
+  el.textContent = msg;
+  el.style.display = msg ? 'block' : 'none';
+}
+
+// ── Login Screen ──
 
 function pickLang(el) {
   document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('selected'));
@@ -160,54 +198,150 @@ function pickLang(el) {
 
 function checkLoginReady() {
   const name = document.getElementById('login-name').value.trim();
-  document.getElementById('login-btn').disabled = !(name && myLang);
-}
-document.getElementById('login-name').addEventListener('input', checkLoginReady);
-
-async function doLogin() {
-  myName = document.getElementById('login-name').value.trim();
   const contact = document.getElementById('login-contact').value.trim();
-  if (!myName || !myLang) return;
+  document.getElementById('login-btn').disabled = !(name && contact && myLang);
+}
 
-  document.getElementById('login-btn').disabled = true;
-  document.getElementById('login-btn').textContent = 'Joining...';
+document.getElementById('login-name').addEventListener('input', checkLoginReady);
+document.getElementById('login-contact').addEventListener('input', checkLoginReady);
+
+async function sendOTP() {
+  myName = document.getElementById('login-name').value.trim();
+  myContact = document.getElementById('login-contact').value.trim();
+  if (!myName || !myContact || !myLang) return;
+
+  const btn = document.getElementById('login-btn');
+  btn.disabled = true;
+  btn.textContent = 'Sending code...';
+  showError('login-error', '');
 
   try {
+    const res = await fetch('/api/send-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contact: myContact })
+    });
+    const data = await res.json();
+    console.log('[OTP] Send result:', data);
+
+    if (!data.ok) {
+      showError('login-error', data.error || 'Failed to send code');
+      btn.disabled = false;
+      btn.textContent = 'Send Code';
+      return;
+    }
+
+    // Show where code was sent
+    let methodLabel = 'your phone/email';
+    if (data.method === 'sms') methodLabel = 'your phone via SMS';
+    else if (data.method === 'email') methodLabel = 'your email';
+    else if (data.method === 'console') methodLabel = 'the server console (check Render logs)';
+
+    document.getElementById('otp-prompt').textContent = `Enter the 6-digit code sent to ${methodLabel}`;
+    showScreen('otp-screen');
+    document.getElementById('otp-input').value = '';
+    document.getElementById('otp-input').focus();
+  } catch (e) {
+    console.error('[OTP] Send failed:', e);
+    showError('login-error', 'Network error — check connection');
+  } finally {
+    btn.textContent = 'Send Code';
+    btn.disabled = false;
+  }
+}
+
+// ── OTP Screen ──
+
+document.getElementById('otp-input').addEventListener('input', function() {
+  this.value = this.value.replace(/\D/g, '').substring(0, 6);
+  document.getElementById('otp-btn').disabled = this.value.length !== 6;
+});
+
+async function verifyOTP() {
+  const code = document.getElementById('otp-input').value.trim();
+  if (code.length !== 6) return;
+
+  const btn = document.getElementById('otp-btn');
+  btn.disabled = true;
+  btn.textContent = 'Verifying...';
+  showError('otp-error', '');
+
+  try {
+    const res = await fetch('/api/verify-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contact: myContact, code })
+    });
+    const data = await res.json();
+    console.log('[OTP] Verify result:', data);
+
+    if (!data.ok) {
+      showError('otp-error', data.error || 'Invalid code — try again');
+      btn.disabled = false;
+      btn.textContent = 'Verify & Join Chat';
+      return;
+    }
+
+    // OTP verified — complete login
     await fetch('/api/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: myName, contact, lang: myLang })
+      body: JSON.stringify({ name: myName, contact: myContact, lang: myLang })
     });
-  } catch (e) { /* continue anyway */ }
 
-  // Save to localStorage so fields are pre-filled on next visit
-  localStorage.setItem('bt_name', myName);
-  localStorage.setItem('bt_contact', contact);
-  localStorage.setItem('bt_lang', myLang);
+    // Save to localStorage
+    localStorage.setItem('bt_name', myName);
+    localStorage.setItem('bt_contact', myContact);
+    localStorage.setItem('bt_lang', myLang);
 
-  enterChat();
+    enterChat();
+  } catch (e) {
+    console.error('[OTP] Verify failed:', e);
+    showError('otp-error', 'Network error — check connection');
+    btn.disabled = false;
+    btn.textContent = 'Verify & Join Chat';
+  }
 }
 
+async function resendOTP() {
+  showError('otp-error', '');
+  try {
+    await fetch('/api/send-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contact: myContact })
+    });
+    showError('otp-error', ''); // Clear any previous error
+    document.getElementById('otp-prompt').textContent = 'New code sent! Enter the 6-digit code';
+  } catch (e) {
+    showError('otp-error', 'Failed to resend code');
+  }
+}
+
+function backToLogin() {
+  showScreen('login-screen');
+}
+
+// ── Enter Chat ──
+
 function enterChat() {
-  document.getElementById('login-screen').style.display = 'none';
-  document.getElementById('chat-screen').style.display = 'flex';
+  showScreen('chat-screen');
   document.getElementById('header-subtitle').textContent = `${myName} · ${myLang}`;
   loadMessages();
   polling = setInterval(loadMessages, 2500);
   document.getElementById('msg-input').focus();
 }
 
-// Pre-fill login from localStorage so returning users just tap Join Chat
+// Pre-fill from localStorage
 (function prefillLogin() {
-  const savedName = localStorage.getItem('bt_name');
-  const savedContact = localStorage.getItem('bt_contact');
-  const savedLang = localStorage.getItem('bt_lang');
-
-  if (savedName) document.getElementById('login-name').value = savedName;
-  if (savedContact) document.getElementById('login-contact').value = savedContact;
-  if (savedLang) {
-    const btn = document.querySelector(`.lang-btn[data-lang="${savedLang}"]`);
-    if (btn) { btn.classList.add('selected'); myLang = savedLang; }
+  const n = localStorage.getItem('bt_name');
+  const c = localStorage.getItem('bt_contact');
+  const l = localStorage.getItem('bt_lang');
+  if (n) document.getElementById('login-name').value = n;
+  if (c) document.getElementById('login-contact').value = c;
+  if (l) {
+    const btn = document.querySelector(`.lang-btn[data-lang="${l}"]`);
+    if (btn) { btn.classList.add('selected'); myLang = l; }
   }
   checkLoginReady();
 })();
@@ -238,7 +372,6 @@ function cancelReply() {
 // ── Reactions ──
 
 async function toggleReaction(msgId, emoji) {
-  // Close picker
   document.querySelectorAll('.emoji-picker.show').forEach(e => e.classList.remove('show'));
   try {
     await fetch('/api/react', {
@@ -251,7 +384,6 @@ async function toggleReaction(msgId, emoji) {
 }
 
 function showEmojiPicker(msgId) {
-  // Close all other pickers
   document.querySelectorAll('.emoji-picker.show').forEach(e => e.classList.remove('show'));
   const picker = document.getElementById('ep-' + msgId);
   if (picker) picker.classList.toggle('show');
@@ -268,9 +400,9 @@ async function loadMessages() {
   if (!myName || !myLang) return;
   try {
     const res = await fetch('/api/messages?lang=' + encodeURIComponent(myLang));
+    if (!res.ok) { console.error('[loadMessages] Server returned', res.status); return; }
     const msgs = await res.json();
 
-    // Hash check to avoid re-rendering
     const hash = JSON.stringify(msgs.map(m => [m.id, m.translation, JSON.stringify(m.reactions)]));
     if (hash === lastHash) return;
     lastHash = hash;
@@ -291,19 +423,13 @@ async function loadMessages() {
 
       let h = '';
 
-      // Reply preview
       if (m.replyTo) {
         h += `<div class="msg-reply-preview"><div class="rp-sender ${sc(m.replyTo.sender)}">${esc(m.replyTo.sender)}</div><div class="rp-text">${esc(m.replyTo.text)}</div></div>`;
       }
-
-      // Sender
       if (!mine) h += `<div class="msg-sender ${sc(m.sender)}">${esc(m.sender)}</div>`;
-
-      // Text + translation
       h += `<div class="msg-text">${esc(m.text)}</div>`;
       if (m.translation) h += `<div class="msg-translation">🌐 ${esc(m.translation)}</div>`;
 
-      // Reactions
       const reactions = m.reactions || {};
       const rKeys = Object.keys(reactions).filter(k => reactions[k].length > 0);
       if (rKeys.length > 0) {
@@ -318,27 +444,22 @@ async function loadMessages() {
 
       h += `<div class="msg-time">${ftime(m.time)}</div>`;
 
-      // Action buttons
       const displayText = m.translation || m.text;
       const safeText = esc(displayText).replace(/'/g, '&#39;');
       h += `<div class="msg-actions"><button onclick="setReply('${m.id}','${esc(m.sender)}','${safeText}')" title="Reply">↩</button><button onclick="showEmojiPicker('${m.id}')" title="React">☺</button></div>`;
 
-      // Emoji picker
       h += `<div class="emoji-picker" id="ep-${m.id}">`;
       EMOJIS.forEach(e => { h += `<button onclick="toggleReaction('${m.id}','${e}')">${e}</button>`; });
       h += '</div>';
 
       div.innerHTML = h;
-
-      // Touch support for actions
       div.addEventListener('touchstart', () => { div.classList.add('touched'); });
       div.addEventListener('touchend', () => { setTimeout(() => div.classList.remove('touched'), 2000); });
-
       container.appendChild(div);
     });
 
     if (atBottom) container.scrollTop = container.scrollHeight;
-  } catch (e) { console.error('Load failed:', e); }
+  } catch (e) { console.error('[loadMessages] Failed:', e); }
 }
 
 async function sendMsg() {
@@ -346,6 +467,8 @@ async function sendMsg() {
   const input = document.getElementById('msg-input');
   const text = input.value.trim();
   if (!text) return;
+
+  console.log('[sendMsg] Sending:', { text: text.substring(0, 50), sender: myName, lang: myLang });
 
   sending = true;
   document.getElementById('send-btn').disabled = true;
@@ -361,15 +484,18 @@ async function sendMsg() {
       body: JSON.stringify(body)
     });
     const data = await res.json();
+    console.log('[sendMsg] Response:', res.status, data);
+
     if (!res.ok || !data.ok) {
-      console.error('Send error:', data);
+      console.error('[sendMsg] Server error:', data);
       input.value = text;
       return;
     }
     cancelReply();
+    lastHash = ''; // Force refresh
     await loadMessages();
   } catch (e) {
-    console.error('Send failed:', e);
+    console.error('[sendMsg] Network error:', e);
     input.value = text;
   } finally {
     sending = false;
@@ -382,7 +508,7 @@ document.getElementById('msg-input').addEventListener('keydown', e => {
   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); }
 });
 
-// Logout (hold header icon)
+// Logout
 document.getElementById('header-icon').addEventListener('dblclick', () => {
   if (confirm('Log out?')) {
     localStorage.clear();
