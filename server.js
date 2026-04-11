@@ -21,7 +21,7 @@ console.log('[STARTUP] MONGODB_URI set:', !!process.env.MONGODB_URI);
 
 const userSchema = new mongoose.Schema({
   name: { type: String, required: true, unique: true },
-  pinHash: { type: String, required: true },
+  pinHash: { type: String, default: '' },
   contact: { type: String, default: '' },
   lang: { type: String, required: true },
   createdAt: { type: Date, default: Date.now }
@@ -103,15 +103,25 @@ app.post('/api/login', async (req, res) => {
 
   try {
     const existing = await User.findOne({ name });
+    console.log(`[LOGIN] User lookup result: ${existing ? 'found (has pinHash: ' + !!existing.pinHash + ')' : 'not found'}`);
 
     if (existing) {
-      // User exists — check PIN
+      // Old user from before PIN system — migrate them
+      if (!existing.pinHash) {
+        console.log(`[LOGIN] Migrating old user ${name} — setting their PIN`);
+        existing.pinHash = await bcrypt.hash(pin, 10);
+        existing.lang = lang;
+        if (contact) existing.contact = contact;
+        await existing.save();
+        return res.json({ ok: true, user: { name: existing.name, lang: existing.lang } });
+      }
+
+      // User exists with PIN — check it
       const match = await bcrypt.compare(pin, existing.pinHash);
       if (!match) {
         console.log(`[LOGIN] Wrong PIN for ${name}`);
         return res.json({ ok: false, error: 'Wrong PIN' });
       }
-      // Update lang and contact if provided
       existing.lang = lang;
       if (contact) existing.contact = contact;
       await existing.save();
@@ -126,7 +136,8 @@ app.post('/api/login', async (req, res) => {
     res.json({ ok: true, user: { name: user.name, lang: user.lang }, isNew: true });
   } catch (e) {
     console.error('[LOGIN ERROR]', e.message);
-    res.status(500).json({ ok: false, error: 'Login failed' });
+    console.error('[LOGIN ERROR] Stack:', e.stack);
+    res.status(500).json({ ok: false, error: 'Login failed: ' + e.message });
   }
 });
 
