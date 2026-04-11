@@ -14,27 +14,23 @@
   #header-subtitle { font-size: 0.75rem; opacity: 0.85; }
   #header-icon { width: 40px; height: 40px; border-radius: 50%; background: #25d366; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0; }
 
-  /* Screens */
-  .screen { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; background: #fff; }
-  .screen.hidden { display: none; }
-  .screen h2 { color: #075e54; margin-bottom: 4px; font-size: 1.4rem; }
-  .screen p { color: #667; margin-bottom: 20px; font-size: 0.88rem; text-align: center; }
+  /* Login screen */
+  #login-screen { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; background: #fff; }
+  #login-screen h2 { color: #075e54; margin-bottom: 4px; font-size: 1.4rem; }
+  #login-screen p { color: #667; margin-bottom: 20px; font-size: 0.88rem; text-align: center; }
   .form-box { width: 100%; max-width: 340px; }
   .form-box input { width: 100%; padding: 12px 16px; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem; margin-bottom: 12px; outline: none; }
   .form-box input:focus { border-color: #075e54; }
   .form-box label { font-size: 0.82rem; color: #555; margin-bottom: 4px; display: block; font-weight: 500; }
-  .btn-primary { width: 100%; padding: 14px; background: #25d366; color: white; border: none; border-radius: 8px; font-size: 1.05rem; font-weight: 600; cursor: pointer; }
-  .btn-primary:disabled { background: #ccc; cursor: default; }
-  .btn-link { background: none; border: none; color: #075e54; font-size: 0.88rem; cursor: pointer; margin-top: 12px; text-decoration: underline; }
-  .error-msg { color: #c62828; font-size: 0.85rem; margin-bottom: 10px; display: none; }
   .lang-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 20px; }
   .lang-btn { padding: 10px 6px; border: 2px solid #ddd; border-radius: 10px; background: #fff; cursor: pointer; font-size: 0.85rem; text-align: center; transition: all 0.2s; }
   .lang-btn:hover { border-color: #25d366; }
   .lang-btn.selected { border-color: #25d366; background: #dcf8c6; }
   .lang-flag { font-size: 1.4rem; display: block; margin-bottom: 2px; }
-
-  /* OTP input */
-  #otp-input { text-align: center; font-size: 1.8rem; letter-spacing: 12px; font-weight: 700; padding: 14px; }
+  #pin-input { text-align: center; font-size: 1.6rem; letter-spacing: 10px; font-weight: 700; }
+  .btn-primary { width: 100%; padding: 14px; background: #25d366; color: white; border: none; border-radius: 8px; font-size: 1.05rem; font-weight: 600; cursor: pointer; }
+  .btn-primary:disabled { background: #ccc; cursor: default; }
+  .error-msg { color: #c62828; font-size: 0.85rem; margin-bottom: 10px; text-align: center; display: none; }
 
   /* Chat screen */
   #chat-screen { flex: 1; display: none; flex-direction: column; }
@@ -51,15 +47,15 @@
   .msg.mine .msg-sender { display: none; }
   .msg-group-first { margin-top: 10px; }
 
-  /* Reply preview inside bubble */
+  /* Reply preview */
   .msg-reply-preview { background: rgba(0,0,0,0.05); border-left: 3px solid #25d366; padding: 4px 8px; border-radius: 4px; margin-bottom: 4px; font-size: 0.8rem; }
   .msg-reply-preview .rp-sender { font-weight: 600; font-size: 0.75rem; }
   .msg-reply-preview .rp-text { color: #555; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px; }
 
   /* Sender colors */
-  .sc0 { color: #e91e63; } .sc1 { color: #9c27b0; } .sc2 { color: #3f51b5; }
-  .sc3 { color: #00897b; } .sc4 { color: #e65100; } .sc5 { color: #2e7d32; }
-  .sc6 { color: #c62828; } .sc7 { color: #6a1b9a; }
+  .sc0{color:#e91e63}.sc1{color:#9c27b0}.sc2{color:#3f51b5}
+  .sc3{color:#00897b}.sc4{color:#e65100}.sc5{color:#2e7d32}
+  .sc6{color:#c62828}.sc7{color:#6a1b9a}
 
   /* Action bar */
   .msg-actions { display: none; position: absolute; top: -14px; right: 4px; background: #fff; border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.2); padding: 2px 4px; gap: 2px; z-index: 5; }
@@ -107,15 +103,17 @@
   </div>
 </div>
 
-<!-- Screen 1: Login -->
-<div id="login-screen" class="screen">
+<!-- Login Screen -->
+<div id="login-screen">
   <h2>Welcome to BaanTask</h2>
-  <p>Sign in to start chatting</p>
+  <p>Enter your name and 4-digit PIN to join</p>
   <div class="form-box">
     <label>Your Name</label>
     <input id="login-name" type="text" placeholder="Enter your name" maxlength="30" autocomplete="name" />
-    <label>Phone or Email</label>
-    <input id="login-contact" type="text" placeholder="Phone number or email" maxlength="60" autocomplete="email" />
+    <label>Phone or Email (optional)</label>
+    <input id="login-contact" type="text" placeholder="For contact info only" maxlength="60" autocomplete="email" />
+    <label>4-Digit PIN</label>
+    <input id="pin-input" type="password" inputmode="numeric" placeholder="••••" maxlength="4" autocomplete="off" />
     <label>Your Language</label>
     <div class="lang-grid">
       <button class="lang-btn" data-lang="Russian" onclick="pickLang(this)"><span class="lang-flag">🇷🇺</span>Russian</button>
@@ -126,24 +124,11 @@
       <button class="lang-btn" data-lang="Chinese" onclick="pickLang(this)"><span class="lang-flag">🇨🇳</span>Chinese</button>
     </div>
     <div id="login-error" class="error-msg"></div>
-    <button id="login-btn" class="btn-primary" disabled onclick="sendOTP()">Send Code</button>
+    <button id="login-btn" class="btn-primary" disabled onclick="doLogin()">Join Chat</button>
   </div>
 </div>
 
-<!-- Screen 2: OTP Verification -->
-<div id="otp-screen" class="screen hidden">
-  <h2>Verify Your Identity</h2>
-  <p id="otp-prompt">Enter the 6-digit code we sent</p>
-  <div class="form-box">
-    <input id="otp-input" type="text" placeholder="000000" maxlength="6" inputmode="numeric" autocomplete="one-time-code" />
-    <div id="otp-error" class="error-msg"></div>
-    <button id="otp-btn" class="btn-primary" disabled onclick="verifyOTP()">Verify &amp; Join Chat</button>
-    <button class="btn-link" onclick="resendOTP()">Resend code</button>
-    <button class="btn-link" onclick="backToLogin()">Back</button>
-  </div>
-</div>
-
-<!-- Screen 3: Chat -->
+<!-- Chat Screen -->
 <div id="chat-screen">
   <div id="messages"></div>
   <div id="reply-bar">
@@ -163,169 +148,83 @@
 
 <script>
 const EMOJIS = ['👍','❤️','😂','😮','😢','👏'];
-let myName = null, myLang = null, myContact = null;
+let myName = null, myLang = null;
 let polling = null, lastHash = '', sending = false;
 let replyToId = null, replyToSender = null, replyToText = null;
 const senderColors = {};
 let colorIdx = 0;
 
-// ── Screen helpers ──
-
-function showScreen(id) {
-  document.querySelectorAll('.screen, #chat-screen').forEach(s => {
-    s.style.display = 'none';
-    s.classList.add('hidden');
-  });
-  const el = document.getElementById(id);
-  el.style.display = id === 'chat-screen' ? 'flex' : 'flex';
-  el.classList.remove('hidden');
-}
-
-function showError(elId, msg) {
-  const el = document.getElementById(elId);
-  el.textContent = msg;
-  el.style.display = msg ? 'block' : 'none';
-}
-
-// ── Login Screen ──
+// ── Login ──
 
 function pickLang(el) {
   document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('selected'));
   el.classList.add('selected');
   myLang = el.dataset.lang;
-  checkLoginReady();
+  checkReady();
 }
 
-function checkLoginReady() {
+function checkReady() {
+  const name = document.getElementById('login-name').value.trim();
+  const pin = document.getElementById('pin-input').value;
+  document.getElementById('login-btn').disabled = !(name && pin.length === 4 && myLang);
+}
+
+document.getElementById('login-name').addEventListener('input', checkReady);
+document.getElementById('pin-input').addEventListener('input', function() {
+  this.value = this.value.replace(/\D/g, '').substring(0, 4);
+  checkReady();
+});
+
+function showError(msg) {
+  const el = document.getElementById('login-error');
+  el.textContent = msg;
+  el.style.display = msg ? 'block' : 'none';
+}
+
+async function doLogin() {
   const name = document.getElementById('login-name').value.trim();
   const contact = document.getElementById('login-contact').value.trim();
-  document.getElementById('login-btn').disabled = !(name && contact && myLang);
-}
-
-document.getElementById('login-name').addEventListener('input', checkLoginReady);
-document.getElementById('login-contact').addEventListener('input', checkLoginReady);
-
-async function sendOTP() {
-  myName = document.getElementById('login-name').value.trim();
-  myContact = document.getElementById('login-contact').value.trim();
-  if (!myName || !myContact || !myLang) return;
+  const pin = document.getElementById('pin-input').value;
+  if (!name || pin.length !== 4 || !myLang) return;
 
   const btn = document.getElementById('login-btn');
   btn.disabled = true;
-  btn.textContent = 'Sending code...';
-  showError('login-error', '');
+  btn.textContent = 'Logging in...';
+  showError('');
 
   try {
-    const res = await fetch('/api/send-otp', {
+    const res = await fetch('/api/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contact: myContact })
+      body: JSON.stringify({ name, pin, contact, lang: myLang })
     });
     const data = await res.json();
-    console.log('[OTP] Send result:', data);
+    console.log('[LOGIN] Response:', data);
 
     if (!data.ok) {
-      showError('login-error', data.error || 'Failed to send code');
+      showError(data.error || 'Login failed');
       btn.disabled = false;
-      btn.textContent = 'Send Code';
+      btn.textContent = 'Join Chat';
       return;
     }
 
-    // Show where code was sent
-    let methodLabel = 'your phone/email';
-    if (data.method === 'sms') methodLabel = 'your phone via SMS';
-    else if (data.method === 'email') methodLabel = 'your email';
-    else if (data.method === 'console') methodLabel = 'the server console (check Render logs)';
-
-    document.getElementById('otp-prompt').textContent = `Enter the 6-digit code sent to ${methodLabel}`;
-    showScreen('otp-screen');
-    document.getElementById('otp-input').value = '';
-    document.getElementById('otp-input').focus();
-  } catch (e) {
-    console.error('[OTP] Send failed:', e);
-    showError('login-error', 'Network error — check connection');
-  } finally {
-    btn.textContent = 'Send Code';
-    btn.disabled = false;
-  }
-}
-
-// ── OTP Screen ──
-
-document.getElementById('otp-input').addEventListener('input', function() {
-  this.value = this.value.replace(/\D/g, '').substring(0, 6);
-  document.getElementById('otp-btn').disabled = this.value.length !== 6;
-});
-
-async function verifyOTP() {
-  const code = document.getElementById('otp-input').value.trim();
-  if (code.length !== 6) return;
-
-  const btn = document.getElementById('otp-btn');
-  btn.disabled = true;
-  btn.textContent = 'Verifying...';
-  showError('otp-error', '');
-
-  try {
-    const res = await fetch('/api/verify-otp', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contact: myContact, code })
-    });
-    const data = await res.json();
-    console.log('[OTP] Verify result:', data);
-
-    if (!data.ok) {
-      showError('otp-error', data.error || 'Invalid code — try again');
-      btn.disabled = false;
-      btn.textContent = 'Verify & Join Chat';
-      return;
-    }
-
-    // OTP verified — complete login
-    await fetch('/api/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: myName, contact: myContact, lang: myLang })
-    });
-
-    // Save to localStorage
-    localStorage.setItem('bt_name', myName);
-    localStorage.setItem('bt_contact', myContact);
+    myName = name;
+    localStorage.setItem('bt_name', name);
+    localStorage.setItem('bt_contact', contact);
     localStorage.setItem('bt_lang', myLang);
 
     enterChat();
   } catch (e) {
-    console.error('[OTP] Verify failed:', e);
-    showError('otp-error', 'Network error — check connection');
+    console.error('[LOGIN] Error:', e);
+    showError('Network error — check connection');
     btn.disabled = false;
-    btn.textContent = 'Verify & Join Chat';
+    btn.textContent = 'Join Chat';
   }
 }
-
-async function resendOTP() {
-  showError('otp-error', '');
-  try {
-    await fetch('/api/send-otp', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contact: myContact })
-    });
-    showError('otp-error', ''); // Clear any previous error
-    document.getElementById('otp-prompt').textContent = 'New code sent! Enter the 6-digit code';
-  } catch (e) {
-    showError('otp-error', 'Failed to resend code');
-  }
-}
-
-function backToLogin() {
-  showScreen('login-screen');
-}
-
-// ── Enter Chat ──
 
 function enterChat() {
-  showScreen('chat-screen');
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('chat-screen').style.display = 'flex';
   document.getElementById('header-subtitle').textContent = `${myName} · ${myLang}`;
   loadMessages();
   polling = setInterval(loadMessages, 2500);
@@ -333,7 +232,7 @@ function enterChat() {
 }
 
 // Pre-fill from localStorage
-(function prefillLogin() {
+(function prefill() {
   const n = localStorage.getItem('bt_name');
   const c = localStorage.getItem('bt_contact');
   const l = localStorage.getItem('bt_lang');
@@ -343,7 +242,9 @@ function enterChat() {
     const btn = document.querySelector(`.lang-btn[data-lang="${l}"]`);
     if (btn) { btn.classList.add('selected'); myLang = l; }
   }
-  checkLoginReady();
+  checkReady();
+  // Focus PIN if name is pre-filled
+  if (n) setTimeout(() => document.getElementById('pin-input').focus(), 100);
 })();
 
 // ── Helpers ──
@@ -422,7 +323,6 @@ async function loadMessages() {
       div.id = 'msg-' + m.id;
 
       let h = '';
-
       if (m.replyTo) {
         h += `<div class="msg-reply-preview"><div class="rp-sender ${sc(m.replyTo.sender)}">${esc(m.replyTo.sender)}</div><div class="rp-text">${esc(m.replyTo.text)}</div></div>`;
       }
@@ -469,7 +369,6 @@ async function sendMsg() {
   if (!text) return;
 
   console.log('[sendMsg] Sending:', { text: text.substring(0, 50), sender: myName, lang: myLang });
-
   sending = true;
   document.getElementById('send-btn').disabled = true;
   input.value = '';
@@ -485,14 +384,13 @@ async function sendMsg() {
     });
     const data = await res.json();
     console.log('[sendMsg] Response:', res.status, data);
-
     if (!res.ok || !data.ok) {
-      console.error('[sendMsg] Server error:', data);
+      console.error('[sendMsg] Error:', data);
       input.value = text;
       return;
     }
     cancelReply();
-    lastHash = ''; // Force refresh
+    lastHash = '';
     await loadMessages();
   } catch (e) {
     console.error('[sendMsg] Network error:', e);
@@ -510,10 +408,7 @@ document.getElementById('msg-input').addEventListener('keydown', e => {
 
 // Logout
 document.getElementById('header-icon').addEventListener('dblclick', () => {
-  if (confirm('Log out?')) {
-    localStorage.clear();
-    location.reload();
-  }
+  if (confirm('Log out?')) { localStorage.clear(); location.reload(); }
 });
 </script>
 </body>
