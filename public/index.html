@@ -8,35 +8,43 @@
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; height: 100vh; height: 100dvh; display: flex; flex-direction: column; background: #e5ddd5; }
 
-  /* Header */
   #header { background: #075e54; color: white; padding: 12px 16px; display: flex; align-items: center; gap: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.2); z-index: 10; }
   #header-title { font-size: 1.1rem; font-weight: 600; }
   #header-subtitle { font-size: 0.75rem; opacity: 0.85; }
   #header-icon { width: 40px; height: 40px; border-radius: 50%; background: #25d366; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0; }
 
-  /* Login screen */
-  #login-screen { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; background: #fff; }
-  #login-screen h2 { color: #075e54; margin-bottom: 4px; font-size: 1.4rem; }
-  #login-screen p { color: #667; margin-bottom: 20px; font-size: 0.88rem; text-align: center; }
+  /* Shared screen styles */
+  .screen { flex: 1; display: none; flex-direction: column; align-items: center; justify-content: center; padding: 24px; background: #fff; }
+  .screen.active { display: flex; }
+  .screen h2 { color: #075e54; margin-bottom: 4px; font-size: 1.4rem; }
+  .screen p { color: #667; margin-bottom: 20px; font-size: 0.88rem; text-align: center; }
   .form-box { width: 100%; max-width: 340px; }
   .form-box input { width: 100%; padding: 12px 16px; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem; margin-bottom: 12px; outline: none; }
   .form-box input:focus { border-color: #075e54; }
   .form-box label { font-size: 0.82rem; color: #555; margin-bottom: 4px; display: block; font-weight: 500; }
+  .btn-primary { width: 100%; padding: 14px; background: #25d366; color: white; border: none; border-radius: 8px; font-size: 1.05rem; font-weight: 600; cursor: pointer; margin-bottom: 10px; }
+  .btn-primary:disabled { background: #ccc; cursor: default; }
+  .btn-outline { width: 100%; padding: 14px; background: #fff; color: #075e54; border: 2px solid #075e54; border-radius: 8px; font-size: 1.05rem; font-weight: 600; cursor: pointer; margin-bottom: 10px; }
+  .btn-link { background: none; border: none; color: #075e54; font-size: 0.88rem; cursor: pointer; margin-top: 8px; text-decoration: underline; }
+  .error-msg { color: #c62828; font-size: 0.85rem; margin-bottom: 10px; text-align: center; display: none; }
   .lang-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 20px; }
   .lang-btn { padding: 10px 6px; border: 2px solid #ddd; border-radius: 10px; background: #fff; cursor: pointer; font-size: 0.85rem; text-align: center; transition: all 0.2s; }
   .lang-btn:hover { border-color: #25d366; }
   .lang-btn.selected { border-color: #25d366; background: #dcf8c6; }
   .lang-flag { font-size: 1.4rem; display: block; margin-bottom: 2px; }
   #pin-input { text-align: center; font-size: 1.6rem; letter-spacing: 10px; font-weight: 700; }
-  .btn-primary { width: 100%; padding: 14px; background: #25d366; color: white; border: none; border-radius: 8px; font-size: 1.05rem; font-weight: 600; cursor: pointer; }
-  .btn-primary:disabled { background: #ccc; cursor: default; }
-  .error-msg { color: #c62828; font-size: 0.85rem; margin-bottom: 10px; text-align: center; display: none; }
+
+  /* Room code display */
+  .room-code-display { text-align: center; background: #f0f4f0; border: 2px dashed #25d366; border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+  .room-code-display .code { font-size: 2.2rem; font-weight: 800; letter-spacing: 6px; color: #075e54; font-family: monospace; }
+  .room-code-display .label { font-size: 0.82rem; color: #888; margin-bottom: 6px; }
+  #join-code-input { text-align: center; font-size: 1.5rem; letter-spacing: 6px; font-weight: 700; text-transform: uppercase; }
 
   /* Chat screen */
   #chat-screen { flex: 1; display: none; flex-direction: column; }
+  #chat-screen.active { display: flex; }
   #messages { flex: 1; overflow-y: auto; padding: 8px 12px; display: flex; flex-direction: column; gap: 2px; background: #e5ddd5; }
 
-  /* Bubbles */
   .msg { max-width: 82%; padding: 6px 10px; border-radius: 8px; position: relative; margin-top: 2px; word-wrap: break-word; box-shadow: 0 1px 1px rgba(0,0,0,0.1); }
   .msg.mine { align-self: flex-end; background: #dcf8c6; border-top-right-radius: 0; }
   .msg.other { align-self: flex-start; background: #fff; border-top-left-radius: 0; }
@@ -46,47 +54,33 @@
   .msg-time { font-size: 0.68rem; color: #999; text-align: right; margin-top: 2px; }
   .msg.mine .msg-sender { display: none; }
   .msg-group-first { margin-top: 10px; }
-
-  /* Reply preview */
   .msg-reply-preview { background: rgba(0,0,0,0.05); border-left: 3px solid #25d366; padding: 4px 8px; border-radius: 4px; margin-bottom: 4px; font-size: 0.8rem; }
   .msg-reply-preview .rp-sender { font-weight: 600; font-size: 0.75rem; }
   .msg-reply-preview .rp-text { color: #555; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px; }
+  .sc0{color:#e91e63}.sc1{color:#9c27b0}.sc2{color:#3f51b5}.sc3{color:#00897b}.sc4{color:#e65100}.sc5{color:#2e7d32}.sc6{color:#c62828}.sc7{color:#6a1b9a}
 
-  /* Sender colors */
-  .sc0{color:#e91e63}.sc1{color:#9c27b0}.sc2{color:#3f51b5}
-  .sc3{color:#00897b}.sc4{color:#e65100}.sc5{color:#2e7d32}
-  .sc6{color:#c62828}.sc7{color:#6a1b9a}
-
-  /* Action bar */
   .msg-actions { display: none; position: absolute; top: -14px; right: 4px; background: #fff; border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.2); padding: 2px 4px; gap: 2px; z-index: 5; }
   .msg.other .msg-actions { left: 4px; right: auto; }
   .msg:hover .msg-actions, .msg.touched .msg-actions { display: flex; }
   .msg-actions button { background: none; border: none; cursor: pointer; font-size: 0.9rem; padding: 2px 5px; border-radius: 8px; }
   .msg-actions button:hover { background: #f0f0f0; }
-
-  /* Emoji picker */
   .emoji-picker { display: none; position: absolute; top: -38px; right: 4px; background: #fff; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.18); padding: 4px 6px; gap: 2px; z-index: 6; }
   .msg.other .emoji-picker { left: 4px; right: auto; }
   .emoji-picker.show { display: flex; }
   .emoji-picker button { background: none; border: none; cursor: pointer; font-size: 1.2rem; padding: 3px 5px; border-radius: 8px; }
   .emoji-picker button:hover { background: #f0f0f0; transform: scale(1.2); }
-
-  /* Reactions */
   .msg-reactions { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 3px; }
   .reaction-chip { display: inline-flex; align-items: center; gap: 2px; background: #e8f5e9; border: 1px solid #c8e6c9; border-radius: 12px; padding: 1px 7px; font-size: 0.75rem; cursor: pointer; }
   .reaction-chip.mine { background: #c8e6c9; }
   .reaction-chip .r-emoji { font-size: 0.85rem; }
   .reaction-chip .r-count { font-size: 0.7rem; color: #555; }
 
-  /* Reply bar */
   #reply-bar { display: none; background: #f0f0f0; border-top: 1px solid #ddd; padding: 8px 12px; align-items: center; gap: 8px; }
   #reply-bar.show { display: flex; }
   #reply-bar .rb-content { flex: 1; border-left: 3px solid #25d366; padding-left: 8px; }
   #reply-bar .rb-sender { font-size: 0.78rem; font-weight: 600; color: #075e54; }
   #reply-bar .rb-text { font-size: 0.82rem; color: #555; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   #reply-bar .rb-close { background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #999; padding: 4px; }
-
-  /* Input area */
   #input-area { background: #f0f0f0; padding: 6px 8px; display: flex; gap: 6px; align-items: flex-end; }
   #msg-input { flex: 1; padding: 10px 14px; border: none; border-radius: 24px; font-size: 1rem; outline: none; background: #fff; max-height: 100px; resize: none; line-height: 1.4; }
   #send-btn { background: #075e54; color: white; border: none; border-radius: 50%; width: 44px; height: 44px; cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
@@ -103,10 +97,10 @@
   </div>
 </div>
 
-<!-- Login Screen -->
-<div id="login-screen">
+<!-- Screen 1: Login -->
+<div id="login-screen" class="screen active">
   <h2>Welcome to BaanTask</h2>
-  <p>Enter your name and 4-digit PIN to join</p>
+  <p>Enter your name and 4-digit PIN</p>
   <div class="form-box">
     <label>Your Name</label>
     <input id="login-name" type="text" placeholder="Enter your name" maxlength="30" autocomplete="name" />
@@ -128,7 +122,56 @@
   </div>
 </div>
 
-<!-- Chat Screen -->
+<!-- Screen 2: Room choice -->
+<div id="room-screen" class="screen">
+  <h2>Choose Your Household</h2>
+  <p>Create a new household or join one with an invite code</p>
+  <div class="form-box">
+    <button class="btn-primary" onclick="showCreateRoom()">Create New Household</button>
+    <button class="btn-outline" onclick="showJoinRoom()">Join with Invite Code</button>
+  </div>
+</div>
+
+<!-- Screen 3a: Create room -->
+<div id="create-room-screen" class="screen">
+  <h2>Create Household</h2>
+  <p>Give your household a name</p>
+  <div class="form-box">
+    <label>Household Name</label>
+    <input id="create-room-name" type="text" placeholder="e.g. Phuket Villa, Bangkok Office" maxlength="40" autocomplete="off" />
+    <div id="create-room-error" class="error-msg"></div>
+    <button id="create-room-btn" class="btn-primary" disabled onclick="createRoom()">Create</button>
+    <button class="btn-link" onclick="showRoomScreen()">Back</button>
+  </div>
+</div>
+
+<!-- Screen 3b: Room created - show code -->
+<div id="room-created-screen" class="screen">
+  <h2>Household Created!</h2>
+  <p>Share this invite code with your team</p>
+  <div class="form-box">
+    <div class="room-code-display">
+      <div class="label">Invite Code</div>
+      <div class="code" id="created-code"></div>
+    </div>
+    <p style="font-size:0.82rem; color:#888; margin-bottom:16px;">Anyone can join using this code</p>
+    <button class="btn-primary" onclick="enterChat()">Enter Chat</button>
+  </div>
+</div>
+
+<!-- Screen 3c: Join room -->
+<div id="join-room-screen" class="screen">
+  <h2>Join Household</h2>
+  <p>Enter the 6-character invite code</p>
+  <div class="form-box">
+    <input id="join-code-input" type="text" placeholder="ABC123" maxlength="6" autocomplete="off" />
+    <div id="join-room-error" class="error-msg"></div>
+    <button id="join-room-btn" class="btn-primary" disabled onclick="joinRoom()">Join</button>
+    <button class="btn-link" onclick="showRoomScreen()">Back</button>
+  </div>
+</div>
+
+<!-- Screen 4: Chat -->
 <div id="chat-screen">
   <div id="messages"></div>
   <div id="reply-bar">
@@ -148,11 +191,26 @@
 
 <script>
 const EMOJIS = ['👍','❤️','😂','😮','😢','👏'];
-let myName = null, myLang = null;
+let myName = null, myLang = null, myRoomCode = null, myRoomName = null;
 let polling = null, lastHash = '', sending = false;
-let replyToId = null, replyToSender = null, replyToText = null;
+let replyToId = null;
 const senderColors = {};
 let colorIdx = 0;
+
+// ── Screen management ──
+
+function showScreen(id) {
+  document.querySelectorAll('.screen, #chat-screen').forEach(s => { s.classList.remove('active'); s.style.display = 'none'; });
+  const el = document.getElementById(id);
+  el.classList.add('active');
+  el.style.display = id === 'chat-screen' ? 'flex' : 'flex';
+}
+
+function showError(elId, msg) {
+  const el = document.getElementById(elId);
+  el.textContent = msg;
+  el.style.display = msg ? 'block' : 'none';
+}
 
 // ── Login ──
 
@@ -160,26 +218,20 @@ function pickLang(el) {
   document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('selected'));
   el.classList.add('selected');
   myLang = el.dataset.lang;
-  checkReady();
+  checkLoginReady();
 }
 
-function checkReady() {
+function checkLoginReady() {
   const name = document.getElementById('login-name').value.trim();
   const pin = document.getElementById('pin-input').value;
   document.getElementById('login-btn').disabled = !(name && pin.length === 4 && myLang);
 }
 
-document.getElementById('login-name').addEventListener('input', checkReady);
+document.getElementById('login-name').addEventListener('input', checkLoginReady);
 document.getElementById('pin-input').addEventListener('input', function() {
   this.value = this.value.replace(/\D/g, '').substring(0, 4);
-  checkReady();
+  checkLoginReady();
 });
-
-function showError(msg) {
-  const el = document.getElementById('login-error');
-  el.textContent = msg;
-  el.style.display = msg ? 'block' : 'none';
-}
 
 async function doLogin() {
   const name = document.getElementById('login-name').value.trim();
@@ -190,7 +242,7 @@ async function doLogin() {
   const btn = document.getElementById('login-btn');
   btn.disabled = true;
   btn.textContent = 'Logging in...';
-  showError('');
+  showError('login-error', '');
 
   try {
     const res = await fetch('/api/login', {
@@ -199,10 +251,9 @@ async function doLogin() {
       body: JSON.stringify({ name, pin, contact, lang: myLang })
     });
     const data = await res.json();
-    console.log('[LOGIN] Response:', data);
 
     if (!data.ok) {
-      showError(data.error || 'Login failed');
+      showError('login-error', data.error || 'Login failed');
       btn.disabled = false;
       btn.textContent = 'Join Chat';
       return;
@@ -213,19 +264,130 @@ async function doLogin() {
     localStorage.setItem('bt_contact', contact);
     localStorage.setItem('bt_lang', myLang);
 
-    enterChat();
+    // Check if user has a saved room
+    const savedRoom = localStorage.getItem('bt_room');
+    if (savedRoom) {
+      // Verify room still exists
+      const rr = await fetch('/api/rooms/' + savedRoom);
+      const rd = await rr.json();
+      if (rd.ok) {
+        myRoomCode = rd.room.code;
+        myRoomName = rd.room.name;
+        enterChat();
+        return;
+      }
+      localStorage.removeItem('bt_room');
+      localStorage.removeItem('bt_room_name');
+    }
+
+    showScreen('room-screen');
   } catch (e) {
-    console.error('[LOGIN] Error:', e);
-    showError('Network error — check connection');
+    showError('login-error', 'Network error');
     btn.disabled = false;
     btn.textContent = 'Join Chat';
   }
 }
 
+// ── Room screens ──
+
+function showRoomScreen() { showScreen('room-screen'); }
+
+function showCreateRoom() {
+  showScreen('create-room-screen');
+  document.getElementById('create-room-name').value = '';
+  document.getElementById('create-room-btn').disabled = true;
+  document.getElementById('create-room-name').focus();
+}
+
+document.getElementById('create-room-name').addEventListener('input', function() {
+  document.getElementById('create-room-btn').disabled = !this.value.trim();
+});
+
+async function createRoom() {
+  const name = document.getElementById('create-room-name').value.trim();
+  if (!name) return;
+
+  document.getElementById('create-room-btn').disabled = true;
+  showError('create-room-error', '');
+
+  try {
+    const res = await fetch('/api/rooms/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, userName: myName })
+    });
+    const data = await res.json();
+
+    if (!data.ok) {
+      showError('create-room-error', data.error);
+      document.getElementById('create-room-btn').disabled = false;
+      return;
+    }
+
+    myRoomCode = data.room.code;
+    myRoomName = data.room.name;
+    localStorage.setItem('bt_room', myRoomCode);
+    localStorage.setItem('bt_room_name', myRoomName);
+
+    document.getElementById('created-code').textContent = myRoomCode;
+    showScreen('room-created-screen');
+  } catch (e) {
+    showError('create-room-error', 'Network error');
+    document.getElementById('create-room-btn').disabled = false;
+  }
+}
+
+function showJoinRoom() {
+  showScreen('join-room-screen');
+  document.getElementById('join-code-input').value = '';
+  document.getElementById('join-room-btn').disabled = true;
+  document.getElementById('join-code-input').focus();
+}
+
+document.getElementById('join-code-input').addEventListener('input', function() {
+  this.value = this.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase().substring(0, 6);
+  document.getElementById('join-room-btn').disabled = this.value.length !== 6;
+});
+
+async function joinRoom() {
+  const code = document.getElementById('join-code-input').value.trim().toUpperCase();
+  if (code.length !== 6) return;
+
+  document.getElementById('join-room-btn').disabled = true;
+  showError('join-room-error', '');
+
+  try {
+    const res = await fetch('/api/rooms/join', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code, userName: myName })
+    });
+    const data = await res.json();
+
+    if (!data.ok) {
+      showError('join-room-error', data.error || 'Invalid code');
+      document.getElementById('join-room-btn').disabled = false;
+      return;
+    }
+
+    myRoomCode = data.room.code;
+    myRoomName = data.room.name;
+    localStorage.setItem('bt_room', myRoomCode);
+    localStorage.setItem('bt_room_name', myRoomName);
+
+    enterChat();
+  } catch (e) {
+    showError('join-room-error', 'Network error');
+    document.getElementById('join-room-btn').disabled = false;
+  }
+}
+
+// ── Enter Chat ──
+
 function enterChat() {
-  document.getElementById('login-screen').style.display = 'none';
-  document.getElementById('chat-screen').style.display = 'flex';
-  document.getElementById('header-subtitle').textContent = `${myName} · ${myLang}`;
+  showScreen('chat-screen');
+  document.getElementById('header-title').textContent = myRoomName || 'BaanTask';
+  document.getElementById('header-subtitle').textContent = `${myName} · ${myLang} · Code: ${myRoomCode}`;
   loadMessages();
   polling = setInterval(loadMessages, 2500);
   document.getElementById('msg-input').focus();
@@ -242,66 +404,51 @@ function enterChat() {
     const btn = document.querySelector(`.lang-btn[data-lang="${l}"]`);
     if (btn) { btn.classList.add('selected'); myLang = l; }
   }
-  checkReady();
-  // Focus PIN if name is pre-filled
+  checkLoginReady();
   if (n) setTimeout(() => document.getElementById('pin-input').focus(), 100);
 })();
 
 // ── Helpers ──
 
-function sc(name) {
-  if (!senderColors[name]) senderColors[name] = 'sc' + (colorIdx++ % 8);
-  return senderColors[name];
-}
+function sc(name) { if (!senderColors[name]) senderColors[name] = 'sc' + (colorIdx++ % 8); return senderColors[name]; }
 function ftime(iso) { return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); }
 function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
 // ── Reply ──
 
 function setReply(id, sender, text) {
-  replyToId = id; replyToSender = sender; replyToText = text;
+  replyToId = id;
   document.getElementById('rb-sender').textContent = sender;
   document.getElementById('rb-text').textContent = text.length > 80 ? text.substring(0, 80) + '...' : text;
   document.getElementById('reply-bar').classList.add('show');
   document.getElementById('msg-input').focus();
 }
-function cancelReply() {
-  replyToId = null; replyToSender = null; replyToText = null;
-  document.getElementById('reply-bar').classList.remove('show');
-}
+function cancelReply() { replyToId = null; document.getElementById('reply-bar').classList.remove('show'); }
 
 // ── Reactions ──
 
 async function toggleReaction(msgId, emoji) {
   document.querySelectorAll('.emoji-picker.show').forEach(e => e.classList.remove('show'));
   try {
-    await fetch('/api/react', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messageId: msgId, emoji, userName: myName })
-    });
+    await fetch('/api/react', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ messageId: msgId, emoji, userName: myName }) });
     await loadMessages();
   } catch (e) { console.error('React failed:', e); }
 }
-
 function showEmojiPicker(msgId) {
   document.querySelectorAll('.emoji-picker.show').forEach(e => e.classList.remove('show'));
-  const picker = document.getElementById('ep-' + msgId);
-  if (picker) picker.classList.toggle('show');
+  const p = document.getElementById('ep-' + msgId);
+  if (p) p.classList.toggle('show');
 }
 
 // ── Messages ──
 
-function isAtBottom() {
-  const el = document.getElementById('messages');
-  return el.scrollHeight - el.scrollTop - el.clientHeight < 80;
-}
+function isAtBottom() { const el = document.getElementById('messages'); return el.scrollHeight - el.scrollTop - el.clientHeight < 80; }
 
 async function loadMessages() {
-  if (!myName || !myLang) return;
+  if (!myName || !myLang || !myRoomCode) return;
   try {
-    const res = await fetch('/api/messages?lang=' + encodeURIComponent(myLang));
-    if (!res.ok) { console.error('[loadMessages] Server returned', res.status); return; }
+    const res = await fetch(`/api/messages?lang=${encodeURIComponent(myLang)}&room=${encodeURIComponent(myRoomCode)}`);
+    if (!res.ok) return;
     const msgs = await res.json();
 
     const hash = JSON.stringify(msgs.map(m => [m.id, m.translation, JSON.stringify(m.reactions)]));
@@ -320,46 +467,39 @@ async function loadMessages() {
 
       const div = document.createElement('div');
       div.className = 'msg ' + (mine ? 'mine' : 'other') + (newGroup ? ' msg-group-first' : '');
-      div.id = 'msg-' + m.id;
 
       let h = '';
-      if (m.replyTo) {
-        h += `<div class="msg-reply-preview"><div class="rp-sender ${sc(m.replyTo.sender)}">${esc(m.replyTo.sender)}</div><div class="rp-text">${esc(m.replyTo.text)}</div></div>`;
-      }
+      if (m.replyTo) h += `<div class="msg-reply-preview"><div class="rp-sender ${sc(m.replyTo.sender)}">${esc(m.replyTo.sender)}</div><div class="rp-text">${esc(m.replyTo.text)}</div></div>`;
       if (!mine) h += `<div class="msg-sender ${sc(m.sender)}">${esc(m.sender)}</div>`;
       h += `<div class="msg-text">${esc(m.text)}</div>`;
       if (m.translation) h += `<div class="msg-translation">🌐 ${esc(m.translation)}</div>`;
 
       const reactions = m.reactions || {};
       const rKeys = Object.keys(reactions).filter(k => reactions[k].length > 0);
-      if (rKeys.length > 0) {
+      if (rKeys.length) {
         h += '<div class="msg-reactions">';
         rKeys.forEach(emoji => {
           const users = reactions[emoji];
-          const isMine = users.includes(myName);
-          h += `<span class="reaction-chip${isMine ? ' mine' : ''}" onclick="toggleReaction('${m.id}','${emoji}')"><span class="r-emoji">${emoji}</span><span class="r-count">${users.length}</span></span>`;
+          h += `<span class="reaction-chip${users.includes(myName) ? ' mine' : ''}" onclick="toggleReaction('${m.id}','${emoji}')"><span class="r-emoji">${emoji}</span><span class="r-count">${users.length}</span></span>`;
         });
         h += '</div>';
       }
 
       h += `<div class="msg-time">${ftime(m.time)}</div>`;
-
-      const displayText = m.translation || m.text;
-      const safeText = esc(displayText).replace(/'/g, '&#39;');
+      const safeText = esc(m.translation || m.text).replace(/'/g, '&#39;');
       h += `<div class="msg-actions"><button onclick="setReply('${m.id}','${esc(m.sender)}','${safeText}')" title="Reply">↩</button><button onclick="showEmojiPicker('${m.id}')" title="React">☺</button></div>`;
-
       h += `<div class="emoji-picker" id="ep-${m.id}">`;
       EMOJIS.forEach(e => { h += `<button onclick="toggleReaction('${m.id}','${e}')">${e}</button>`; });
       h += '</div>';
 
       div.innerHTML = h;
-      div.addEventListener('touchstart', () => { div.classList.add('touched'); });
-      div.addEventListener('touchend', () => { setTimeout(() => div.classList.remove('touched'), 2000); });
+      div.addEventListener('touchstart', () => div.classList.add('touched'));
+      div.addEventListener('touchend', () => setTimeout(() => div.classList.remove('touched'), 2000));
       container.appendChild(div);
     });
 
     if (atBottom) container.scrollTop = container.scrollHeight;
-  } catch (e) { console.error('[loadMessages] Failed:', e); }
+  } catch (e) { console.error('[loadMessages]', e); }
 }
 
 async function sendMsg() {
@@ -368,38 +508,22 @@ async function sendMsg() {
   const text = input.value.trim();
   if (!text) return;
 
-  console.log('[sendMsg] Sending:', { text: text.substring(0, 50), sender: myName, lang: myLang });
   sending = true;
   document.getElementById('send-btn').disabled = true;
   input.value = '';
 
-  const body = { text, sender: myName, lang: myLang };
+  const body = { text, sender: myName, lang: myLang, roomCode: myRoomCode };
   if (replyToId) body.replyTo = replyToId;
 
   try {
-    const res = await fetch('/api/send', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    });
+    const res = await fetch('/api/send', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     const data = await res.json();
-    console.log('[sendMsg] Response:', res.status, data);
-    if (!res.ok || !data.ok) {
-      console.error('[sendMsg] Error:', data);
-      input.value = text;
-      return;
-    }
+    if (!res.ok || !data.ok) { input.value = text; return; }
     cancelReply();
     lastHash = '';
     await loadMessages();
-  } catch (e) {
-    console.error('[sendMsg] Network error:', e);
-    input.value = text;
-  } finally {
-    sending = false;
-    document.getElementById('send-btn').disabled = false;
-    input.focus();
-  }
+  } catch (e) { input.value = text; }
+  finally { sending = false; document.getElementById('send-btn').disabled = false; input.focus(); }
 }
 
 document.getElementById('msg-input').addEventListener('keydown', e => {
@@ -408,7 +532,7 @@ document.getElementById('msg-input').addEventListener('keydown', e => {
 
 // Logout
 document.getElementById('header-icon').addEventListener('dblclick', () => {
-  if (confirm('Log out?')) { localStorage.clear(); location.reload(); }
+  if (confirm('Log out and leave room?')) { localStorage.clear(); location.reload(); }
 });
 </script>
 </body>

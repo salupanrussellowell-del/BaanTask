@@ -3,6 +3,7 @@ const express = require('express');
 const Anthropic = require('@anthropic-ai/sdk');
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const path = require('path');
 
 const app = express();
@@ -27,7 +28,16 @@ const userSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
+const roomSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  code: { type: String, required: true, unique: true },
+  createdBy: { type: String, required: true },
+  members: [{ type: String }],
+  createdAt: { type: Date, default: Date.now }
+});
+
 const messageSchema = new mongoose.Schema({
+  roomCode: { type: String, required: true, index: true },
   sender: { type: String, required: true },
   senderLang: { type: String, required: true },
   text: { type: String, required: true },
@@ -38,6 +48,7 @@ const messageSchema = new mongoose.Schema({
 });
 
 const User = mongoose.model('User', userSchema);
+const Room = mongoose.model('Room', roomSchema);
 const Message = mongoose.model('Message', messageSchema);
 
 // ── Connect to MongoDB ──
@@ -50,8 +61,6 @@ async function connectDB() {
     console.error('[DB] MONGODB_URI not set! App will not work.');
     return;
   }
-
-  // Ensure the URI has the database name 'baantask'
   try {
     const url = new URL(uri);
     if (!url.pathname || url.pathname === '/' || url.pathname === '') {
@@ -72,11 +81,18 @@ async function connectDB() {
     dbConnected = true;
     console.log('[DB] Connected to MongoDB Atlas');
     const users = await User.countDocuments();
+    const rooms = await Room.countDocuments();
     const msgs = await Message.countDocuments();
-    console.log(`[DB] ${users} users, ${msgs} messages`);
+    console.log(`[DB] ${users} users, ${rooms} rooms, ${msgs} messages`);
   } catch (e) {
     console.error('[DB] Connection failed:', e.message);
   }
+}
+
+// ── Helpers ──
+
+function genRoomCode() {
+  return crypto.randomBytes(3).toString('hex').toUpperCase(); // 6-char hex
 }
 
 // ── Translate ──
@@ -120,20 +136,17 @@ app.post('/api/login', async (req, res) => {
 
   try {
     const existing = await User.findOne({ name });
-    console.log(`[LOGIN] User lookup result: ${existing ? 'found (has pinHash: ' + !!existing.pinHash + ')' : 'not found'}`);
 
     if (existing) {
-      // Old user from before PIN system — migrate them
       if (!existing.pinHash) {
-        console.log(`[LOGIN] Migrating old user ${name} — setting their PIN`);
         existing.pinHash = await bcrypt.hash(pin, 10);
         existing.lang = lang;
         if (contact) existing.contact = contact;
         await existing.save();
+        console.log(`[LOGIN] Migrated old user: ${name}`);
         return res.json({ ok: true, user: { name: existing.name, lang: existing.lang } });
       }
 
-      // User exists with PIN — check it
       const match = await bcrypt.compare(pin, existing.pinHash);
       if (!match) {
         console.log(`[LOGIN] Wrong PIN for ${name}`);
@@ -146,27 +159,92 @@ app.post('/api/login', async (req, res) => {
       return res.json({ ok: true, user: { name: existing.name, lang: existing.lang } });
     }
 
-    // New user — create account
     const pinHash = await bcrypt.hash(pin, 10);
     const user = await User.create({ name, pinHash, contact: contact || '', lang });
     console.log(`[LOGIN] New user created: ${name}`);
     res.json({ ok: true, user: { name: user.name, lang: user.lang }, isNew: true });
   } catch (e) {
     console.error('[LOGIN ERROR]', e.message);
-    console.error('[LOGIN ERROR] Stack:', e.stack);
     res.status(500).json({ ok: false, error: 'Login failed: ' + e.message });
   }
 });
 
-// ── Message Routes ──
+// ── Room Routes ──
 
-app.get('/api/messages', async (req, res) => {
-  const lang = req.query.lang;
-  if (!lang) return res.json([]);
+// Create a new room
+app.post('/api/rooms/create', async (req, res) => {
+  const { name, userName } = req.body;
+  if (!name || !userName) {
+    return res.status(400).json({ ok: false, error: 'Room name and user name required' });
+  }
 
   try {
-    const msgs = await Message.find().sort({ createdAt: 1 }).lean();
-    console.log(`[GET /api/messages] ${msgs.length} msgs for ${lang}`);
+    let code;
+    // Ensure unique code
+    for (let i = 0; i < 10; i++) {
+      code = genRoomCode();
+      const exists = await Room.findOne({ code });
+      if (!exists) break;
+    }
+
+    const room = await Room.create({ name, code, createdBy: userName, members: [userName] });
+    console.log(`[ROOM] Created "${name}" code=${code} by ${userName}`);
+    res.json({ ok: true, room: { name: room.name, code: room.code, members: room.members } });
+  } catch (e) {
+    console.error('[ROOM CREATE ERROR]', e.message);
+    res.status(500).json({ ok: false, error: 'Failed to create room' });
+  }
+});
+
+// Join a room by invite code
+app.post('/api/rooms/join', async (req, res) => {
+  const { code, userName } = req.body;
+  if (!code || !userName) {
+    return res.status(400).json({ ok: false, error: 'Code and user name required' });
+  }
+
+  try {
+    const room = await Room.findOne({ code: code.toUpperCase() });
+    if (!room) {
+      console.log(`[ROOM] Invalid code: ${code}`);
+      return res.json({ ok: false, error: 'Invalid invite code' });
+    }
+
+    if (!room.members.includes(userName)) {
+      room.members.push(userName);
+      await room.save();
+      console.log(`[ROOM] ${userName} joined "${room.name}" (${room.code})`);
+    } else {
+      console.log(`[ROOM] ${userName} already in "${room.name}" (${room.code})`);
+    }
+
+    res.json({ ok: true, room: { name: room.name, code: room.code, members: room.members } });
+  } catch (e) {
+    console.error('[ROOM JOIN ERROR]', e.message);
+    res.status(500).json({ ok: false, error: 'Failed to join room' });
+  }
+});
+
+// Get room info
+app.get('/api/rooms/:code', async (req, res) => {
+  try {
+    const room = await Room.findOne({ code: req.params.code.toUpperCase() });
+    if (!room) return res.json({ ok: false, error: 'Room not found' });
+    res.json({ ok: true, room: { name: room.name, code: room.code, members: room.members } });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: 'Failed to get room' });
+  }
+});
+
+// ── Message Routes (scoped to room) ──
+
+app.get('/api/messages', async (req, res) => {
+  const { lang, room } = req.query;
+  if (!lang || !room) return res.json([]);
+
+  try {
+    const msgs = await Message.find({ roomCode: room }).sort({ createdAt: 1 }).lean();
+    console.log(`[GET /api/messages] ${msgs.length} msgs for room=${room} lang=${lang}`);
 
     for (const m of msgs) {
       if (m.senderLang === lang) continue;
@@ -217,19 +295,19 @@ app.get('/api/messages', async (req, res) => {
 });
 
 app.post('/api/send', async (req, res) => {
-  const { text, sender, lang, replyTo } = req.body;
-  console.log(`[SEND] Received:`, JSON.stringify({ text: text?.substring(0, 50), sender, lang, replyTo: !!replyTo }));
+  const { text, sender, lang, roomCode, replyTo } = req.body;
+  console.log(`[SEND] Received:`, JSON.stringify({ text: text?.substring(0, 50), sender, lang, roomCode, replyTo: !!replyTo }));
 
-  if (!text || !sender || !lang) {
-    return res.status(400).json({ ok: false, error: 'Missing text, sender, or lang' });
+  if (!text || !sender || !lang || !roomCode) {
+    return res.status(400).json({ ok: false, error: 'Missing text, sender, lang, or roomCode' });
   }
   if (!dbConnected) {
     return res.status(503).json({ ok: false, error: 'Database not connected' });
   }
 
   try {
-    const msg = await Message.create({ sender, senderLang: lang, text, replyTo: replyTo || null });
-    console.log(`[SEND OK] id=${msg._id} from ${sender} (${lang}): "${text.substring(0, 50)}"`);
+    const msg = await Message.create({ roomCode, sender, senderLang: lang, text, replyTo: replyTo || null });
+    console.log(`[SEND OK] id=${msg._id} room=${roomCode} from ${sender}: "${text.substring(0, 50)}"`);
     res.json({ ok: true, id: msg._id.toString() });
   } catch (e) {
     console.error('[SEND ERROR]', e.message);
@@ -258,7 +336,6 @@ app.post('/api/react', async (req, res) => {
       msg.reactions.set(emoji, users);
     }
     await msg.save();
-    console.log(`[REACT] ${userName} ${idx >= 0 ? 'removed' : 'added'} ${emoji} on ${messageId}`);
     res.json({ ok: true });
   } catch (e) {
     console.error('[REACT ERROR]', e.message);
@@ -278,8 +355,9 @@ app.get('/status', async (req, res) => {
     } catch (e) { /* */ }
   }
   const users = dbOk ? await User.countDocuments() : 0;
+  const rooms = dbOk ? await Room.countDocuments() : 0;
   const msgs = dbOk ? await Message.countDocuments() : 0;
-  res.json({ db: dbOk, api: apiOk, users, messages: msgs });
+  res.json({ db: dbOk, api: apiOk, users, rooms, messages: msgs });
 });
 
 // ── Start ──
