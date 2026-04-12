@@ -332,6 +332,13 @@ async function verifyOTP() {
     // OTP verified — now do PIN login
     const pin = sessionStorage.getItem('pending_pin');
     sessionStorage.removeItem('pending_pin');
+    console.log('[OTP] Verified. PIN from session:', pin ? '****' : 'MISSING');
+    if (!pin) {
+      showError('otp-error', 'Session expired — please go back and re-enter your PIN');
+      btn.disabled = false;
+      btn.textContent = 'Verify & Continue';
+      return;
+    }
     await completePinLogin(myName, pin, myContact);
   } catch (e) {
     showError('otp-error', 'Network error');

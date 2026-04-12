@@ -125,13 +125,16 @@ app.post('/api/send-otp', async (req, res) => {
   const { contact, name } = req.body;
   if (!contact) return res.status(400).json({ ok: false, error: 'Email required' });
 
+  const normalizedContact = contact.trim().toLowerCase();
   const code = genOTP();
   const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
-  console.log(`[OTP] Generating for ${contact}: ${code}`);
+  console.log(`[OTP] Generating for ${normalizedContact}: ${code} (type: ${typeof code})`);
 
   try {
-    await OTP.create({ contact, otp: code, expiresAt });
+    await OTP.create({ contact: normalizedContact, otp: String(code), expiresAt });
+    console.log(`[OTP] Saved to DB: contact="${normalizedContact}" otp="${code}"`);
+
   } catch (e) {
     console.error('[OTP] DB save failed:', e.message);
   }
@@ -183,23 +186,34 @@ app.post('/api/verify-otp', async (req, res) => {
   const { contact, otp } = req.body;
   if (!contact || !otp) return res.status(400).json({ ok: false, error: 'Email and code required' });
 
-  console.log(`[OTP VERIFY] ${contact} entered: ${otp}`);
+  const normalizedContact = contact.trim().toLowerCase();
+  const otpString = String(otp).trim();
+
+  console.log(`[OTP VERIFY] contact="${normalizedContact}" code="${otpString}" (type: ${typeof otp})`);
 
   try {
+    // First, show all OTPs for this contact for debugging
+    const allForContact = await OTP.find({ contact: normalizedContact }).sort({ createdAt: -1 }).lean();
+    console.log(`[OTP VERIFY] Found ${allForContact.length} OTP records for ${normalizedContact}`);
+    allForContact.forEach((r, i) => {
+      console.log(`[OTP VERIFY]   #${i}: otp="${r.otp}" expires=${r.expiresAt.toISOString()} expired=${r.expiresAt < new Date()}`);
+    });
+
     const record = await OTP.findOne({
-      contact,
-      otp,
+      contact: normalizedContact,
+      otp: otpString,
       expiresAt: { $gt: new Date() }
     }).sort({ createdAt: -1 });
 
+    console.log(`[OTP VERIFY] Match result: ${record ? 'FOUND' : 'NOT FOUND'}`);
+
     if (!record) {
-      console.log(`[OTP VERIFY] Invalid or expired for ${contact}`);
       return res.json({ ok: false, error: 'Invalid or expired code' });
     }
 
     // Clean up used OTPs
-    await OTP.deleteMany({ contact });
-    console.log(`[OTP VERIFY] Verified ${contact}`);
+    await OTP.deleteMany({ contact: normalizedContact });
+    console.log(`[OTP VERIFY] Verified and cleaned up OTPs for ${normalizedContact}`);
     res.json({ ok: true });
   } catch (e) {
     console.error('[OTP VERIFY ERROR]', e.message);
