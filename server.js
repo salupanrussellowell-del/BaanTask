@@ -4,7 +4,7 @@ const Anthropic = require('@anthropic-ai/sdk');
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 const path = require('path');
 
 const app = express();
@@ -18,32 +18,16 @@ const LANGUAGES = ['Russian', 'Thai', 'English', 'Filipino', 'Myanmar', 'Chinese
 console.log('[STARTUP] BaanTask server starting...');
 console.log('[STARTUP] ANTHROPIC_API_KEY set:', !!process.env.ANTHROPIC_API_KEY);
 console.log('[STARTUP] MONGODB_URI set:', !!process.env.MONGODB_URI);
-console.log('[STARTUP] GMAIL_USER set:', !!process.env.GMAIL_USER);
-console.log('[STARTUP] GMAIL_PASS set:', !!process.env.GMAIL_PASS);
+console.log('[STARTUP] RESEND_API_KEY set:', !!process.env.RESEND_API_KEY);
 
-// ── Gmail transporter ──
+// ── Resend email client ──
 
-let mailTransporter = null;
-if (process.env.GMAIL_USER && process.env.GMAIL_PASS) {
-  mailTransporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 587,
-    secure: false,
-    auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_PASS }
-  });
-  // Verify connection at startup
-  mailTransporter.verify((err, success) => {
-    if (err) {
-      console.error('[STARTUP] Gmail SMTP verification FAILED:', err.message);
-      console.error('[STARTUP] Gmail error code:', err.code);
-      console.error('[STARTUP] Full error:', JSON.stringify(err, Object.getOwnPropertyNames(err)));
-    } else {
-      console.log('[STARTUP] Gmail SMTP verified and ready');
-    }
-  });
-  console.log(`[STARTUP] Gmail transporter created for ${process.env.GMAIL_USER}`);
+let resend = null;
+if (process.env.RESEND_API_KEY) {
+  resend = new Resend(process.env.RESEND_API_KEY);
+  console.log('[STARTUP] Resend email client ready');
 } else {
-  console.warn('[STARTUP] GMAIL_USER/GMAIL_PASS not set — OTP codes will be logged to console only');
+  console.warn('[STARTUP] RESEND_API_KEY not set — OTP codes will be logged to console only');
 }
 
 // ── Mongoose schemas ──
@@ -152,31 +136,36 @@ app.post('/api/send-otp', async (req, res) => {
     console.error('[OTP] DB save failed:', e.message);
   }
 
-  if (mailTransporter) {
+  if (resend) {
     try {
-      await mailTransporter.sendMail({
-        from: `"BaanTask" <${process.env.GMAIL_USER}>`,
-        to: contact,
+      const { data, error } = await resend.emails.send({
+        from: 'BaanTask <onboarding@resend.dev>',
+        to: [contact],
         subject: 'Your BaanTask verification code',
-        text: `Hi ${name || 'there'},\n\nYour BaanTask verification code is: ${code}\n\nThis code expires in 10 minutes.\n\n- BaanTask Team`,
-        html: `<div style="font-family:sans-serif;max-width:400px;margin:0 auto;padding:20px;">
-          <h2 style="color:#075e54;">BaanTask Verification</h2>
-          <p>Hi ${name || 'there'},</p>
-          <p>Your verification code is:</p>
-          <div style="background:#f0f4f0;border-radius:8px;padding:20px;text-align:center;margin:16px 0;">
-            <span style="font-size:32px;font-weight:bold;letter-spacing:8px;color:#075e54;">${code}</span>
+        html: `<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:400px;margin:0 auto;padding:24px;">
+          <h2 style="color:#075e54;margin:0 0 16px;">BaanTask</h2>
+          <p style="color:#333;margin:0 0 8px;">Hi ${name || 'there'},</p>
+          <p style="color:#555;margin:0 0 20px;">Here is your verification code:</p>
+          <div style="background:#f0f4f0;border-radius:12px;padding:24px;text-align:center;margin:0 0 20px;">
+            <span style="font-size:36px;font-weight:800;letter-spacing:8px;color:#075e54;">${code}</span>
           </div>
-          <p style="color:#888;font-size:13px;">This code expires in 10 minutes.</p>
+          <p style="color:#999;font-size:13px;margin:0;">This code expires in 10 minutes.</p>
         </div>`
       });
-      console.log(`[OTP] Email sent to ${contact}`);
-      return res.json({ ok: true, method: 'email' });
+      if (error) {
+        console.error('[OTP] ========================================');
+        console.error('[OTP] Resend FAILED for:', contact);
+        console.error('[OTP] Error:', JSON.stringify(error));
+        console.error('[OTP] ========================================');
+        // Fall through to console fallback
+      } else {
+        console.log(`[OTP] Email sent to ${contact} via Resend (id: ${data?.id})`);
+        return res.json({ ok: true, method: 'email' });
+      }
     } catch (e) {
       console.error('[OTP] ========================================');
-      console.error('[OTP] Gmail send FAILED for:', contact);
-      console.error('[OTP] Error message:', e.message);
-      console.error('[OTP] Error code:', e.code);
-      console.error('[OTP] Error command:', e.command);
+      console.error('[OTP] Resend exception for:', contact);
+      console.error('[OTP] Message:', e.message);
       console.error('[OTP] Full error:', JSON.stringify(e, Object.getOwnPropertyNames(e)));
       console.error('[OTP] ========================================');
       // Fall through to console fallback
@@ -372,10 +361,10 @@ app.get('/admin/clear-messages', async (req, res) => {
 app.get('/status', async (req, res) => {
   const dbOk = mongoose.connection.readyState === 1;
   const hasKey = !!process.env.ANTHROPIC_API_KEY;
-  const hasGmail = !!mailTransporter;
+  const hasResend = !!resend;
   let apiOk = false;
   if (hasKey) { try { await client.messages.create({ model: 'claude-haiku-4-5-20251001', max_tokens: 5, messages: [{ role: 'user', content: 'ok' }] }); apiOk = true; } catch (e) { /* */ } }
-  res.json({ db: dbOk, api: apiOk, gmail: hasGmail });
+  res.json({ db: dbOk, api: apiOk, resend: hasResend });
 });
 
 connectDB().then(() => {
