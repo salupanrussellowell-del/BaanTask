@@ -182,42 +182,56 @@ app.post('/api/send-otp', async (req, res) => {
   res.json({ ok: true, method: 'console' });
 });
 
+// Verify OTP + create/update user in one step
 app.post('/api/verify-otp', async (req, res) => {
-  const { contact, otp } = req.body;
+  const { contact, otp, name, pin, lang } = req.body;
   if (!contact || !otp) return res.status(400).json({ ok: false, error: 'Email and code required' });
+  if (!name || !pin || !lang) return res.status(400).json({ ok: false, error: 'Name, PIN, and language required' });
 
   const normalizedContact = contact.trim().toLowerCase();
   const otpString = String(otp).trim();
 
-  console.log(`[OTP VERIFY] contact="${normalizedContact}" code="${otpString}" (type: ${typeof otp})`);
+  console.log(`[OTP VERIFY] contact="${normalizedContact}" code="${otpString}"`);
 
   try {
-    // First, show all OTPs for this contact for debugging
-    const allForContact = await OTP.find({ contact: normalizedContact }).sort({ createdAt: -1 }).lean();
-    console.log(`[OTP VERIFY] Found ${allForContact.length} OTP records for ${normalizedContact}`);
-    allForContact.forEach((r, i) => {
-      console.log(`[OTP VERIFY]   #${i}: otp="${r.otp}" expires=${r.expiresAt.toISOString()} expired=${r.expiresAt < new Date()}`);
-    });
-
+    // Check OTP
     const record = await OTP.findOne({
       contact: normalizedContact,
       otp: otpString,
       expiresAt: { $gt: new Date() }
     }).sort({ createdAt: -1 });
 
-    console.log(`[OTP VERIFY] Match result: ${record ? 'FOUND' : 'NOT FOUND'}`);
-
     if (!record) {
+      const all = await OTP.find({ contact: normalizedContact }).lean();
+      console.log(`[OTP VERIFY] NOT FOUND. Records for contact: ${all.length}`);
+      all.forEach((r, i) => console.log(`[OTP VERIFY]   #${i}: otp="${r.otp}" expired=${r.expiresAt < new Date()}`));
       return res.json({ ok: false, error: 'Invalid or expired code' });
     }
 
-    // Clean up used OTPs
+    // OTP valid — clean up
     await OTP.deleteMany({ contact: normalizedContact });
-    console.log(`[OTP VERIFY] Verified and cleaned up OTPs for ${normalizedContact}`);
-    res.json({ ok: true });
+    console.log(`[OTP VERIFY] Code verified for ${normalizedContact}`);
+
+    // Now create or update user (same logic as /api/login but skips PIN check for new OTP-verified users)
+    const pinHash = await bcrypt.hash(pin, 10);
+    let user = await User.findOne({ name });
+
+    if (user) {
+      user.pinHash = pinHash;
+      user.lang = lang;
+      user.contact = normalizedContact;
+      user.emailVerified = true;
+      await user.save();
+      console.log(`[OTP VERIFY] Updated user: ${name}`);
+    } else {
+      user = await User.create({ name, pinHash, contact: normalizedContact, lang, emailVerified: true });
+      console.log(`[OTP VERIFY] Created new user: ${name}`);
+    }
+
+    res.json({ ok: true, user: { name: user.name, lang: user.lang } });
   } catch (e) {
     console.error('[OTP VERIFY ERROR]', e.message);
-    res.json({ ok: false, error: 'Verification failed' });
+    res.json({ ok: false, error: 'Verification failed: ' + e.message });
   }
 });
 

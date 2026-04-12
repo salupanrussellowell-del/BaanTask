@@ -220,6 +220,8 @@ function showScreen(id) {
 function showError(elId, msg) { const el = document.getElementById(elId); el.textContent = msg; el.style.display = msg ? 'block' : 'none'; }
 
 // ── Login ──
+let pendingPin = null; // stored in memory, not sessionStorage
+
 function pickLang(el) {
   document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('selected'));
   el.classList.add('selected');
@@ -230,7 +232,6 @@ function checkLoginReady() {
   const name = document.getElementById('login-name').value.trim();
   const contact = document.getElementById('login-contact').value.trim();
   const pin = document.getElementById('pin-input').value;
-  // Returning user (has verified contact in localStorage) — only need name + pin + lang
   const isReturning = !!localStorage.getItem('bt_verified');
   if (isReturning) {
     document.getElementById('login-btn').disabled = !(name && pin.length === 4 && myLang);
@@ -255,22 +256,29 @@ async function doLogin() {
 
   myName = name;
   myContact = contact;
+  pendingPin = pin;
 
   const btn = document.getElementById('login-btn');
   btn.disabled = true;
   showError('login-error', '');
 
-  // Returning user with verified email — skip OTP
-  const isReturning = !!localStorage.getItem('bt_verified');
-  if (isReturning) {
+  // Returning user — skip OTP, go straight to PIN login
+  if (localStorage.getItem('bt_verified')) {
     btn.textContent = 'Logging in...';
-    await completePinLogin(name, pin, contact);
-    btn.textContent = 'Join Chat';
-    btn.disabled = false;
+    try {
+      const res = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, pin, contact: localStorage.getItem('bt_contact') || '', lang: myLang })
+      });
+      const data = await res.json();
+      if (!data.ok) { showError('login-error', data.error); btn.disabled = false; btn.textContent = 'Join Chat'; return; }
+      await loginSuccess(name, contact);
+    } catch (e) { showError('login-error', 'Network error'); btn.disabled = false; btn.textContent = 'Join Chat'; }
     return;
   }
 
-  // New user / new device — send OTP first
+  // New user — send OTP
   if (!contact) { showError('login-error', 'Email required for first login'); btn.disabled = false; return; }
   btn.textContent = 'Sending code...';
 
@@ -283,11 +291,7 @@ async function doLogin() {
     const data = await res.json();
     if (!data.ok) { showError('login-error', data.error); btn.disabled = false; btn.textContent = 'Send Verification Code'; return; }
 
-    // Store login details temporarily for after OTP
-    sessionStorage.setItem('pending_pin', pin);
-
-    let methodMsg = 'your email';
-    if (data.method === 'console') methodMsg = 'the server console (check Render logs)';
+    let methodMsg = data.method === 'console' ? 'the server console (check Render logs)' : 'your email';
     document.getElementById('otp-prompt').textContent = `Enter the 6-digit code sent to ${methodMsg}`;
     showScreen('otp-screen');
     document.getElementById('otp-code-input').value = '';
@@ -300,7 +304,7 @@ async function doLogin() {
   }
 }
 
-// ── OTP Screen ──
+// ── OTP Screen — verify OTP + login in ONE call ──
 document.getElementById('otp-code-input').addEventListener('input', function() {
   this.value = this.value.replace(/\D/g, '').substring(0, 6);
   document.getElementById('otp-verify-btn').disabled = this.value.length !== 6;
@@ -316,10 +320,17 @@ async function verifyOTP() {
   showError('otp-error', '');
 
   try {
+    // Single call: verify OTP + create/update user + hash PIN
     const res = await fetch('/api/verify-otp', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contact: myContact, otp: code })
+      body: JSON.stringify({
+        contact: myContact,
+        otp: code,
+        name: myName,
+        pin: pendingPin,
+        lang: myLang
+      })
     });
     const data = await res.json();
     if (!data.ok) {
@@ -329,17 +340,9 @@ async function verifyOTP() {
       return;
     }
 
-    // OTP verified — now do PIN login
-    const pin = sessionStorage.getItem('pending_pin');
-    sessionStorage.removeItem('pending_pin');
-    console.log('[OTP] Verified. PIN from session:', pin ? '****' : 'MISSING');
-    if (!pin) {
-      showError('otp-error', 'Session expired — please go back and re-enter your PIN');
-      btn.disabled = false;
-      btn.textContent = 'Verify & Continue';
-      return;
-    }
-    await completePinLogin(myName, pin, myContact);
+    // All done — user verified and logged in
+    pendingPin = null;
+    await loginSuccess(myName, myContact);
   } catch (e) {
     showError('otp-error', 'Network error');
     btn.disabled = false;
@@ -362,43 +365,24 @@ async function resendOTP() {
   } catch (e) { showError('otp-error', 'Failed to resend'); }
 }
 
-// ── Complete login after OTP (or directly for returning users) ──
-async function completePinLogin(name, pin, contact) {
-  try {
-    const res = await fetch('/api/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, pin, contact, lang: myLang })
-    });
-    const data = await res.json();
-    if (!data.ok) {
-      // Show error on whichever screen is active
-      if (document.getElementById('otp-screen').classList.contains('active')) {
-        showError('otp-error', data.error);
-      } else {
-        showError('login-error', data.error);
-      }
-      return;
-    }
+// ── After successful login (both OTP and returning paths) ──
+async function loginSuccess(name, contact) {
+  myName = name;
+  localStorage.setItem('bt_name', name);
+  localStorage.setItem('bt_contact', contact || '');
+  localStorage.setItem('bt_lang', myLang);
+  localStorage.setItem('bt_verified', 'true');
 
-    myName = name;
-    localStorage.setItem('bt_name', name);
-    localStorage.setItem('bt_contact', contact || '');
-    localStorage.setItem('bt_lang', myLang);
-    localStorage.setItem('bt_verified', 'true');
-
-    // Check saved room
-    const savedRoom = localStorage.getItem('bt_room');
-    if (savedRoom) {
+  const savedRoom = localStorage.getItem('bt_room');
+  if (savedRoom) {
+    try {
       const rr = await fetch('/api/rooms/' + savedRoom);
       const rd = await rr.json();
       if (rd.ok) { myRoomCode = rd.room.code; myRoomName = rd.room.name; enterChat(); return; }
-      localStorage.removeItem('bt_room');
-    }
-    showScreen('room-screen');
-  } catch (e) {
-    showError('login-error', 'Network error');
+    } catch (e) { /* */ }
+    localStorage.removeItem('bt_room');
   }
+  showScreen('room-screen');
 }
 
 // ── Room screens ──
