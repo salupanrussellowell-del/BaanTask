@@ -343,6 +343,31 @@ app.post('/api/react', async (req, res) => {
   }
 });
 
+// Delete a message (sender only)
+app.post('/api/delete', async (req, res) => {
+  const { messageId, userName } = req.body;
+  if (!messageId || !userName) {
+    return res.status(400).json({ ok: false, error: 'Missing messageId or userName' });
+  }
+
+  try {
+    const msg = await Message.findById(messageId);
+    if (!msg) return res.status(404).json({ ok: false, error: 'Message not found' });
+
+    if (msg.sender !== userName) {
+      console.log(`[DELETE] Denied: ${userName} tried to delete message from ${msg.sender}`);
+      return res.status(403).json({ ok: false, error: 'You can only delete your own messages' });
+    }
+
+    await Message.deleteOne({ _id: messageId });
+    console.log(`[DELETE] ${userName} deleted message ${messageId}`);
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('[DELETE ERROR]', e.message);
+    res.status(500).json({ ok: false, error: 'Failed to delete message' });
+  }
+});
+
 // Health check
 app.get('/status', async (req, res) => {
   const dbOk = mongoose.connection.readyState === 1;

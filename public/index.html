@@ -59,16 +59,20 @@
   .msg-reply-preview .rp-text { color: #555; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px; }
   .sc0{color:#e91e63}.sc1{color:#9c27b0}.sc2{color:#3f51b5}.sc3{color:#00897b}.sc4{color:#e65100}.sc5{color:#2e7d32}.sc6{color:#c62828}.sc7{color:#6a1b9a}
 
-  .msg-actions { display: none; position: absolute; top: -14px; right: 4px; background: #fff; border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.2); padding: 2px 4px; gap: 2px; z-index: 5; }
-  .msg.other .msg-actions { left: 4px; right: auto; }
-  .msg:hover .msg-actions, .msg.touched .msg-actions { display: flex; }
-  .msg-actions button { background: none; border: none; cursor: pointer; font-size: 0.9rem; padding: 2px 5px; border-radius: 8px; }
-  .msg-actions button:hover { background: #f0f0f0; }
-  .emoji-picker { display: none; position: absolute; top: -38px; right: 4px; background: #fff; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.18); padding: 4px 6px; gap: 2px; z-index: 6; }
-  .msg.other .emoji-picker { left: 4px; right: auto; }
-  .emoji-picker.show { display: flex; }
-  .emoji-picker button { background: none; border: none; cursor: pointer; font-size: 1.2rem; padding: 3px 5px; border-radius: 8px; }
-  .emoji-picker button:hover { background: #f0f0f0; transform: scale(1.2); }
+  /* Context menu (long-press popup) */
+  #ctx-menu { display: none; position: fixed; z-index: 100; background: #fff; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.22); padding: 6px 0; min-width: 160px; }
+  #ctx-menu.show { display: block; }
+  #ctx-menu button { display: flex; align-items: center; gap: 10px; width: 100%; padding: 11px 18px; border: none; background: none; font-size: 0.95rem; cursor: pointer; text-align: left; color: #333; }
+  #ctx-menu button:hover, #ctx-menu button:active { background: #f0f0f0; }
+  #ctx-menu button.danger { color: #c62828; }
+  #ctx-menu .ctx-icon { font-size: 1.1rem; width: 22px; text-align: center; }
+  #ctx-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 99; }
+  #ctx-overlay.show { display: block; }
+
+  /* Emoji quick-react row in context menu */
+  .ctx-emoji-row { display: flex; justify-content: center; gap: 4px; padding: 8px 12px; border-bottom: 1px solid #eee; }
+  .ctx-emoji-row button { padding: 4px 7px; font-size: 1.3rem; border-radius: 8px; min-width: 0; width: auto; }
+  .ctx-emoji-row button:hover { background: #f0f0f0; transform: scale(1.15); }
   .msg-reactions { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 3px; }
   .reaction-chip { display: inline-flex; align-items: center; gap: 2px; background: #e8f5e9; border: 1px solid #c8e6c9; border-radius: 12px; padding: 1px 7px; font-size: 0.75rem; cursor: pointer; }
   .reaction-chip.mine { background: #c8e6c9; }
@@ -169,6 +173,14 @@
     <button id="join-room-btn" class="btn-primary" disabled onclick="joinRoom()">Join</button>
     <button class="btn-link" onclick="showRoomScreen()">Back</button>
   </div>
+</div>
+
+<!-- Context menu overlay + popup -->
+<div id="ctx-overlay" onclick="closeContextMenu()"></div>
+<div id="ctx-menu">
+  <div class="ctx-emoji-row" id="ctx-emojis"></div>
+  <button onclick="ctxReply()"><span class="ctx-icon">↩</span> Reply</button>
+  <button id="ctx-delete-btn" class="danger" onclick="ctxDelete()"><span class="ctx-icon">🗑</span> Delete</button>
 </div>
 
 <!-- Screen 4: Chat -->
@@ -414,7 +426,85 @@ function sc(name) { if (!senderColors[name]) senderColors[name] = 'sc' + (colorI
 function ftime(iso) { return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); }
 function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
-// ── Reply ──
+// ── Context Menu ──
+
+let ctxMsgId = null, ctxMsgSender = null, ctxMsgText = null;
+let longPressTimer = null;
+
+function openContextMenu(e, msgId, sender, text) {
+  e.preventDefault();
+  ctxMsgId = msgId;
+  ctxMsgSender = sender;
+  ctxMsgText = text;
+
+  // Show/hide delete button (only for own messages)
+  document.getElementById('ctx-delete-btn').style.display = (sender === myName) ? 'flex' : 'none';
+
+  // Build emoji row
+  const emojiRow = document.getElementById('ctx-emojis');
+  emojiRow.innerHTML = '';
+  EMOJIS.forEach(em => {
+    const btn = document.createElement('button');
+    btn.textContent = em;
+    btn.onclick = () => { closeContextMenu(); toggleReaction(msgId, em); };
+    emojiRow.appendChild(btn);
+  });
+
+  // Position the menu
+  const menu = document.getElementById('ctx-menu');
+  const overlay = document.getElementById('ctx-overlay');
+
+  // Get touch/click coordinates
+  const cx = e.touches ? e.touches[0].clientX : e.clientX;
+  const cy = e.touches ? e.touches[0].clientY : e.clientY;
+
+  menu.classList.add('show');
+  overlay.classList.add('show');
+
+  // Adjust to keep on screen
+  const mw = menu.offsetWidth;
+  const mh = menu.offsetHeight;
+  let left = Math.min(cx, window.innerWidth - mw - 8);
+  let top = cy - mh - 10;
+  if (top < 8) top = cy + 10;
+  left = Math.max(8, left);
+
+  menu.style.left = left + 'px';
+  menu.style.top = top + 'px';
+}
+
+function closeContextMenu() {
+  document.getElementById('ctx-menu').classList.remove('show');
+  document.getElementById('ctx-overlay').classList.remove('show');
+  ctxMsgId = null;
+}
+
+function ctxReply() {
+  const id = ctxMsgId, sender = ctxMsgSender, text = ctxMsgText;
+  closeContextMenu();
+  setReply(id, sender, text);
+}
+
+async function ctxDelete() {
+  const id = ctxMsgId;
+  closeContextMenu();
+  if (!confirm('Delete this message?')) return;
+
+  try {
+    const res = await fetch('/api/delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messageId: id, userName: myName })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      lastHash = '';
+      await loadMessages();
+    }
+  } catch (e) { console.error('Delete failed:', e); }
+}
+
+// ── Reply Bar ──
 
 function setReply(id, sender, text) {
   replyToId = id;
@@ -428,16 +518,11 @@ function cancelReply() { replyToId = null; document.getElementById('reply-bar').
 // ── Reactions ──
 
 async function toggleReaction(msgId, emoji) {
-  document.querySelectorAll('.emoji-picker.show').forEach(e => e.classList.remove('show'));
   try {
     await fetch('/api/react', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ messageId: msgId, emoji, userName: myName }) });
+    lastHash = '';
     await loadMessages();
   } catch (e) { console.error('React failed:', e); }
-}
-function showEmojiPicker(msgId) {
-  document.querySelectorAll('.emoji-picker.show').forEach(e => e.classList.remove('show'));
-  const p = document.getElementById('ep-' + msgId);
-  if (p) p.classList.toggle('show');
 }
 
 // ── Messages ──
@@ -480,21 +565,24 @@ async function loadMessages() {
         h += '<div class="msg-reactions">';
         rKeys.forEach(emoji => {
           const users = reactions[emoji];
-          h += `<span class="reaction-chip${users.includes(myName) ? ' mine' : ''}" onclick="toggleReaction('${m.id}','${emoji}')"><span class="r-emoji">${emoji}</span><span class="r-count">${users.length}</span></span>`;
+          h += `<span class="reaction-chip${users.includes(myName) ? ' mine' : ''}" onclick="toggleReaction(\'${m.id}\',\'${emoji}\')"><span class="r-emoji">${emoji}</span><span class="r-count">${users.length}</span></span>`;
         });
         h += '</div>';
       }
 
       h += `<div class="msg-time">${ftime(m.time)}</div>`;
-      const safeText = esc(m.translation || m.text).replace(/'/g, '&#39;');
-      h += `<div class="msg-actions"><button onclick="setReply('${m.id}','${esc(m.sender)}','${safeText}')" title="Reply">↩</button><button onclick="showEmojiPicker('${m.id}')" title="React">☺</button></div>`;
-      h += `<div class="emoji-picker" id="ep-${m.id}">`;
-      EMOJIS.forEach(e => { h += `<button onclick="toggleReaction('${m.id}','${e}')">${e}</button>`; });
-      h += '</div>';
-
       div.innerHTML = h;
-      div.addEventListener('touchstart', () => div.classList.add('touched'));
-      div.addEventListener('touchend', () => setTimeout(() => div.classList.remove('touched'), 2000));
+
+      // Context menu triggers: long-press (mobile) + right-click (desktop)
+      const displayText = m.translation || m.text;
+      let lpt = null;
+      div.addEventListener('touchstart', (e) => {
+        lpt = setTimeout(() => { openContextMenu(e, m.id, m.sender, displayText); }, 500);
+      }, { passive: false });
+      div.addEventListener('touchend', () => clearTimeout(lpt));
+      div.addEventListener('touchmove', () => clearTimeout(lpt));
+      div.addEventListener('contextmenu', (e) => { openContextMenu(e, m.id, m.sender, displayText); });
+
       container.appendChild(div);
     });
 
