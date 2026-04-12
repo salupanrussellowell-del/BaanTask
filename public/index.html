@@ -13,7 +13,6 @@
   #header-subtitle { font-size: 0.75rem; opacity: 0.85; }
   #header-icon { width: 40px; height: 40px; border-radius: 50%; background: #25d366; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0; }
 
-  /* Shared screen styles */
   .screen { flex: 1; display: none; flex-direction: column; align-items: center; justify-content: center; padding: 24px; background: #fff; }
   .screen.active { display: flex; }
   .screen h2 { color: #075e54; margin-bottom: 4px; font-size: 1.4rem; }
@@ -27,20 +26,20 @@
   .btn-outline { width: 100%; padding: 14px; background: #fff; color: #075e54; border: 2px solid #075e54; border-radius: 8px; font-size: 1.05rem; font-weight: 600; cursor: pointer; margin-bottom: 10px; }
   .btn-link { background: none; border: none; color: #075e54; font-size: 0.88rem; cursor: pointer; margin-top: 8px; text-decoration: underline; }
   .error-msg { color: #c62828; font-size: 0.85rem; margin-bottom: 10px; text-align: center; display: none; }
+  .success-msg { color: #2e7d32; font-size: 0.85rem; margin-bottom: 10px; text-align: center; display: none; }
   .lang-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 20px; }
   .lang-btn { padding: 10px 6px; border: 2px solid #ddd; border-radius: 10px; background: #fff; cursor: pointer; font-size: 0.85rem; text-align: center; transition: all 0.2s; }
   .lang-btn:hover { border-color: #25d366; }
   .lang-btn.selected { border-color: #25d366; background: #dcf8c6; }
   .lang-flag { font-size: 1.4rem; display: block; margin-bottom: 2px; }
   #pin-input { text-align: center; font-size: 1.6rem; letter-spacing: 10px; font-weight: 700; }
+  #otp-code-input { text-align: center; font-size: 1.8rem; letter-spacing: 10px; font-weight: 700; }
 
-  /* Room code display */
   .room-code-display { text-align: center; background: #f0f4f0; border: 2px dashed #25d366; border-radius: 12px; padding: 20px; margin-bottom: 16px; }
   .room-code-display .code { font-size: 2.2rem; font-weight: 800; letter-spacing: 6px; color: #075e54; font-family: monospace; }
   .room-code-display .label { font-size: 0.82rem; color: #888; margin-bottom: 6px; }
   #join-code-input { text-align: center; font-size: 1.5rem; letter-spacing: 6px; font-weight: 700; text-transform: uppercase; }
 
-  /* Chat screen */
   #chat-screen { flex: 1; display: none; flex-direction: column; }
   #chat-screen.active { display: flex; }
   #messages { flex: 1; overflow-y: auto; padding: 8px 12px; display: flex; flex-direction: column; gap: 2px; background: #e5ddd5; }
@@ -59,7 +58,6 @@
   .msg-reply-preview .rp-text { color: #555; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px; }
   .sc0{color:#e91e63}.sc1{color:#9c27b0}.sc2{color:#3f51b5}.sc3{color:#00897b}.sc4{color:#e65100}.sc5{color:#2e7d32}.sc6{color:#c62828}.sc7{color:#6a1b9a}
 
-  /* Context menu (long-press popup) */
   #ctx-menu { display: none; position: fixed; z-index: 100; background: #fff; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.22); padding: 6px 0; min-width: 160px; }
   #ctx-menu.show { display: block; }
   #ctx-menu button { display: flex; align-items: center; gap: 10px; width: 100%; padding: 11px 18px; border: none; background: none; font-size: 0.95rem; cursor: pointer; text-align: left; color: #333; }
@@ -68,16 +66,12 @@
   #ctx-menu .ctx-icon { font-size: 1.1rem; width: 22px; text-align: center; }
   #ctx-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 99; }
   #ctx-overlay.show { display: block; }
-
-  /* Emoji quick-react row in context menu */
   .ctx-emoji-row { display: flex; justify-content: center; gap: 4px; padding: 8px 12px; border-bottom: 1px solid #eee; }
   .ctx-emoji-row button { padding: 4px 7px; font-size: 1.3rem; border-radius: 8px; min-width: 0; width: auto; }
   .ctx-emoji-row button:hover { background: #f0f0f0; transform: scale(1.15); }
   .msg-reactions { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 3px; }
   .reaction-chip { display: inline-flex; align-items: center; gap: 2px; background: #e8f5e9; border: 1px solid #c8e6c9; border-radius: 12px; padding: 1px 7px; font-size: 0.75rem; cursor: pointer; }
   .reaction-chip.mine { background: #c8e6c9; }
-  .reaction-chip .r-emoji { font-size: 0.85rem; }
-  .reaction-chip .r-count { font-size: 0.7rem; color: #555; }
 
   #reply-bar { display: none; background: #f0f0f0; border-top: 1px solid #ddd; padding: 8px 12px; align-items: center; gap: 8px; }
   #reply-bar.show { display: flex; }
@@ -86,7 +80,7 @@
   #reply-bar .rb-text { font-size: 0.82rem; color: #555; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   #reply-bar .rb-close { background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #999; padding: 4px; }
   #input-area { background: #f0f0f0; padding: 6px 8px; display: flex; gap: 6px; align-items: flex-end; }
-  #msg-input { flex: 1; padding: 10px 14px; border: none; border-radius: 24px; font-size: 1rem; outline: none; background: #fff; max-height: 100px; resize: none; line-height: 1.4; }
+  #msg-input { flex: 1; padding: 10px 14px; border: none; border-radius: 24px; font-size: 1rem; outline: none; background: #fff; }
   #send-btn { background: #075e54; color: white; border: none; border-radius: 50%; width: 44px; height: 44px; cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
   #send-btn:disabled { background: #a0b8b3; }
 </style>
@@ -104,12 +98,12 @@
 <!-- Screen 1: Login -->
 <div id="login-screen" class="screen active">
   <h2>Welcome to BaanTask</h2>
-  <p>Enter your name and 4-digit PIN</p>
+  <p>Enter your details to sign in</p>
   <div class="form-box">
     <label>Your Name</label>
     <input id="login-name" type="text" placeholder="Enter your name" maxlength="30" autocomplete="name" />
-    <label>Phone or Email (optional)</label>
-    <input id="login-contact" type="text" placeholder="For contact info only" maxlength="60" autocomplete="email" />
+    <label>Email</label>
+    <input id="login-contact" type="email" placeholder="your@email.com" maxlength="60" autocomplete="email" />
     <label>4-Digit PIN</label>
     <input id="pin-input" type="password" inputmode="numeric" placeholder="••••" maxlength="4" autocomplete="off" />
     <label>Your Language</label>
@@ -122,7 +116,21 @@
       <button class="lang-btn" data-lang="Chinese" onclick="pickLang(this)"><span class="lang-flag">🇨🇳</span>Chinese</button>
     </div>
     <div id="login-error" class="error-msg"></div>
-    <button id="login-btn" class="btn-primary" disabled onclick="doLogin()">Join Chat</button>
+    <button id="login-btn" class="btn-primary" disabled onclick="doLogin()">Send Verification Code</button>
+  </div>
+</div>
+
+<!-- Screen 1b: OTP verification -->
+<div id="otp-screen" class="screen">
+  <h2>Check Your Email</h2>
+  <p id="otp-prompt">Enter the 6-digit code we sent to your email</p>
+  <div class="form-box">
+    <input id="otp-code-input" type="text" inputmode="numeric" placeholder="000000" maxlength="6" autocomplete="one-time-code" />
+    <div id="otp-error" class="error-msg"></div>
+    <div id="otp-success" class="success-msg"></div>
+    <button id="otp-verify-btn" class="btn-primary" disabled onclick="verifyOTP()">Verify &amp; Continue</button>
+    <button class="btn-link" onclick="resendOTP()">Resend code</button>
+    <button class="btn-link" onclick="showScreen('login-screen')">Back to login</button>
   </div>
 </div>
 
@@ -142,14 +150,14 @@
   <p>Give your household a name</p>
   <div class="form-box">
     <label>Household Name</label>
-    <input id="create-room-name" type="text" placeholder="e.g. Phuket Villa, Bangkok Office" maxlength="40" autocomplete="off" />
+    <input id="create-room-name" type="text" placeholder="e.g. Phuket Villa" maxlength="40" autocomplete="off" />
     <div id="create-room-error" class="error-msg"></div>
     <button id="create-room-btn" class="btn-primary" disabled onclick="createRoom()">Create</button>
-    <button class="btn-link" onclick="showRoomScreen()">Back</button>
+    <button class="btn-link" onclick="showScreen('room-screen')">Back</button>
   </div>
 </div>
 
-<!-- Screen 3b: Room created - show code -->
+<!-- Screen 3b: Room created -->
 <div id="room-created-screen" class="screen">
   <h2>Household Created!</h2>
   <p>Share this invite code with your team</p>
@@ -158,7 +166,6 @@
       <div class="label">Invite Code</div>
       <div class="code" id="created-code"></div>
     </div>
-    <p style="font-size:0.82rem; color:#888; margin-bottom:16px;">Anyone can join using this code</p>
     <button class="btn-primary" onclick="enterChat()">Enter Chat</button>
   </div>
 </div>
@@ -171,11 +178,10 @@
     <input id="join-code-input" type="text" placeholder="ABC123" maxlength="6" autocomplete="off" />
     <div id="join-room-error" class="error-msg"></div>
     <button id="join-room-btn" class="btn-primary" disabled onclick="joinRoom()">Join</button>
-    <button class="btn-link" onclick="showRoomScreen()">Back</button>
+    <button class="btn-link" onclick="showScreen('room-screen')">Back</button>
   </div>
 </div>
 
-<!-- Context menu overlay + popup -->
 <div id="ctx-overlay" onclick="closeContextMenu()"></div>
 <div id="ctx-menu">
   <div class="ctx-emoji-row" id="ctx-emojis"></div>
@@ -183,14 +189,10 @@
   <button id="ctx-delete-btn" class="danger" onclick="ctxDelete()"><span class="ctx-icon">🗑</span> Delete</button>
 </div>
 
-<!-- Screen 4: Chat -->
 <div id="chat-screen">
   <div id="messages"></div>
   <div id="reply-bar">
-    <div class="rb-content">
-      <div class="rb-sender" id="rb-sender"></div>
-      <div class="rb-text" id="rb-text"></div>
-    </div>
+    <div class="rb-content"><div class="rb-sender" id="rb-sender"></div><div class="rb-text" id="rb-text"></div></div>
     <button class="rb-close" onclick="cancelReply()">&times;</button>
   </div>
   <div id="input-area">
@@ -203,43 +205,43 @@
 
 <script>
 const EMOJIS = ['👍','❤️','😂','😮','😢','👏'];
-let myName = null, myLang = null, myRoomCode = null, myRoomName = null;
-let polling = null, lastHash = '', sending = false;
-let replyToId = null;
+let myName = null, myLang = null, myContact = null, myRoomCode = null, myRoomName = null;
+let polling = null, lastHash = '', sending = false, replyToId = null;
 const senderColors = {};
 let colorIdx = 0;
 
-// ── Screen management ──
-
+// ── Screens ──
 function showScreen(id) {
   document.querySelectorAll('.screen, #chat-screen').forEach(s => { s.classList.remove('active'); s.style.display = 'none'; });
   const el = document.getElementById(id);
   el.classList.add('active');
-  el.style.display = id === 'chat-screen' ? 'flex' : 'flex';
+  el.style.display = 'flex';
 }
-
-function showError(elId, msg) {
-  const el = document.getElementById(elId);
-  el.textContent = msg;
-  el.style.display = msg ? 'block' : 'none';
-}
+function showError(elId, msg) { const el = document.getElementById(elId); el.textContent = msg; el.style.display = msg ? 'block' : 'none'; }
 
 // ── Login ──
-
 function pickLang(el) {
   document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('selected'));
   el.classList.add('selected');
   myLang = el.dataset.lang;
   checkLoginReady();
 }
-
 function checkLoginReady() {
   const name = document.getElementById('login-name').value.trim();
+  const contact = document.getElementById('login-contact').value.trim();
   const pin = document.getElementById('pin-input').value;
-  document.getElementById('login-btn').disabled = !(name && pin.length === 4 && myLang);
+  // Returning user (has verified contact in localStorage) — only need name + pin + lang
+  const isReturning = !!localStorage.getItem('bt_verified');
+  if (isReturning) {
+    document.getElementById('login-btn').disabled = !(name && pin.length === 4 && myLang);
+    document.getElementById('login-btn').textContent = 'Join Chat';
+  } else {
+    document.getElementById('login-btn').disabled = !(name && contact && pin.length === 4 && myLang);
+    document.getElementById('login-btn').textContent = 'Send Verification Code';
+  }
 }
-
 document.getElementById('login-name').addEventListener('input', checkLoginReady);
+document.getElementById('login-contact').addEventListener('input', checkLoginReady);
 document.getElementById('pin-input').addEventListener('input', function() {
   this.value = this.value.replace(/\D/g, '').substring(0, 4);
   checkLoginReady();
@@ -251,11 +253,110 @@ async function doLogin() {
   const pin = document.getElementById('pin-input').value;
   if (!name || pin.length !== 4 || !myLang) return;
 
+  myName = name;
+  myContact = contact;
+
   const btn = document.getElementById('login-btn');
   btn.disabled = true;
-  btn.textContent = 'Logging in...';
   showError('login-error', '');
 
+  // Returning user with verified email — skip OTP
+  const isReturning = !!localStorage.getItem('bt_verified');
+  if (isReturning) {
+    btn.textContent = 'Logging in...';
+    await completePinLogin(name, pin, contact);
+    btn.textContent = 'Join Chat';
+    btn.disabled = false;
+    return;
+  }
+
+  // New user / new device — send OTP first
+  if (!contact) { showError('login-error', 'Email required for first login'); btn.disabled = false; return; }
+  btn.textContent = 'Sending code...';
+
+  try {
+    const res = await fetch('/api/send-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contact, name })
+    });
+    const data = await res.json();
+    if (!data.ok) { showError('login-error', data.error); btn.disabled = false; btn.textContent = 'Send Verification Code'; return; }
+
+    // Store login details temporarily for after OTP
+    sessionStorage.setItem('pending_pin', pin);
+
+    let methodMsg = 'your email';
+    if (data.method === 'console') methodMsg = 'the server console (check Render logs)';
+    document.getElementById('otp-prompt').textContent = `Enter the 6-digit code sent to ${methodMsg}`;
+    showScreen('otp-screen');
+    document.getElementById('otp-code-input').value = '';
+    document.getElementById('otp-code-input').focus();
+  } catch (e) {
+    showError('login-error', 'Network error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Send Verification Code';
+  }
+}
+
+// ── OTP Screen ──
+document.getElementById('otp-code-input').addEventListener('input', function() {
+  this.value = this.value.replace(/\D/g, '').substring(0, 6);
+  document.getElementById('otp-verify-btn').disabled = this.value.length !== 6;
+});
+
+async function verifyOTP() {
+  const code = document.getElementById('otp-code-input').value.trim();
+  if (code.length !== 6) return;
+
+  const btn = document.getElementById('otp-verify-btn');
+  btn.disabled = true;
+  btn.textContent = 'Verifying...';
+  showError('otp-error', '');
+
+  try {
+    const res = await fetch('/api/verify-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contact: myContact, otp: code })
+    });
+    const data = await res.json();
+    if (!data.ok) {
+      showError('otp-error', data.error || 'Invalid code');
+      btn.disabled = false;
+      btn.textContent = 'Verify & Continue';
+      return;
+    }
+
+    // OTP verified — now do PIN login
+    const pin = sessionStorage.getItem('pending_pin');
+    sessionStorage.removeItem('pending_pin');
+    await completePinLogin(myName, pin, myContact);
+  } catch (e) {
+    showError('otp-error', 'Network error');
+    btn.disabled = false;
+    btn.textContent = 'Verify & Continue';
+  }
+}
+
+async function resendOTP() {
+  showError('otp-error', '');
+  try {
+    await fetch('/api/send-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contact: myContact, name: myName })
+    });
+    const s = document.getElementById('otp-success');
+    s.textContent = 'New code sent!';
+    s.style.display = 'block';
+    setTimeout(() => { s.style.display = 'none'; }, 3000);
+  } catch (e) { showError('otp-error', 'Failed to resend'); }
+}
+
+// ── Complete login after OTP (or directly for returning users) ──
+async function completePinLogin(name, pin, contact) {
   try {
     const res = await fetch('/api/login', {
       method: 'POST',
@@ -263,139 +364,85 @@ async function doLogin() {
       body: JSON.stringify({ name, pin, contact, lang: myLang })
     });
     const data = await res.json();
-
     if (!data.ok) {
-      showError('login-error', data.error || 'Login failed');
-      btn.disabled = false;
-      btn.textContent = 'Join Chat';
+      // Show error on whichever screen is active
+      if (document.getElementById('otp-screen').classList.contains('active')) {
+        showError('otp-error', data.error);
+      } else {
+        showError('login-error', data.error);
+      }
       return;
     }
 
     myName = name;
     localStorage.setItem('bt_name', name);
-    localStorage.setItem('bt_contact', contact);
+    localStorage.setItem('bt_contact', contact || '');
     localStorage.setItem('bt_lang', myLang);
+    localStorage.setItem('bt_verified', 'true');
 
-    // Check if user has a saved room
+    // Check saved room
     const savedRoom = localStorage.getItem('bt_room');
     if (savedRoom) {
-      // Verify room still exists
       const rr = await fetch('/api/rooms/' + savedRoom);
       const rd = await rr.json();
-      if (rd.ok) {
-        myRoomCode = rd.room.code;
-        myRoomName = rd.room.name;
-        enterChat();
-        return;
-      }
+      if (rd.ok) { myRoomCode = rd.room.code; myRoomName = rd.room.name; enterChat(); return; }
       localStorage.removeItem('bt_room');
-      localStorage.removeItem('bt_room_name');
     }
-
     showScreen('room-screen');
   } catch (e) {
     showError('login-error', 'Network error');
-    btn.disabled = false;
-    btn.textContent = 'Join Chat';
   }
 }
 
 // ── Room screens ──
-
-function showRoomScreen() { showScreen('room-screen'); }
-
 function showCreateRoom() {
   showScreen('create-room-screen');
   document.getElementById('create-room-name').value = '';
   document.getElementById('create-room-btn').disabled = true;
   document.getElementById('create-room-name').focus();
 }
-
 document.getElementById('create-room-name').addEventListener('input', function() {
   document.getElementById('create-room-btn').disabled = !this.value.trim();
 });
-
 async function createRoom() {
   const name = document.getElementById('create-room-name').value.trim();
   if (!name) return;
-
   document.getElementById('create-room-btn').disabled = true;
-  showError('create-room-error', '');
-
   try {
-    const res = await fetch('/api/rooms/create', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, userName: myName })
-    });
+    const res = await fetch('/api/rooms/create', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, userName: myName }) });
     const data = await res.json();
-
-    if (!data.ok) {
-      showError('create-room-error', data.error);
-      document.getElementById('create-room-btn').disabled = false;
-      return;
-    }
-
-    myRoomCode = data.room.code;
-    myRoomName = data.room.name;
-    localStorage.setItem('bt_room', myRoomCode);
-    localStorage.setItem('bt_room_name', myRoomName);
-
+    if (!data.ok) { showError('create-room-error', data.error); document.getElementById('create-room-btn').disabled = false; return; }
+    myRoomCode = data.room.code; myRoomName = data.room.name;
+    localStorage.setItem('bt_room', myRoomCode); localStorage.setItem('bt_room_name', myRoomName);
     document.getElementById('created-code').textContent = myRoomCode;
     showScreen('room-created-screen');
-  } catch (e) {
-    showError('create-room-error', 'Network error');
-    document.getElementById('create-room-btn').disabled = false;
-  }
+  } catch (e) { showError('create-room-error', 'Network error'); document.getElementById('create-room-btn').disabled = false; }
 }
-
 function showJoinRoom() {
   showScreen('join-room-screen');
   document.getElementById('join-code-input').value = '';
   document.getElementById('join-room-btn').disabled = true;
   document.getElementById('join-code-input').focus();
 }
-
 document.getElementById('join-code-input').addEventListener('input', function() {
   this.value = this.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase().substring(0, 6);
   document.getElementById('join-room-btn').disabled = this.value.length !== 6;
 });
-
 async function joinRoom() {
   const code = document.getElementById('join-code-input').value.trim().toUpperCase();
   if (code.length !== 6) return;
-
   document.getElementById('join-room-btn').disabled = true;
-  showError('join-room-error', '');
-
   try {
-    const res = await fetch('/api/rooms/join', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code, userName: myName })
-    });
+    const res = await fetch('/api/rooms/join', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code, userName: myName }) });
     const data = await res.json();
-
-    if (!data.ok) {
-      showError('join-room-error', data.error || 'Invalid code');
-      document.getElementById('join-room-btn').disabled = false;
-      return;
-    }
-
-    myRoomCode = data.room.code;
-    myRoomName = data.room.name;
-    localStorage.setItem('bt_room', myRoomCode);
-    localStorage.setItem('bt_room_name', myRoomName);
-
+    if (!data.ok) { showError('join-room-error', data.error); document.getElementById('join-room-btn').disabled = false; return; }
+    myRoomCode = data.room.code; myRoomName = data.room.name;
+    localStorage.setItem('bt_room', myRoomCode); localStorage.setItem('bt_room_name', myRoomName);
     enterChat();
-  } catch (e) {
-    showError('join-room-error', 'Network error');
-    document.getElementById('join-room-btn').disabled = false;
-  }
+  } catch (e) { showError('join-room-error', 'Network error'); document.getElementById('join-room-btn').disabled = false; }
 }
 
 // ── Enter Chat ──
-
 function enterChat() {
   showScreen('chat-screen');
   document.getElementById('header-title').textContent = myRoomName || 'BaanTask';
@@ -405,107 +452,51 @@ function enterChat() {
   document.getElementById('msg-input').focus();
 }
 
-// Pre-fill from localStorage
+// Pre-fill
 (function prefill() {
   const n = localStorage.getItem('bt_name');
   const c = localStorage.getItem('bt_contact');
   const l = localStorage.getItem('bt_lang');
   if (n) document.getElementById('login-name').value = n;
   if (c) document.getElementById('login-contact').value = c;
-  if (l) {
-    const btn = document.querySelector(`.lang-btn[data-lang="${l}"]`);
-    if (btn) { btn.classList.add('selected'); myLang = l; }
-  }
+  if (l) { const b = document.querySelector(`.lang-btn[data-lang="${l}"]`); if (b) { b.classList.add('selected'); myLang = l; } }
   checkLoginReady();
   if (n) setTimeout(() => document.getElementById('pin-input').focus(), 100);
 })();
 
 // ── Helpers ──
-
 function sc(name) { if (!senderColors[name]) senderColors[name] = 'sc' + (colorIdx++ % 8); return senderColors[name]; }
 function ftime(iso) { return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); }
 function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
 // ── Context Menu ──
-
 let ctxMsgId = null, ctxMsgSender = null, ctxMsgText = null;
-let longPressTimer = null;
-
 function openContextMenu(e, msgId, sender, text) {
   e.preventDefault();
-  ctxMsgId = msgId;
-  ctxMsgSender = sender;
-  ctxMsgText = text;
-
-  // Show/hide delete button (only for own messages)
+  ctxMsgId = msgId; ctxMsgSender = sender; ctxMsgText = text;
   document.getElementById('ctx-delete-btn').style.display = (sender === myName) ? 'flex' : 'none';
-
-  // Build emoji row
   const emojiRow = document.getElementById('ctx-emojis');
   emojiRow.innerHTML = '';
-  EMOJIS.forEach(em => {
-    const btn = document.createElement('button');
-    btn.textContent = em;
-    btn.onclick = () => { closeContextMenu(); toggleReaction(msgId, em); };
-    emojiRow.appendChild(btn);
-  });
-
-  // Position the menu
+  EMOJIS.forEach(em => { const b = document.createElement('button'); b.textContent = em; b.onclick = () => { closeContextMenu(); toggleReaction(msgId, em); }; emojiRow.appendChild(b); });
   const menu = document.getElementById('ctx-menu');
-  const overlay = document.getElementById('ctx-overlay');
-
-  // Get touch/click coordinates
   const cx = e.touches ? e.touches[0].clientX : e.clientX;
   const cy = e.touches ? e.touches[0].clientY : e.clientY;
-
   menu.classList.add('show');
-  overlay.classList.add('show');
-
-  // Adjust to keep on screen
-  const mw = menu.offsetWidth;
-  const mh = menu.offsetHeight;
-  let left = Math.min(cx, window.innerWidth - mw - 8);
-  let top = cy - mh - 10;
+  document.getElementById('ctx-overlay').classList.add('show');
+  const mw = menu.offsetWidth, mh = menu.offsetHeight;
+  let left = Math.min(cx, window.innerWidth - mw - 8), top = cy - mh - 10;
   if (top < 8) top = cy + 10;
-  left = Math.max(8, left);
-
-  menu.style.left = left + 'px';
-  menu.style.top = top + 'px';
+  menu.style.left = Math.max(8, left) + 'px'; menu.style.top = top + 'px';
 }
-
-function closeContextMenu() {
-  document.getElementById('ctx-menu').classList.remove('show');
-  document.getElementById('ctx-overlay').classList.remove('show');
-  ctxMsgId = null;
-}
-
-function ctxReply() {
-  const id = ctxMsgId, sender = ctxMsgSender, text = ctxMsgText;
-  closeContextMenu();
-  setReply(id, sender, text);
-}
-
+function closeContextMenu() { document.getElementById('ctx-menu').classList.remove('show'); document.getElementById('ctx-overlay').classList.remove('show'); ctxMsgId = null; }
+function ctxReply() { const id = ctxMsgId, s = ctxMsgSender, t = ctxMsgText; closeContextMenu(); setReply(id, s, t); }
 async function ctxDelete() {
-  const id = ctxMsgId;
-  closeContextMenu();
+  const id = ctxMsgId; closeContextMenu();
   if (!confirm('Delete this message?')) return;
-
-  try {
-    const res = await fetch('/api/delete', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messageId: id, userName: myName })
-    });
-    const data = await res.json();
-    if (data.ok) {
-      lastHash = '';
-      await loadMessages();
-    }
-  } catch (e) { console.error('Delete failed:', e); }
+  try { const r = await fetch('/api/delete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ messageId: id, userName: myName }) }); const d = await r.json(); if (d.ok) { lastHash = ''; await loadMessages(); } } catch (e) {}
 }
 
-// ── Reply Bar ──
-
+// ── Reply ──
 function setReply(id, sender, text) {
   replyToId = id;
   document.getElementById('rb-sender').textContent = sender;
@@ -516,112 +507,69 @@ function setReply(id, sender, text) {
 function cancelReply() { replyToId = null; document.getElementById('reply-bar').classList.remove('show'); }
 
 // ── Reactions ──
-
 async function toggleReaction(msgId, emoji) {
-  try {
-    await fetch('/api/react', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ messageId: msgId, emoji, userName: myName }) });
-    lastHash = '';
-    await loadMessages();
-  } catch (e) { console.error('React failed:', e); }
+  try { await fetch('/api/react', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ messageId: msgId, emoji, userName: myName }) }); lastHash = ''; await loadMessages(); } catch (e) {}
 }
 
 // ── Messages ──
-
 function isAtBottom() { const el = document.getElementById('messages'); return el.scrollHeight - el.scrollTop - el.clientHeight < 80; }
-
 async function loadMessages() {
   if (!myName || !myLang || !myRoomCode) return;
   try {
     const res = await fetch(`/api/messages?lang=${encodeURIComponent(myLang)}&room=${encodeURIComponent(myRoomCode)}`);
     if (!res.ok) return;
     const msgs = await res.json();
-
     const hash = JSON.stringify(msgs.map(m => [m.id, m.translation, JSON.stringify(m.reactions)]));
     if (hash === lastHash) return;
     lastHash = hash;
-
     const atBottom = isAtBottom();
     const container = document.getElementById('messages');
     container.innerHTML = '';
     let prevSender = null;
-
     msgs.forEach(m => {
-      const mine = m.sender === myName;
-      const newGroup = m.sender !== prevSender;
-      prevSender = m.sender;
-
+      const mine = m.sender === myName, newGroup = m.sender !== prevSender; prevSender = m.sender;
       const div = document.createElement('div');
       div.className = 'msg ' + (mine ? 'mine' : 'other') + (newGroup ? ' msg-group-first' : '');
-
       let h = '';
       if (m.replyTo) h += `<div class="msg-reply-preview"><div class="rp-sender ${sc(m.replyTo.sender)}">${esc(m.replyTo.sender)}</div><div class="rp-text">${esc(m.replyTo.text)}</div></div>`;
       if (!mine) h += `<div class="msg-sender ${sc(m.sender)}">${esc(m.sender)}</div>`;
       h += `<div class="msg-text">${esc(m.text)}</div>`;
       if (m.translation) h += `<div class="msg-translation">🌐 ${esc(m.translation)}</div>`;
-
       const reactions = m.reactions || {};
       const rKeys = Object.keys(reactions).filter(k => reactions[k].length > 0);
-      if (rKeys.length) {
-        h += '<div class="msg-reactions">';
-        rKeys.forEach(emoji => {
-          const users = reactions[emoji];
-          h += `<span class="reaction-chip${users.includes(myName) ? ' mine' : ''}" onclick="toggleReaction(\'${m.id}\',\'${emoji}\')"><span class="r-emoji">${emoji}</span><span class="r-count">${users.length}</span></span>`;
-        });
-        h += '</div>';
-      }
-
+      if (rKeys.length) { h += '<div class="msg-reactions">'; rKeys.forEach(emoji => { const users = reactions[emoji]; h += `<span class="reaction-chip${users.includes(myName) ? ' mine' : ''}" onclick="toggleReaction('${m.id}','${emoji}')"><span class="r-emoji">${emoji}</span><span class="r-count">${users.length}</span></span>`; }); h += '</div>'; }
       h += `<div class="msg-time">${ftime(m.time)}</div>`;
       div.innerHTML = h;
-
-      // Context menu triggers: long-press (mobile) + right-click (desktop)
-      const displayText = m.translation || m.text;
+      const dt = m.translation || m.text;
       let lpt = null;
-      div.addEventListener('touchstart', (e) => {
-        lpt = setTimeout(() => { openContextMenu(e, m.id, m.sender, displayText); }, 500);
-      }, { passive: false });
+      div.addEventListener('touchstart', (e) => { lpt = setTimeout(() => openContextMenu(e, m.id, m.sender, dt), 500); }, { passive: false });
       div.addEventListener('touchend', () => clearTimeout(lpt));
       div.addEventListener('touchmove', () => clearTimeout(lpt));
-      div.addEventListener('contextmenu', (e) => { openContextMenu(e, m.id, m.sender, displayText); });
-
+      div.addEventListener('contextmenu', (e) => openContextMenu(e, m.id, m.sender, dt));
       container.appendChild(div);
     });
-
     if (atBottom) container.scrollTop = container.scrollHeight;
-  } catch (e) { console.error('[loadMessages]', e); }
+  } catch (e) {}
 }
 
 async function sendMsg() {
   if (sending) return;
-  const input = document.getElementById('msg-input');
-  const text = input.value.trim();
+  const input = document.getElementById('msg-input'), text = input.value.trim();
   if (!text) return;
-
-  sending = true;
-  document.getElementById('send-btn').disabled = true;
-  input.value = '';
-
+  sending = true; document.getElementById('send-btn').disabled = true; input.value = '';
   const body = { text, sender: myName, lang: myLang, roomCode: myRoomCode };
   if (replyToId) body.replyTo = replyToId;
-
   try {
-    const res = await fetch('/api/send', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-    const data = await res.json();
-    if (!res.ok || !data.ok) { input.value = text; return; }
-    cancelReply();
-    lastHash = '';
-    await loadMessages();
+    const r = await fetch('/api/send', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const d = await r.json();
+    if (!r.ok || !d.ok) { input.value = text; return; }
+    cancelReply(); lastHash = ''; await loadMessages();
   } catch (e) { input.value = text; }
   finally { sending = false; document.getElementById('send-btn').disabled = false; input.focus(); }
 }
 
-document.getElementById('msg-input').addEventListener('keydown', e => {
-  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); }
-});
-
-// Logout
-document.getElementById('header-icon').addEventListener('dblclick', () => {
-  if (confirm('Log out and leave room?')) { localStorage.clear(); location.reload(); }
-});
+document.getElementById('msg-input').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); } });
+document.getElementById('header-icon').addEventListener('dblclick', () => { if (confirm('Log out?')) { localStorage.clear(); location.reload(); } });
 </script>
 </body>
 </html>

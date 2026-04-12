@@ -4,6 +4,7 @@ const Anthropic = require('@anthropic-ai/sdk');
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
+const nodemailer = require('nodemailer');
 const path = require('path');
 
 const app = express();
@@ -17,6 +18,21 @@ const LANGUAGES = ['Russian', 'Thai', 'English', 'Filipino', 'Myanmar', 'Chinese
 console.log('[STARTUP] BaanTask server starting...');
 console.log('[STARTUP] ANTHROPIC_API_KEY set:', !!process.env.ANTHROPIC_API_KEY);
 console.log('[STARTUP] MONGODB_URI set:', !!process.env.MONGODB_URI);
+console.log('[STARTUP] GMAIL_USER set:', !!process.env.GMAIL_USER);
+console.log('[STARTUP] GMAIL_PASS set:', !!process.env.GMAIL_PASS);
+
+// ── Gmail transporter ──
+
+let mailTransporter = null;
+if (process.env.GMAIL_USER && process.env.GMAIL_PASS) {
+  mailTransporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_PASS }
+  });
+  console.log('[STARTUP] Gmail transporter ready');
+} else {
+  console.warn('[STARTUP] GMAIL_USER/GMAIL_PASS not set — OTP codes will be logged to console only');
+}
 
 // ── Mongoose schemas ──
 
@@ -25,6 +41,14 @@ const userSchema = new mongoose.Schema({
   pinHash: { type: String, default: '' },
   contact: { type: String, default: '' },
   lang: { type: String, required: true },
+  emailVerified: { type: Boolean, default: false },
+  createdAt: { type: Date, default: Date.now }
+});
+
+const otpSchema = new mongoose.Schema({
+  contact: { type: String, required: true },
+  otp: { type: String, required: true },
+  expiresAt: { type: Date, required: true },
   createdAt: { type: Date, default: Date.now }
 });
 
@@ -48,6 +72,7 @@ const messageSchema = new mongoose.Schema({
 });
 
 const User = mongoose.model('User', userSchema);
+const OTP = mongoose.model('OTP', otpSchema);
 const Room = mongoose.model('Room', roomSchema);
 const Message = mongoose.model('Message', messageSchema);
 
@@ -57,33 +82,20 @@ let dbConnected = false;
 
 async function connectDB() {
   let uri = process.env.MONGODB_URI;
-  if (!uri) {
-    console.error('[DB] MONGODB_URI not set! App will not work.');
-    return;
-  }
+  if (!uri) { console.error('[DB] MONGODB_URI not set!'); return; }
   try {
     const url = new URL(uri);
     if (!url.pathname || url.pathname === '/' || url.pathname === '') {
       url.pathname = '/baantask';
       uri = url.toString();
-      console.log('[DB] Added database name to URI: /baantask');
     }
-    console.log(`[DB] Connecting to database: ${url.pathname.substring(1) || '(none)'}`);
-  } catch (e) {
-    console.warn('[DB] Could not parse URI to check db name:', e.message);
-  }
+    console.log(`[DB] Connecting to: ${url.pathname.substring(1) || '(none)'}`);
+  } catch (e) { /* */ }
 
   try {
-    await mongoose.connect(uri, {
-      serverSelectionTimeoutMS: 30000,
-      socketTimeoutMS: 45000
-    });
+    await mongoose.connect(uri, { serverSelectionTimeoutMS: 30000, socketTimeoutMS: 45000 });
     dbConnected = true;
     console.log('[DB] Connected to MongoDB Atlas');
-    const users = await User.countDocuments();
-    const rooms = await Room.countDocuments();
-    const msgs = await Message.countDocuments();
-    console.log(`[DB] ${users} users, ${rooms} rooms, ${msgs} messages`);
   } catch (e) {
     console.error('[DB] Connection failed:', e.message);
   }
@@ -91,35 +103,99 @@ async function connectDB() {
 
 // ── Helpers ──
 
-function genRoomCode() {
-  return crypto.randomBytes(3).toString('hex').toUpperCase(); // 6-char hex
-}
+function genRoomCode() { return crypto.randomBytes(3).toString('hex').toUpperCase(); }
+function genOTP() { return String(Math.floor(100000 + Math.random() * 900000)); }
 
 // ── Translate ──
 
 async function translateOne(text, fromLang, toLang) {
-  console.log(`[TRANSLATE] "${text.substring(0, 40)}" | ${fromLang} -> ${toLang}`);
-  if (!process.env.ANTHROPIC_API_KEY) {
-    console.error('[TRANSLATE FAIL] No ANTHROPIC_API_KEY');
-    return null;
-  }
+  if (!process.env.ANTHROPIC_API_KEY) return null;
   try {
     const response = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 500,
-      messages: [{
-        role: 'user',
-        content: `You are a translator. Translate the following text from ${fromLang} to ${toLang}. Output ONLY the translated text, nothing else. No quotes, no labels, no explanations.\n\nText to translate: ${text}`
-      }]
+      messages: [{ role: 'user', content: `You are a translator. Translate the following text from ${fromLang} to ${toLang}. Output ONLY the translated text, nothing else. No quotes, no labels, no explanations.\n\nText to translate: ${text}` }]
     });
-    const translated = response.content[0].text.trim();
-    console.log(`[TRANSLATE OK] ${toLang}: "${translated.substring(0, 60)}"`);
-    return translated;
+    return response.content[0].text.trim();
   } catch (e) {
     console.error(`[TRANSLATE FAIL] ${fromLang}->${toLang}: ${e.message}`);
     return null;
   }
 }
+
+// ── OTP Routes ──
+
+app.post('/api/send-otp', async (req, res) => {
+  const { contact, name } = req.body;
+  if (!contact) return res.status(400).json({ ok: false, error: 'Email required' });
+
+  const code = genOTP();
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+  console.log(`[OTP] Generating for ${contact}: ${code}`);
+
+  try {
+    await OTP.create({ contact, otp: code, expiresAt });
+  } catch (e) {
+    console.error('[OTP] DB save failed:', e.message);
+  }
+
+  if (mailTransporter) {
+    try {
+      await mailTransporter.sendMail({
+        from: `"BaanTask" <${process.env.GMAIL_USER}>`,
+        to: contact,
+        subject: 'Your BaanTask verification code',
+        text: `Hi ${name || 'there'},\n\nYour BaanTask verification code is: ${code}\n\nThis code expires in 10 minutes.\n\n- BaanTask Team`,
+        html: `<div style="font-family:sans-serif;max-width:400px;margin:0 auto;padding:20px;">
+          <h2 style="color:#075e54;">BaanTask Verification</h2>
+          <p>Hi ${name || 'there'},</p>
+          <p>Your verification code is:</p>
+          <div style="background:#f0f4f0;border-radius:8px;padding:20px;text-align:center;margin:16px 0;">
+            <span style="font-size:32px;font-weight:bold;letter-spacing:8px;color:#075e54;">${code}</span>
+          </div>
+          <p style="color:#888;font-size:13px;">This code expires in 10 minutes.</p>
+        </div>`
+      });
+      console.log(`[OTP] Email sent to ${contact}`);
+      return res.json({ ok: true, method: 'email' });
+    } catch (e) {
+      console.error('[OTP] Gmail send failed:', e.message);
+    }
+  }
+
+  // Fallback: console log
+  console.log(`[OTP] *** CODE FOR ${contact}: ${code} *** (Gmail not configured)`);
+  res.json({ ok: true, method: 'console' });
+});
+
+app.post('/api/verify-otp', async (req, res) => {
+  const { contact, otp } = req.body;
+  if (!contact || !otp) return res.status(400).json({ ok: false, error: 'Email and code required' });
+
+  console.log(`[OTP VERIFY] ${contact} entered: ${otp}`);
+
+  try {
+    const record = await OTP.findOne({
+      contact,
+      otp,
+      expiresAt: { $gt: new Date() }
+    }).sort({ createdAt: -1 });
+
+    if (!record) {
+      console.log(`[OTP VERIFY] Invalid or expired for ${contact}`);
+      return res.json({ ok: false, error: 'Invalid or expired code' });
+    }
+
+    // Clean up used OTPs
+    await OTP.deleteMany({ contact });
+    console.log(`[OTP VERIFY] Verified ${contact}`);
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('[OTP VERIFY ERROR]', e.message);
+    res.json({ ok: false, error: 'Verification failed' });
+  }
+});
 
 // ── PIN Login ──
 
@@ -141,27 +217,23 @@ app.post('/api/login', async (req, res) => {
       if (!existing.pinHash) {
         existing.pinHash = await bcrypt.hash(pin, 10);
         existing.lang = lang;
-        if (contact) existing.contact = contact;
+        if (contact) { existing.contact = contact; existing.emailVerified = true; }
         await existing.save();
-        console.log(`[LOGIN] Migrated old user: ${name}`);
         return res.json({ ok: true, user: { name: existing.name, lang: existing.lang } });
       }
 
       const match = await bcrypt.compare(pin, existing.pinHash);
-      if (!match) {
-        console.log(`[LOGIN] Wrong PIN for ${name}`);
-        return res.json({ ok: false, error: 'Wrong PIN' });
-      }
+      if (!match) return res.json({ ok: false, error: 'Wrong PIN' });
+
       existing.lang = lang;
-      if (contact) existing.contact = contact;
+      if (contact) { existing.contact = contact; existing.emailVerified = true; }
       await existing.save();
-      console.log(`[LOGIN] Welcome back: ${name}`);
       return res.json({ ok: true, user: { name: existing.name, lang: existing.lang } });
     }
 
     const pinHash = await bcrypt.hash(pin, 10);
-    const user = await User.create({ name, pinHash, contact: contact || '', lang });
-    console.log(`[LOGIN] New user created: ${name}`);
+    const user = await User.create({ name, pinHash, contact: contact || '', lang, emailVerified: !!contact });
+    console.log(`[LOGIN] New user: ${name}`);
     res.json({ ok: true, user: { name: user.name, lang: user.lang }, isNew: true });
   } catch (e) {
     console.error('[LOGIN ERROR]', e.message);
@@ -171,86 +243,48 @@ app.post('/api/login', async (req, res) => {
 
 // ── Room Routes ──
 
-// Create a new room
 app.post('/api/rooms/create', async (req, res) => {
   const { name, userName } = req.body;
-  if (!name || !userName) {
-    return res.status(400).json({ ok: false, error: 'Room name and user name required' });
-  }
-
+  if (!name || !userName) return res.status(400).json({ ok: false, error: 'Room name and user name required' });
   try {
     let code;
-    // Ensure unique code
-    for (let i = 0; i < 10; i++) {
-      code = genRoomCode();
-      const exists = await Room.findOne({ code });
-      if (!exists) break;
-    }
-
+    for (let i = 0; i < 10; i++) { code = genRoomCode(); if (!(await Room.findOne({ code }))) break; }
     const room = await Room.create({ name, code, createdBy: userName, members: [userName] });
     console.log(`[ROOM] Created "${name}" code=${code} by ${userName}`);
     res.json({ ok: true, room: { name: room.name, code: room.code, members: room.members } });
-  } catch (e) {
-    console.error('[ROOM CREATE ERROR]', e.message);
-    res.status(500).json({ ok: false, error: 'Failed to create room' });
-  }
+  } catch (e) { res.status(500).json({ ok: false, error: 'Failed to create room' }); }
 });
 
-// Join a room by invite code
 app.post('/api/rooms/join', async (req, res) => {
   const { code, userName } = req.body;
-  if (!code || !userName) {
-    return res.status(400).json({ ok: false, error: 'Code and user name required' });
-  }
-
+  if (!code || !userName) return res.status(400).json({ ok: false, error: 'Code and user name required' });
   try {
     const room = await Room.findOne({ code: code.toUpperCase() });
-    if (!room) {
-      console.log(`[ROOM] Invalid code: ${code}`);
-      return res.json({ ok: false, error: 'Invalid invite code' });
-    }
-
-    if (!room.members.includes(userName)) {
-      room.members.push(userName);
-      await room.save();
-      console.log(`[ROOM] ${userName} joined "${room.name}" (${room.code})`);
-    } else {
-      console.log(`[ROOM] ${userName} already in "${room.name}" (${room.code})`);
-    }
-
+    if (!room) return res.json({ ok: false, error: 'Invalid invite code' });
+    if (!room.members.includes(userName)) { room.members.push(userName); await room.save(); }
     res.json({ ok: true, room: { name: room.name, code: room.code, members: room.members } });
-  } catch (e) {
-    console.error('[ROOM JOIN ERROR]', e.message);
-    res.status(500).json({ ok: false, error: 'Failed to join room' });
-  }
+  } catch (e) { res.status(500).json({ ok: false, error: 'Failed to join room' }); }
 });
 
-// Get room info
 app.get('/api/rooms/:code', async (req, res) => {
   try {
     const room = await Room.findOne({ code: req.params.code.toUpperCase() });
     if (!room) return res.json({ ok: false, error: 'Room not found' });
     res.json({ ok: true, room: { name: room.name, code: room.code, members: room.members } });
-  } catch (e) {
-    res.status(500).json({ ok: false, error: 'Failed to get room' });
-  }
+  } catch (e) { res.status(500).json({ ok: false, error: 'Failed to get room' }); }
 });
 
-// ── Message Routes (scoped to room) ──
+// ── Message Routes ──
 
 app.get('/api/messages', async (req, res) => {
   const { lang, room } = req.query;
   if (!lang || !room) return res.json([]);
-
   try {
     const msgs = await Message.find({ roomCode: room }).sort({ createdAt: 1 }).lean();
-    console.log(`[GET /api/messages] ${msgs.length} msgs for room=${room} lang=${lang}`);
-
     for (const m of msgs) {
       if (m.senderLang === lang) continue;
-      const translations = m.translations instanceof Map ? Object.fromEntries(m.translations) : (m.translations || {});
-      if (translations[lang]) continue;
-
+      const t = m.translations instanceof Map ? Object.fromEntries(m.translations) : (m.translations || {});
+      if (t[lang]) continue;
       const translated = await translateOne(m.text, m.senderLang, lang);
       if (translated) {
         await Message.updateOne({ _id: m._id }, { $set: { [`translations.${lang}`]: translated } });
@@ -258,150 +292,72 @@ app.get('/api/messages', async (req, res) => {
         else { m.translations = m.translations || {}; m.translations[lang] = translated; }
       }
     }
-
     const byId = {};
     msgs.forEach(m => { byId[m._id.toString()] = m; });
-
     const result = msgs.map(m => {
-      const translations = m.translations instanceof Map ? Object.fromEntries(m.translations) : (m.translations || {});
-      const reactions = m.reactions instanceof Map ? Object.fromEntries(m.reactions) : (m.reactions || {});
-
-      let replyPreview = null;
-      if (m.replyTo) {
-        const orig = byId[m.replyTo.toString()];
-        if (orig) {
-          const ot = orig.translations instanceof Map ? Object.fromEntries(orig.translations) : (orig.translations || {});
-          replyPreview = { sender: orig.sender, text: orig.senderLang === lang ? orig.text : (ot[lang] || orig.text) };
-        }
-      }
-
-      return {
-        id: m._id.toString(),
-        sender: m.sender,
-        senderLang: m.senderLang,
-        text: m.text,
-        translation: m.senderLang === lang ? null : (translations[lang] || null),
-        reactions,
-        replyTo: replyPreview,
-        time: m.createdAt
-      };
+      const tr = m.translations instanceof Map ? Object.fromEntries(m.translations) : (m.translations || {});
+      const re = m.reactions instanceof Map ? Object.fromEntries(m.reactions) : (m.reactions || {});
+      let rp = null;
+      if (m.replyTo) { const o = byId[m.replyTo.toString()]; if (o) { const ot = o.translations instanceof Map ? Object.fromEntries(o.translations) : (o.translations || {}); rp = { sender: o.sender, text: o.senderLang === lang ? o.text : (ot[lang] || o.text) }; } }
+      return { id: m._id.toString(), sender: m.sender, senderLang: m.senderLang, text: m.text, translation: m.senderLang === lang ? null : (tr[lang] || null), reactions: re, replyTo: rp, time: m.createdAt };
     });
-
     res.json(result);
-  } catch (e) {
-    console.error('[GET /api/messages ERROR]', e.message);
-    res.json([]);
-  }
+  } catch (e) { console.error('[MESSAGES ERROR]', e.message); res.json([]); }
 });
 
 app.post('/api/send', async (req, res) => {
   const { text, sender, lang, roomCode, replyTo } = req.body;
-  console.log(`[SEND] Received:`, JSON.stringify({ text: text?.substring(0, 50), sender, lang, roomCode, replyTo: !!replyTo }));
-
-  if (!text || !sender || !lang || !roomCode) {
-    return res.status(400).json({ ok: false, error: 'Missing text, sender, lang, or roomCode' });
-  }
-  if (!dbConnected) {
-    return res.status(503).json({ ok: false, error: 'Database not connected' });
-  }
-
+  if (!text || !sender || !lang || !roomCode) return res.status(400).json({ ok: false, error: 'Missing fields' });
+  if (!dbConnected) return res.status(503).json({ ok: false, error: 'Database not connected' });
   try {
     const msg = await Message.create({ roomCode, sender, senderLang: lang, text, replyTo: replyTo || null });
-    console.log(`[SEND OK] id=${msg._id} room=${roomCode} from ${sender}: "${text.substring(0, 50)}"`);
+    console.log(`[SEND] ${sender} in ${roomCode}: "${text.substring(0, 50)}"`);
     res.json({ ok: true, id: msg._id.toString() });
-  } catch (e) {
-    console.error('[SEND ERROR]', e.message);
-    res.status(500).json({ ok: false, error: 'Failed to save message' });
-  }
+  } catch (e) { res.status(500).json({ ok: false, error: 'Failed to save' }); }
 });
 
 app.post('/api/react', async (req, res) => {
   const { messageId, emoji, userName } = req.body;
-  if (!messageId || !emoji || !userName) {
-    return res.status(400).json({ error: 'Missing messageId, emoji, or userName' });
-  }
-
+  if (!messageId || !emoji || !userName) return res.status(400).json({ error: 'Missing fields' });
   try {
     const msg = await Message.findById(messageId);
-    if (!msg) return res.status(404).json({ error: 'Message not found' });
-
+    if (!msg) return res.status(404).json({ error: 'Not found' });
     const users = msg.reactions.get(emoji) || [];
     const idx = users.indexOf(userName);
-    if (idx >= 0) {
-      users.splice(idx, 1);
-      if (users.length === 0) msg.reactions.delete(emoji);
-      else msg.reactions.set(emoji, users);
-    } else {
-      users.push(userName);
-      msg.reactions.set(emoji, users);
-    }
+    if (idx >= 0) { users.splice(idx, 1); if (!users.length) msg.reactions.delete(emoji); else msg.reactions.set(emoji, users); }
+    else { users.push(userName); msg.reactions.set(emoji, users); }
     await msg.save();
     res.json({ ok: true });
-  } catch (e) {
-    console.error('[REACT ERROR]', e.message);
-    res.status(500).json({ error: 'Failed to update reaction' });
-  }
+  } catch (e) { res.status(500).json({ error: 'Failed' }); }
 });
 
-// Delete a message (sender only)
 app.post('/api/delete', async (req, res) => {
   const { messageId, userName } = req.body;
-  if (!messageId || !userName) {
-    return res.status(400).json({ ok: false, error: 'Missing messageId or userName' });
-  }
-
+  if (!messageId || !userName) return res.status(400).json({ ok: false, error: 'Missing fields' });
   try {
     const msg = await Message.findById(messageId);
-    if (!msg) return res.status(404).json({ ok: false, error: 'Message not found' });
-
-    if (msg.sender !== userName) {
-      console.log(`[DELETE] Denied: ${userName} tried to delete message from ${msg.sender}`);
-      return res.status(403).json({ ok: false, error: 'You can only delete your own messages' });
-    }
-
+    if (!msg) return res.status(404).json({ ok: false, error: 'Not found' });
+    if (msg.sender !== userName) return res.status(403).json({ ok: false, error: 'Not your message' });
     await Message.deleteOne({ _id: messageId });
-    console.log(`[DELETE] ${userName} deleted message ${messageId}`);
     res.json({ ok: true });
-  } catch (e) {
-    console.error('[DELETE ERROR]', e.message);
-    res.status(500).json({ ok: false, error: 'Failed to delete message' });
-  }
+  } catch (e) { res.status(500).json({ ok: false, error: 'Failed' }); }
 });
 
-// Admin: clear all messages (temporary cleanup route)
 app.get('/admin/clear-messages', async (req, res) => {
-  try {
-    const result = await Message.deleteMany({});
-    console.log(`[ADMIN] Deleted ${result.deletedCount} messages`);
-    res.json({ ok: true, deleted: result.deletedCount });
-  } catch (e) {
-    console.error('[ADMIN] Clear failed:', e.message);
-    res.status(500).json({ ok: false, error: e.message });
-  }
+  try { const r = await Message.deleteMany({}); res.json({ ok: true, deleted: r.deletedCount }); }
+  catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
-// Health check
 app.get('/status', async (req, res) => {
   const dbOk = mongoose.connection.readyState === 1;
   const hasKey = !!process.env.ANTHROPIC_API_KEY;
+  const hasGmail = !!mailTransporter;
   let apiOk = false;
-  if (hasKey) {
-    try {
-      await client.messages.create({ model: 'claude-haiku-4-5-20251001', max_tokens: 5, messages: [{ role: 'user', content: 'Say ok' }] });
-      apiOk = true;
-    } catch (e) { /* */ }
-  }
-  const users = dbOk ? await User.countDocuments() : 0;
-  const rooms = dbOk ? await Room.countDocuments() : 0;
-  const msgs = dbOk ? await Message.countDocuments() : 0;
-  res.json({ db: dbOk, api: apiOk, users, rooms, messages: msgs });
+  if (hasKey) { try { await client.messages.create({ model: 'claude-haiku-4-5-20251001', max_tokens: 5, messages: [{ role: 'user', content: 'ok' }] }); apiOk = true; } catch (e) { /* */ } }
+  res.json({ db: dbOk, api: apiOk, gmail: hasGmail });
 });
-
-// ── Start ──
 
 connectDB().then(() => {
   const PORT = process.env.PORT || 3000;
-  app.listen(PORT, () => {
-    console.log(`[STARTUP] BaanTask running on port ${PORT}`);
-  });
+  app.listen(PORT, () => console.log(`[STARTUP] BaanTask running on port ${PORT}`));
 });
