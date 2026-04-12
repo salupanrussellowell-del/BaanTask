@@ -368,6 +368,18 @@ app.post('/api/delete', async (req, res) => {
   }
 });
 
+// Admin: clear all messages (temporary cleanup route)
+app.get('/admin/clear-messages', async (req, res) => {
+  try {
+    const result = await Message.deleteMany({});
+    console.log(`[ADMIN] Deleted ${result.deletedCount} messages`);
+    res.json({ ok: true, deleted: result.deletedCount });
+  } catch (e) {
+    console.error('[ADMIN] Clear failed:', e.message);
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
 // Health check
 app.get('/status', async (req, res) => {
   const dbOk = mongoose.connection.readyState === 1;
