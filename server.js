@@ -26,10 +26,22 @@ console.log('[STARTUP] GMAIL_PASS set:', !!process.env.GMAIL_PASS);
 let mailTransporter = null;
 if (process.env.GMAIL_USER && process.env.GMAIL_PASS) {
   mailTransporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 587,
+    secure: false,
     auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_PASS }
   });
-  console.log('[STARTUP] Gmail transporter ready');
+  // Verify connection at startup
+  mailTransporter.verify((err, success) => {
+    if (err) {
+      console.error('[STARTUP] Gmail SMTP verification FAILED:', err.message);
+      console.error('[STARTUP] Gmail error code:', err.code);
+      console.error('[STARTUP] Full error:', JSON.stringify(err, Object.getOwnPropertyNames(err)));
+    } else {
+      console.log('[STARTUP] Gmail SMTP verified and ready');
+    }
+  });
+  console.log(`[STARTUP] Gmail transporter created for ${process.env.GMAIL_USER}`);
 } else {
   console.warn('[STARTUP] GMAIL_USER/GMAIL_PASS not set — OTP codes will be logged to console only');
 }
@@ -160,12 +172,21 @@ app.post('/api/send-otp', async (req, res) => {
       console.log(`[OTP] Email sent to ${contact}`);
       return res.json({ ok: true, method: 'email' });
     } catch (e) {
-      console.error('[OTP] Gmail send failed:', e.message);
+      console.error('[OTP] ========================================');
+      console.error('[OTP] Gmail send FAILED for:', contact);
+      console.error('[OTP] Error message:', e.message);
+      console.error('[OTP] Error code:', e.code);
+      console.error('[OTP] Error command:', e.command);
+      console.error('[OTP] Full error:', JSON.stringify(e, Object.getOwnPropertyNames(e)));
+      console.error('[OTP] ========================================');
+      // Fall through to console fallback
     }
   }
 
-  // Fallback: console log
-  console.log(`[OTP] *** CODE FOR ${contact}: ${code} *** (Gmail not configured)`);
+  // Fallback: log OTP clearly in console
+  console.log('[OTP] ========================================');
+  console.log(`[OTP CODE] ====> ${code} <==== for ${contact}`);
+  console.log('[OTP] ========================================');
   res.json({ ok: true, method: 'console' });
 });
 
