@@ -495,7 +495,7 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
   </div>
   <div class="bn">
     <div class="ni active-o" onclick="goScreen('s-owner-home')"><span class="ic">🏠</span>Home</div>
-    <div class="ni" onclick=""><span class="ic">💼</span>Payroll</div>
+    <div class="ni" onclick="goScreen('s-payroll')"><span class="ic">💼</span>Payroll</div>
     <div class="ni" onclick="goScreen('s-tasks')"><span class="ic">✅</span>Tasks</div>
     <div class="ni" onclick="goScreen('s-chat-list')"><span class="ic">💬</span>Chat</div>
     <div class="ni" onclick="goScreen('s-me')"><span class="ic">👤</span>Me</div>
@@ -513,7 +513,7 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
   </div>
   <div class="bn">
     <div class="ni" onclick="goScreen('s-owner-home')"><span class="ic">🏠</span>Home</div>
-    <div class="ni" onclick=""><span class="ic">💼</span>Payroll</div>
+    <div class="ni" onclick="goScreen('s-payroll')"><span class="ic">💼</span>Payroll</div>
     <div class="ni" onclick=""><span class="ic">✅</span>Tasks</div>
     <div class="ni" onclick=""><span class="ic">💬</span>Chat</div>
     <div class="ni" onclick=""><span class="ic">👤</span>Me</div>
@@ -572,7 +572,7 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
   <div class="sc" style="background:#F9FAFB;padding-top:8px" id="tasks-list"></div>
   <div class="bn">
     <div class="ni" onclick="goScreen('s-owner-home')"><span class="ic">🏠</span>Home</div>
-    <div class="ni" onclick=""><span class="ic">💼</span>Payroll</div>
+    <div class="ni" onclick="goScreen('s-payroll')"><span class="ic">💼</span>Payroll</div>
     <div class="ni active-o"><span class="ic">✅</span>Tasks</div>
     <div class="ni" onclick="goScreen('s-chat-list')"><span class="ic">💬</span>Chat</div>
     <div class="ni" onclick="goScreen('s-me')"><span class="ic">👤</span>Me</div>
@@ -654,7 +654,7 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
   <div class="sc" id="workers-full-list"><div style="height:8px"></div></div>
   <div class="bn">
     <div class="ni" onclick="goScreen('s-owner-home')"><span class="ic">🏠</span>Home</div>
-    <div class="ni" onclick=""><span class="ic">💼</span>Payroll</div>
+    <div class="ni" onclick="goScreen('s-payroll')"><span class="ic">💼</span>Payroll</div>
     <div class="ni" onclick="goScreen('s-tasks')"><span class="ic">✅</span>Tasks</div>
     <div class="ni" onclick="goScreen('s-chat-list')"><span class="ic">💬</span>Chat</div>
     <div class="ni" onclick="goScreen('s-me')"><span class="ic">👤</span>Me</div>
@@ -699,7 +699,7 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
   </div>
   <div class="bn">
     <div class="ni" onclick="goScreen('s-owner-home')"><span class="ic">🏠</span>Home</div>
-    <div class="ni" onclick=""><span class="ic">💼</span>Payroll</div>
+    <div class="ni" onclick="goScreen('s-payroll')"><span class="ic">💼</span>Payroll</div>
     <div class="ni" onclick="goScreen('s-tasks')"><span class="ic">✅</span>Tasks</div>
     <div class="ni active-o"><span class="ic">💬</span>Chat</div>
     <div class="ni" onclick="goScreen('s-me')"><span class="ic">👤</span>Me</div>
@@ -746,7 +746,7 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
   </div>
   <div class="bn">
     <div class="ni" onclick="goScreen('s-owner-home')"><span class="ic">🏠</span>Home</div>
-    <div class="ni" onclick=""><span class="ic">💼</span>Payroll</div>
+    <div class="ni" onclick="goScreen('s-payroll')"><span class="ic">💼</span>Payroll</div>
     <div class="ni" onclick="goScreen('s-tasks')"><span class="ic">✅</span>Tasks</div>
     <div class="ni" onclick="goScreen('s-chat-list')"><span class="ic">💬</span>Chat</div>
     <div class="ni active-o"><span class="ic">👤</span>Me</div>
@@ -830,6 +830,33 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
   </div>
 </div>
 
+<!-- ═══ PAYROLL / MONTHLY ═══ -->
+<div id="s-payroll" class="screen">
+  <div class="sb" style="background:#00695C">9:41<span>📶 🔋</span></div>
+  <div class="tn owner-tn" style="background:linear-gradient(135deg,#00897B,#00695C)">
+    <h2 style="color:#fff">💼 Payroll</h2>
+    <span id="payroll-month" style="color:rgba(255,255,255,.8);font-size:.78rem;margin-left:auto"></span>
+  </div>
+  <div class="sc" style="background:#F9FAFB">
+    <div style="padding:12px 12px 4px;font-size:.72rem;font-weight:900;color:#9CA3AF;text-transform:uppercase;letter-spacing:.06em">Tap a worker to see attendance &amp; salary</div>
+    <div style="background:#fff;border-radius:14px;margin:0 12px 8px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.06)" id="payroll-workers"></div>
+    <!-- Total payroll card -->
+    <div style="margin:4px 12px 16px;background:linear-gradient(135deg,#00695C,#004D40);border-radius:14px;padding:14px">
+      <div style="font-size:.72rem;color:rgba(255,255,255,.7);font-weight:700;margin-bottom:4px">Total payroll this month</div>
+      <div id="payroll-total" style="font-size:1.3rem;font-weight:900;color:#fff">฿0</div>
+      <div style="font-size:.7rem;color:rgba(255,255,255,.6);margin-top:4px">Pay day: last day of month</div>
+    </div>
+    <div style="height:70px"></div>
+  </div>
+  <div class="bn">
+    <div class="ni" onclick="goScreen('s-owner-home')"><span class="ic">🏠</span>Home</div>
+    <div class="ni active-o"><span class="ic">💼</span>Payroll</div>
+    <div class="ni" onclick="goScreen('s-tasks')"><span class="ic">✅</span>Tasks</div>
+    <div class="ni" onclick="goScreen('s-chat-list')"><span class="ic">💬</span>Chat</div>
+    <div class="ni" onclick="goScreen('s-me')"><span class="ic">👤</span>Me</div>
+  </div>
+</div>
+
 </div><!-- end #app -->
 <script>
 // ══════════════════════════════════════
@@ -868,6 +895,7 @@ function goScreen(id, skipHistory) {
   if (id === 's-workers') loadWorkersFullList();
   if (id === 's-me') loadMeScreen();
   if (id === 's-add-worker') loadAddWorker();
+  if (id === 's-payroll') loadPayroll();
   if (id === 's-otp') { document.getElementById('otp-input').value = ''; document.getElementById('otp-btn').disabled = true; showError('otp-error',''); }
 }
 function goBack() { const prev = screenHistory.pop(); if (prev) goScreen(prev, true); }
@@ -1368,6 +1396,46 @@ function showQRCode() {
   document.getElementById('qr-code-text').textContent = code;
   document.getElementById('qr-invite-link').textContent = getInviteLink();
   goScreen('s-qr-display');
+}
+
+// ══════════════════════════════════════
+//  PAYROLL
+// ══════════════════════════════════════
+async function loadPayroll() {
+  if (!me || !me.propertyId) return;
+  const now = new Date();
+  document.getElementById('payroll-month').textContent = now.toLocaleString('en', { month: 'long', year: 'numeric' });
+  try {
+    const r = await fetch('/api/workers/' + me.propertyId);
+    const d = await r.json();
+    const container = document.getElementById('payroll-workers');
+    container.innerHTML = '';
+    if (!d.ok || !d.workers.length) {
+      container.innerHTML = '<div style="padding:20px;text-align:center;font-size:.85rem;color:#9CA3AF;font-weight:600">No workers yet</div>';
+      document.getElementById('payroll-total').textContent = '฿0';
+      return;
+    }
+    let total = 0;
+    d.workers.forEach((w, i) => {
+      const u = w.userId || {};
+      const initials = (u.name || '??').split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+      const salary = w.salary || 0;
+      total += salary;
+      const isLast = i === d.workers.length - 1;
+      container.innerHTML += `<div onclick="openWorkerProfile('${w._id}','${u._id}')" style="display:flex;align-items:center;gap:12px;padding:14px;${isLast ? '' : 'border-bottom:1px solid #F3F4F6;'}cursor:pointer;-webkit-tap-highlight-color:transparent">
+        <div class="wav" style="background:${avatarGrad(i)};flex-shrink:0">${initials}</div>
+        <div style="flex:1">
+          <div style="font-size:.86rem;font-weight:900;color:#1F2937">${u.name || '—'}</div>
+          <div style="font-size:.72rem;color:#6B7280;margin-top:2px">${w.jobRole || 'Staff'}</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-size:.9rem;font-weight:900;color:#1F2937">${salary ? '฿' + salary.toLocaleString() : '—'}</div>
+          <div style="font-size:.66rem;color:#43A047;margin-top:2px">✓ Active</div>
+        </div>
+      </div>`;
+    });
+    document.getElementById('payroll-total').textContent = '฿' + total.toLocaleString();
+  } catch(e) {}
 }
 
 function shareInvite(method) {
