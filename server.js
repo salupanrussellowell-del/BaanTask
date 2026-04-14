@@ -370,6 +370,97 @@ app.get('/api/chats/:propertyId/:userId', async (req, res) => {
   } catch (e) { res.json({ ok: true, chats: [] }); }
 });
 
+// Get messages for a chat with auto-translation
+app.get('/api/messages/:chatId', async (req, res) => {
+  const lang = req.query.lang || 'English';
+  try {
+    const msgs = await Message.find({ chatId: req.params.chatId }).sort({ createdAt: 1 }).lean();
+
+    // Translate messages that need it
+    for (const m of msgs) {
+      if (m.senderLang === lang) continue;
+      const t = m.translations instanceof Map ? Object.fromEntries(m.translations) : (m.translations || {});
+      if (t[lang]) continue;
+
+      const translated = await translateOne(m.text, m.senderLang, lang);
+      if (translated) {
+        await Message.updateOne({ _id: m._id }, { $set: { [`translations.${lang}`]: translated } });
+        if (m.translations instanceof Map) m.translations.set(lang, translated);
+        else { m.translations = m.translations || {}; m.translations[lang] = translated; }
+      }
+    }
+
+    const result = msgs.map(m => {
+      const t = m.translations instanceof Map ? Object.fromEntries(m.translations) : (m.translations || {});
+      const r = m.reactions instanceof Map ? Object.fromEntries(m.reactions) : (m.reactions || {});
+      return {
+        id: m._id.toString(),
+        senderId: m.senderId.toString(),
+        senderLang: m.senderLang,
+        text: m.text,
+        translation: m.senderLang === lang ? null : (t[lang] || null),
+        reactions: r,
+        replyTo: m.replyTo ? m.replyTo.toString() : null,
+        pinned: m.pinned,
+        time: m.createdAt
+      };
+    });
+    res.json({ ok: true, messages: result });
+  } catch (e) {
+    console.error('[MESSAGES ERROR]', e.message);
+    res.json({ ok: true, messages: [] });
+  }
+});
+
+// Send a message to a chat
+app.post('/api/messages/send', async (req, res) => {
+  const { chatId, senderId, senderLang, text, replyTo } = req.body;
+  if (!chatId || !senderId || !text) return res.status(400).json({ ok: false, error: 'Missing fields' });
+
+  try {
+    const msg = await Message.create({
+      chatId, senderId, senderLang: senderLang || 'English',
+      text, replyTo: replyTo || null
+    });
+    // Update chat's lastMessage
+    await Chat.findByIdAndUpdate(chatId, { lastMessage: text, lastMessageAt: new Date() });
+    console.log(`[MSG] ${senderId} in ${chatId}: "${text.substring(0, 40)}"`);
+    res.json({ ok: true, id: msg._id.toString() });
+  } catch (e) {
+    console.error('[MSG SEND ERROR]', e.message);
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// React to a message
+app.post('/api/messages/react', async (req, res) => {
+  const { messageId, emoji, userId } = req.body;
+  if (!messageId || !emoji || !userId) return res.status(400).json({ ok: false, error: 'Missing fields' });
+  try {
+    const msg = await Message.findById(messageId);
+    if (!msg) return res.status(404).json({ ok: false, error: 'Not found' });
+    const users = msg.reactions.get(emoji) || [];
+    const idx = users.indexOf(userId);
+    if (idx >= 0) { users.splice(idx, 1); if (!users.length) msg.reactions.delete(emoji); else msg.reactions.set(emoji, users); }
+    else { users.push(userId); msg.reactions.set(emoji, users); }
+    await msg.save();
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+// Delete a message (sender only)
+app.post('/api/messages/delete', async (req, res) => {
+  const { messageId, userId } = req.body;
+  if (!messageId || !userId) return res.status(400).json({ ok: false, error: 'Missing fields' });
+  try {
+    const msg = await Message.findById(messageId);
+    if (!msg) return res.status(404).json({ ok: false, error: 'Not found' });
+    if (msg.senderId.toString() !== userId) return res.status(403).json({ ok: false, error: 'Not your message' });
+    await Message.deleteOne({ _id: messageId });
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
 // ══════════════════════════════════════
 //  HEALTH / ADMIN
 // ══════════════════════════════════════

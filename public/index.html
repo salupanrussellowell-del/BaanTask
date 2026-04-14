@@ -936,23 +936,32 @@ const splashInterval = setInterval(() => {
 // ══════════════════════════════════════
 (function buildLangGrid() {
   const grid = document.getElementById('lang-grid');
+  const buttons = [];
   LANG_DATA.forEach((l, i) => {
-    const div = document.createElement('div');
+    const btn = document.createElement('div');
+    btn.dataset.langCode = l.code;
+    btn.dataset.langIdx = i;
     const isDefault = i === 0;
-    div.style.cssText = `background:${isDefault ? '#00897B' : '#F9FAFB'};color:${isDefault ? '#fff' : '#6B7280'};padding:11px 10px;border-radius:13px;text-align:center;cursor:pointer;border:2.5px solid ${isDefault ? '#00897B' : '#E5E7EB'}`;
-    div.innerHTML = `<div style="font-size:1.4rem">${l.flag}</div><div style="font-size:.82rem;font-weight:${isDefault?900:800};margin-top:5px">${l.name}${isDefault?' ✓':''}</div>`;
-    div.onclick = () => {
-      grid.querySelectorAll('div').forEach(d => { d.style.background='#F9FAFB'; d.style.color='#6B7280'; d.style.borderColor='#E5E7EB'; d.querySelector('div:last-child').textContent = d.querySelector('div:last-child').textContent.replace(' ✓',''); });
-      div.style.background='#00897B'; div.style.color='#fff'; div.style.borderColor='#00897B';
-      div.querySelector('div:last-child').textContent = l.name + ' ✓';
+    btn.style.cssText = `background:${isDefault ? '#00897B' : '#F9FAFB'};color:${isDefault ? '#fff' : '#6B7280'};padding:11px 10px;border-radius:13px;text-align:center;cursor:pointer;border:2.5px solid ${isDefault ? '#00897B' : '#E5E7EB'};-webkit-tap-highlight-color:transparent`;
+    btn.innerHTML = `<div style="font-size:1.4rem;pointer-events:none">${l.flag}</div><div class="lang-label" style="font-size:.82rem;font-weight:${isDefault?900:800};margin-top:5px;pointer-events:none">${l.name}${isDefault?' ✓':''}</div>`;
+    btn.onclick = () => {
+      // Deselect all
+      buttons.forEach(b => {
+        b.style.background = '#F9FAFB'; b.style.color = '#6B7280'; b.style.borderColor = '#E5E7EB';
+        const label = b.querySelector('.lang-label');
+        if (label) label.textContent = LANG_DATA[b.dataset.langIdx].name;
+      });
+      // Select this one
+      btn.style.background = '#00897B'; btn.style.color = '#fff'; btn.style.borderColor = '#00897B';
+      btn.querySelector('.lang-label').textContent = l.name + ' ✓';
       selectedLang = l.code;
       document.getElementById('lang-sub').textContent = l.sub;
       document.getElementById('lang-continue-btn').textContent = l.cont;
       document.getElementById('lang-continue-btn').disabled = false;
     };
-    grid.appendChild(div);
+    buttons.push(btn);
+    grid.appendChild(btn);
   });
-  // Default English selected
   selectedLang = 'English';
   document.getElementById('lang-continue-btn').disabled = false;
 })();
