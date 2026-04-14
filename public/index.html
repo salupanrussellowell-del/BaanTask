@@ -465,6 +465,7 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
         <div>
           <p class="b-greeting" id="dh-greeting">Good morning 👋</p>
           <h2 class="b-name" id="dh-name">—</h2>
+          <div id="dh-invite-code" style="display:none;margin-top:4px;font-size:.64rem;font-weight:700;opacity:.7;cursor:pointer" onclick="goScreen('s-add-worker')">Invite code: <span id="dh-code" style="letter-spacing:2px;background:rgba(255,255,255,.15);padding:2px 8px;border-radius:6px"></span></div>
         </div>
         <span class="b-bell" onclick="goScreen('s-notif')">🔔<span class="nbadge" id="notif-count" style="display:none">0</span></span>
       </div>
@@ -645,7 +646,11 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
 <!-- ═══ WORKERS (full list) ═══ -->
 <div id="s-workers" class="screen">
   <div class="sb" style="background:#00695C">9:41<span>📶 🔋</span></div>
-  <div class="tn owner-tn"><span class="bk" onclick="goBack()" style="color:#1F2937">‹</span><h2>My Workers</h2></div>
+  <div class="tn owner-tn">
+    <span class="bk" onclick="goBack()" style="color:#1F2937">‹</span>
+    <h2>My Workers</h2>
+    <div onclick="goScreen('s-add-worker')" style="background:#FF7043;color:#fff;font-size:.78rem;font-weight:900;padding:7px 16px;border-radius:20px;cursor:pointer;flex-shrink:0;box-shadow:0 2px 8px rgba(255,112,67,.4);display:flex;align-items:center;gap:4px"><span style="font-size:1rem;line-height:1">＋</span> Add</div>
+  </div>
   <div class="sc" id="workers-full-list"><div style="height:8px"></div></div>
   <div class="bn">
     <div class="ni" onclick="goScreen('s-owner-home')"><span class="ic">🏠</span>Home</div>
@@ -748,6 +753,83 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
   </div>
 </div>
 
+<!-- ═══ ADD WORKER ═══ -->
+<div id="s-add-worker" class="screen">
+  <div class="sb" style="background:#00695C">9:41<span>📶 🔋</span></div>
+  <div class="tn owner-tn"><span class="bk" onclick="goBack()" style="color:#1F2937">‹</span><h2>Add Worker</h2></div>
+  <div class="sc" style="background:#F9FAFB">
+    <div style="padding:20px 16px;display:flex;flex-direction:column;gap:12px">
+
+      <!-- Invite code display -->
+      <div style="text-align:center;background:#E0F2F1;border:2.5px dashed #00897B;border-radius:16px;padding:20px;margin-bottom:4px">
+        <div style="font-size:.72rem;color:#6B7280;font-weight:700;margin-bottom:6px">Your property invite code</div>
+        <div id="aw-code" style="font-size:2.2rem;font-weight:900;letter-spacing:8px;color:#00695C;font-family:'DM Sans',monospace">——</div>
+        <div style="font-size:.68rem;color:#9CA3AF;font-weight:600;margin-top:8px">Workers enter this code to join your household</div>
+      </div>
+
+      <!-- QR Code -->
+      <div onclick="showQRCode()" style="background:#fff;border:2px solid #E5E7EB;border-radius:16px;padding:16px;display:flex;align-items:center;gap:14px;cursor:pointer;-webkit-tap-highlight-color:transparent">
+        <div style="width:48px;height:48px;background:#E0F2F1;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.6rem;flex-shrink:0">📱</div>
+        <div style="flex:1">
+          <div style="font-size:.92rem;font-weight:800;color:#1F2937">Show QR Code</div>
+          <div style="font-size:.72rem;color:#9CA3AF;font-weight:600;margin-top:2px">Worker scans this with their phone camera</div>
+        </div>
+        <span style="font-size:1.1rem;color:#9CA3AF">›</span>
+      </div>
+
+      <!-- Share Link -->
+      <div style="background:#fff;border:2px solid #E5E7EB;border-radius:16px;padding:16px;cursor:pointer;-webkit-tap-highlight-color:transparent">
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:12px">
+          <div style="width:48px;height:48px;background:#E3F2FD;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.6rem;flex-shrink:0">🔗</div>
+          <div style="flex:1">
+            <div style="font-size:.92rem;font-weight:800;color:#1F2937">Send Invite Link</div>
+            <div style="font-size:.72rem;color:#9CA3AF;font-weight:600;margin-top:2px">Share via WhatsApp, LINE, or copy link</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <div onclick="shareInvite('whatsapp')" style="flex:1;background:#25D366;color:#fff;font-size:.76rem;font-weight:800;padding:10px;border-radius:12px;text-align:center;cursor:pointer">💬 WhatsApp</div>
+          <div onclick="shareInvite('line')" style="flex:1;background:#06C755;color:#fff;font-size:.76rem;font-weight:800;padding:10px;border-radius:12px;text-align:center;cursor:pointer">💚 LINE</div>
+          <div onclick="shareInvite('copy')" id="aw-copy-btn" style="flex:1;background:#F3F4F6;color:#1F2937;font-size:.76rem;font-weight:800;padding:10px;border-radius:12px;text-align:center;cursor:pointer">📋 Copy</div>
+        </div>
+      </div>
+
+      <!-- Manual entry hint -->
+      <div style="background:#fff;border:2px solid #E5E7EB;border-radius:16px;padding:16px;display:flex;align-items:center;gap:14px">
+        <div style="width:48px;height:48px;background:#FBE9E7;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.6rem;flex-shrink:0">⌨️</div>
+        <div style="flex:1">
+          <div style="font-size:.92rem;font-weight:800;color:#1F2937">Manual Entry</div>
+          <div style="font-size:.72rem;color:#9CA3AF;font-weight:600;margin-top:2px">Tell your worker to enter code <span style="font-weight:900;color:#00695C" id="aw-code-inline">——</span> when signing up</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ QR CODE DISPLAY ═══ -->
+<div id="s-qr-display" class="screen">
+  <div class="sb" style="background:#00695C">9:41<span>📶 🔋</span></div>
+  <div class="tn owner-tn"><span class="bk" onclick="goBack()" style="color:#1F2937">‹</span><h2>QR Code</h2></div>
+  <div class="sc" style="background:#fff">
+    <div style="padding:32px 16px;display:flex;flex-direction:column;align-items:center;text-align:center">
+      <div style="font-size:1.6rem;margin-bottom:12px">📱</div>
+      <h3 style="font-size:1.1rem;font-weight:900;color:#1F2937;margin-bottom:4px">Scan to Join</h3>
+      <p style="font-size:.78rem;color:#9CA3AF;font-weight:600;margin-bottom:20px">Worker scans this QR with their phone camera</p>
+      <!-- QR code rendered as styled box with code -->
+      <div style="width:200px;height:200px;background:#fff;border:3px solid #00897B;border-radius:20px;display:flex;align-items:center;justify-content:center;margin-bottom:16px;box-shadow:0 4px 20px rgba(0,0,0,.1)">
+        <div style="text-align:center">
+          <div style="font-size:3rem;margin-bottom:8px">🏠</div>
+          <div id="qr-code-text" style="font-size:1.8rem;font-weight:900;letter-spacing:6px;color:#00695C;font-family:'DM Sans',monospace">——</div>
+          <div style="font-size:.68rem;color:#9CA3AF;font-weight:700;margin-top:6px">baantask.onrender.com</div>
+        </div>
+      </div>
+      <p style="font-size:.72rem;color:#6B7280;font-weight:600;margin-bottom:16px">Or tell them to visit the link and enter this code</p>
+      <div style="background:#E0F2F1;border-radius:12px;padding:10px 20px">
+        <span id="qr-invite-link" style="font-size:.78rem;font-weight:800;color:#00695C;word-break:break-all"></span>
+      </div>
+    </div>
+  </div>
+</div>
+
 </div><!-- end #app -->
 <script>
 // ══════════════════════════════════════
@@ -785,6 +867,7 @@ function goScreen(id, skipHistory) {
   if (id === 's-create-task') loadCreateTask();
   if (id === 's-workers') loadWorkersFullList();
   if (id === 's-me') loadMeScreen();
+  if (id === 's-add-worker') loadAddWorker();
   if (id === 's-otp') { document.getElementById('otp-input').value = ''; document.getElementById('otp-btn').disabled = true; showError('otp-error',''); }
 }
 function goBack() { const prev = screenHistory.pop(); if (prev) goScreen(prev, true); }
@@ -1049,6 +1132,10 @@ async function loadOwnerDashboard() {
   document.getElementById('dh-name').textContent = (me.name || '—') + (propName ? ' · ' + propName : '');
   document.getElementById('stat-receipt-count').textContent = '0';
   document.getElementById('stat-expenses').textContent = '฿0';
+  if (myProperty && myProperty.inviteCode) {
+    document.getElementById('dh-code').textContent = myProperty.inviteCode;
+    document.getElementById('dh-invite-code').style.display = 'block';
+  }
   if (myProperty) document.getElementById('invite-code').textContent = myProperty.inviteCode;
   if (me.propertyId) {
     try {
@@ -1260,6 +1347,49 @@ function doLogout() {
   if (!confirm('Log out of BaanTask?')) return;
   localStorage.clear();
   location.reload();
+}
+
+// ══════════════════════════════════════
+//  ADD WORKER / INVITE
+// ══════════════════════════════════════
+function loadAddWorker() {
+  const code = myProperty ? myProperty.inviteCode : '——';
+  document.getElementById('aw-code').textContent = code;
+  document.getElementById('aw-code-inline').textContent = code;
+}
+
+function getInviteLink() {
+  const code = myProperty ? myProperty.inviteCode : '';
+  return `https://baantask.onrender.com?invite=${code}`;
+}
+
+function showQRCode() {
+  const code = myProperty ? myProperty.inviteCode : '——';
+  document.getElementById('qr-code-text').textContent = code;
+  document.getElementById('qr-invite-link').textContent = getInviteLink();
+  goScreen('s-qr-display');
+}
+
+function shareInvite(method) {
+  const code = myProperty ? myProperty.inviteCode : '';
+  const link = getInviteLink();
+  const text = `Join my household on BaanTask! Enter code ${code} or tap this link: ${link}`;
+
+  if (method === 'whatsapp') {
+    window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
+  } else if (method === 'line') {
+    window.open('https://line.me/R/share?text=' + encodeURIComponent(text), '_blank');
+  } else if (method === 'copy') {
+    navigator.clipboard.writeText(link).then(() => {
+      const btn = document.getElementById('aw-copy-btn');
+      btn.textContent = '✓ Copied!';
+      btn.style.background = '#E0F2F1';
+      btn.style.color = '#00695C';
+      setTimeout(() => { btn.textContent = '📋 Copy'; btn.style.background = '#F3F4F6'; btn.style.color = '#1F2937'; }, 2000);
+    }).catch(() => {
+      prompt('Copy this invite link:', link);
+    });
+  }
 }
 </script>
 </body>
