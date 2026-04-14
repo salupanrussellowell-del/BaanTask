@@ -189,7 +189,7 @@ app.post('/api/send-otp', async (req, res) => {
   if (resend) {
     try {
       const { error } = await resend.emails.send({
-        from: 'BaanTask <onboarding@resend.dev>', to: [nc],
+        from: 'BaanTask <noreply@baantask.app>', to: [nc],
         subject: 'Your BaanTask verification code',
         html: `<div style="font-family:sans-serif;max-width:400px;margin:0 auto;padding:24px;"><h2 style="color:#075e54;">BaanTask</h2><p>Hi ${name || 'there'},</p><p>Your code:</p><div style="background:#f0f4f0;border-radius:12px;padding:24px;text-align:center;margin:16px 0;"><span style="font-size:36px;font-weight:800;letter-spacing:8px;color:#075e54;">${code}</span></div><p style="color:#999;font-size:13px;">Expires in 10 minutes.</p></div>`
       });
