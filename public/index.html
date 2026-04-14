@@ -459,7 +459,7 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
 <div id="s-owner-home" class="screen">
   <div class="sb" style="background:#00695C">9:41<span>📶 🔋</span></div>
   <div class="sc">
-    <!-- Banner -->
+    <!-- Banner with greeting, name, bell, stats -->
     <div class="banner owner">
       <div class="b-row">
         <div>
@@ -474,28 +474,20 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
       </div>
     </div>
 
-    <!-- Today's Workers -->
-    <div class="sh">Today's Workers <span class="sa" onclick="goScreen('s-workers-list')">See all →</span></div>
+    <!-- Today's Workers — horizontal scroll -->
+    <div class="sh">Today's Workers <span class="sa" onclick="goScreen('s-workers')">See all →</span></div>
     <div class="worker-scroll" id="dash-workers-scroll"></div>
 
-    <!-- Expense card -->
-    <div class="expense-card" id="dash-expense-card">
+    <!-- Expenses summary card -->
+    <div class="expense-card">
       <div>
-        <div style="font-size:.7rem;color:rgba(255,255,255,.7);font-weight:700;margin-bottom:4px">💰 Expenses this month</div>
+        <div style="font-size:.7rem;color:rgba(255,255,255,.7);font-weight:700;margin-bottom:4px">💰 Expenses this month · <span id="stat-receipt-count">0</span> receipts</div>
         <div style="font-size:1.4rem;font-weight:900;color:#fff" id="stat-expenses">฿0</div>
       </div>
       <div style="text-align:right">
+        <div style="font-size:.66rem;font-weight:800;color:#6EE7B7;margin-bottom:4px" id="stat-expense-note">All AI-logged ✓</div>
         <div style="font-size:.74rem;color:rgba(255,255,255,.7);font-weight:700">See all →</div>
       </div>
-    </div>
-
-    <!-- Quick Actions -->
-    <div class="sh">Quick Actions</div>
-    <div style="padding:0 12px 16px;display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
-      <div style="background:#fff;border:2px solid #E5E7EB;border-radius:14px;padding:12px 4px;text-align:center;cursor:pointer;-webkit-tap-highlight-color:transparent" onclick=""><span style="font-size:1.5rem;display:block">📝</span><span style="font-size:.65rem;font-weight:800;color:#6B7280">New Task</span></div>
-      <div style="background:#fff;border:2px solid #E5E7EB;border-radius:14px;padding:12px 4px;text-align:center;cursor:pointer;-webkit-tap-highlight-color:transparent" onclick="goScreen('s-workers-list')"><span style="font-size:1.5rem;display:block">👥</span><span style="font-size:.65rem;font-weight:800;color:#6B7280">Workers</span></div>
-      <div style="background:#fff;border:2px solid #E5E7EB;border-radius:14px;padding:12px 4px;text-align:center;cursor:pointer;-webkit-tap-highlight-color:transparent" onclick="goScreen('s-invite')"><span style="font-size:1.5rem;display:block">🔗</span><span style="font-size:.65rem;font-weight:800;color:#6B7280">Invite</span></div>
-      <div style="background:#fff;border:2px solid #E5E7EB;border-radius:14px;padding:12px 4px;text-align:center;cursor:pointer;-webkit-tap-highlight-color:transparent"><span style="font-size:1.5rem;display:block">💬</span><span style="font-size:.65rem;font-weight:800;color:#6B7280">Chat</span></div>
     </div>
 
     <div style="height:70px"></div>
@@ -1054,7 +1046,9 @@ async function loadOwnerDashboard() {
   if (!me) return;
   document.getElementById('dh-greeting').textContent = getGreeting() + ' 👋';
   const propName = myProperty ? myProperty.name : '';
-  document.getElementById('dh-name').textContent = me.name + (propName ? ' · ' + propName : '');
+  document.getElementById('dh-name').textContent = (me.name || '—') + (propName ? ' · ' + propName : '');
+  document.getElementById('stat-receipt-count').textContent = '0';
+  document.getElementById('stat-expenses').textContent = '฿0';
   if (myProperty) document.getElementById('invite-code').textContent = myProperty.inviteCode;
   if (me.propertyId) {
     try {
