@@ -271,16 +271,16 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
   <div class="sb">9:41<span>📶 🔋</span></div>
   <div style="background:linear-gradient(160deg,#00897B,#00695C);padding:22px 22px 18px;text-align:center;color:#fff;flex-shrink:0">
     <div style="display:flex;align-items:center;padding-bottom:8px"><span class="bk" onclick="goBack()" style="color:#fff">‹</span></div>
-    <h2 style="font-size:1.2rem;font-weight:900;margin-bottom:3px;color:#fff">Who are you?</h2>
-    <p style="font-size:.78rem;opacity:.85">Choose so we can set up the right app for you</p>
+    <h2 style="font-size:1.2rem;font-weight:900;margin-bottom:3px;color:#fff" data-i18n="who_are_you">Who are you?</h2>
+    <p style="font-size:.78rem;opacity:.85" data-i18n="role_choose">Choose so we can set up the right app for you</p>
   </div>
   <div class="sc" style="background:#fff">
     <div style="padding:20px 16px;display:flex;flex-direction:column;gap:14px">
       <div onclick="selectedRole='owner';goScreen('s-owner-reg')" style="background:#E0F2F1;border:2.5px solid #00897B;border-radius:18px;padding:18px;cursor:pointer;display:flex;align-items:center;gap:14px">
         <span style="font-size:2.2rem">🏠</span>
         <div style="flex:1">
-          <div style="font-size:.98rem;font-weight:900;color:#00695C">I'm an Owner</div>
-          <div style="font-size:.74rem;color:#00897B;margin-top:3px;line-height:1.5">I hire and manage household staff</div>
+          <div style="font-size:.98rem;font-weight:900;color:#00695C" data-i18n="im_owner">I'm an Owner</div>
+          <div style="font-size:.74rem;color:#00897B;margin-top:3px;line-height:1.5" data-i18n="owner_desc">I hire and manage household staff</div>
           <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
             <span style="background:#fff;border:1.5px solid #00897B;color:#00695C;font-size:.62rem;font-weight:800;padding:2px 8px;border-radius:10px">📅 Scheduling</span>
             <span style="background:#fff;border:1.5px solid #00897B;color:#00695C;font-size:.62rem;font-weight:800;padding:2px 8px;border-radius:10px">✅ Tasks</span>
@@ -293,8 +293,8 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
       <div onclick="selectedRole='worker';goScreen('s-worker-reg')" style="background:#F9FAFB;border:2.5px solid #E5E7EB;border-radius:18px;padding:18px;cursor:pointer;display:flex;align-items:center;gap:14px">
         <span style="font-size:2.2rem">🧹</span>
         <div style="flex:1">
-          <div style="font-size:.98rem;font-weight:900;color:#1F2937">I'm a Worker</div>
-          <div style="font-size:.74rem;color:#6B7280;margin-top:3px;line-height:1.5">I work at someone's home</div>
+          <div style="font-size:.98rem;font-weight:900;color:#1F2937" data-i18n="im_worker">I'm a Worker</div>
+          <div style="font-size:.74rem;color:#6B7280;margin-top:3px;line-height:1.5" data-i18n="worker_desc">I work at someone's home</div>
           <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
             <span style="background:#fff;border:1.5px solid #E5E7EB;color:#6B7280;font-size:.62rem;font-weight:800;padding:2px 8px;border-radius:10px">📋 See tasks</span>
             <span style="background:#fff;border:1.5px solid #E5E7EB;color:#6B7280;font-size:.62rem;font-weight:800;padding:2px 8px;border-radius:10px">💬 Chat</span>
@@ -303,7 +303,7 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
         </div>
         <span style="font-size:1.3rem;color:#9CA3AF">→</span>
       </div>
-      <p style="font-size:.72rem;color:#9CA3AF;text-align:center;font-weight:700">Not sure? Choose Owner — you can switch later in Settings</p>
+      <p style="font-size:.72rem;color:#9CA3AF;text-align:center;font-weight:700" data-i18n="role_hint">Not sure? Choose Owner — you can switch later in Settings</p>
     </div>
   </div>
 </div>
@@ -312,24 +312,24 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
 <div id="s-owner-reg" class="screen" style="background:#fff">
   <div class="sb">9:41<span>📶 🔋</span></div>
   <div style="background:linear-gradient(160deg,#00897B,#00695C);padding:16px 22px;color:#fff;flex-shrink:0">
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px"><span class="bk" onclick="goBack()" style="color:#fff">‹</span><span style="font-size:.9rem;font-weight:800">Create Account</span></div>
-    <p style="font-size:.76rem;opacity:.85">Owner registration</p>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px"><span class="bk" onclick="goBack()" style="color:#fff">‹</span><span style="font-size:.9rem;font-weight:800" data-i18n="create_account">Create Account</span></div>
+    <p style="font-size:.76rem;opacity:.85" data-i18n="owner_reg">Owner registration</p>
   </div>
   <div class="sc" style="background:#fff">
     <div style="padding:16px;display:flex;flex-direction:column;align-items:center">
-      <div class="form-group"><label>Full Name</label><input id="or-name" type="text" placeholder="Your full name" maxlength="40"></div>
-      <div class="form-group"><label>Email</label><input id="or-email" type="email" placeholder="your@email.com"></div>
-      <div class="form-group"><label>Phone (optional)</label><input id="or-phone" type="tel" placeholder="+66 81 234 5678"></div>
-      <label style="font-size:.78rem;color:#6B7280;margin-bottom:4px;width:100%;max-width:360px;font-weight:700">Gender</label>
+      <div class="form-group"><label data-i18n="full_name">Full Name</label><input id="or-name" type="text" placeholder="Your full name" maxlength="40"></div>
+      <div class="form-group"><label data-i18n="email">Email</label><input id="or-email" type="email" placeholder="your@email.com"></div>
+      <div class="form-group"><label data-i18n="phone_optional">Phone (optional)</label><input id="or-phone" type="tel" placeholder="+66 81 234 5678"></div>
+      <label style="font-size:.78rem;color:#6B7280;margin-bottom:4px;width:100%;max-width:360px;font-weight:700" data-i18n="gender">Gender</label>
       <div class="gender-row">
-        <div class="gender-btn" onclick="pickGender('male',this)">Male</div>
-        <div class="gender-btn" onclick="pickGender('female',this)">Female</div>
+        <div class="gender-btn" onclick="pickGender('male',this)" data-i18n="male">Male</div>
+        <div class="gender-btn" onclick="pickGender('female',this)" data-i18n="female">Female</div>
       </div>
-      <div class="form-group"><label>Date of Birth</label><input id="or-dob" type="date"></div>
-      <div class="form-group"><label>4-Digit PIN</label><input id="or-pin" type="password" inputmode="numeric" class="pin-input" placeholder="••••" maxlength="4"></div>
+      <div class="form-group"><label data-i18n="dob">Date of Birth</label><input id="or-dob" type="date"></div>
+      <div class="form-group"><label data-i18n="pin_label">4-Digit PIN</label><input id="or-pin" type="password" inputmode="numeric" class="pin-input" placeholder="••••" maxlength="4"></div>
       <div id="or-error" class="error-msg"></div>
-      <button class="btn btn-t" id="or-btn" disabled onclick="ownerRegister()" style="max-width:360px">Send Verification Code</button>
-      <button class="btn-link" onclick="goScreen('s-signin')">Already have an account? Sign in</button>
+      <button class="btn btn-t" id="or-btn" disabled onclick="ownerRegister()" style="max-width:360px" data-i18n="send_code">Send Verification Code</button>
+      <button class="btn-link" onclick="goScreen('s-signin')" data-i18n="have_account">Already have an account? Sign in</button>
     </div>
   </div>
 </div>
@@ -338,18 +338,18 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
 <div id="s-otp" class="screen" style="background:#fff">
   <div class="sb">9:41<span>📶 🔋</span></div>
   <div style="background:linear-gradient(160deg,#00897B,#00695C);padding:16px 22px;color:#fff;flex-shrink:0">
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px"><span class="bk" onclick="goBack()" style="color:#fff">‹</span><span style="font-size:.9rem;font-weight:800">Verify Email</span></div>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px"><span class="bk" onclick="goBack()" style="color:#fff">‹</span><span style="font-size:.9rem;font-weight:800" data-i18n="verify_email">Verify Email</span></div>
   </div>
   <div class="sc" style="background:#fff">
     <div style="padding:32px 16px;display:flex;flex-direction:column;align-items:center;text-align:center">
       <div style="font-size:2.5rem;margin-bottom:12px">📧</div>
-      <h2 style="font-size:1.2rem;font-weight:900;color:#1F2937;margin-bottom:4px">Check Your Email</h2>
+      <h2 style="font-size:1.2rem;font-weight:900;color:#1F2937;margin-bottom:4px" data-i18n="check_email">Check Your Email</h2>
       <p style="font-size:.82rem;color:#6B7280;margin-bottom:24px;font-weight:600" id="otp-subtitle">Enter the 6-digit code</p>
       <div class="form-group"><input id="otp-input" type="text" inputmode="numeric" class="otp-input" placeholder="000000" maxlength="6"></div>
       <div id="otp-error" class="error-msg"></div>
       <div id="otp-success" class="success-msg"></div>
-      <button class="btn btn-t" id="otp-btn" disabled onclick="verifyOTP()" style="max-width:360px">Verify & Continue</button>
-      <button class="btn-link" onclick="resendOTP()">Resend code</button>
+      <button class="btn btn-t" id="otp-btn" disabled onclick="verifyOTP()" style="max-width:360px" data-i18n="verify_continue">Verify & Continue</button>
+      <button class="btn-link" onclick="resendOTP()" data-i18n="resend_code">Resend code</button>
     </div>
   </div>
 </div>
@@ -358,16 +358,16 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
 <div id="s-signin" class="screen" style="background:#fff">
   <div class="sb">9:41<span>📶 🔋</span></div>
   <div style="background:linear-gradient(160deg,#00897B,#00695C);padding:16px 22px;color:#fff;flex-shrink:0">
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px"><span class="bk" onclick="goScreen('s-role')" style="color:#fff">‹</span><span style="font-size:.9rem;font-weight:800">Welcome Back</span></div>
-    <p style="font-size:.76rem;opacity:.85">Sign in with email &amp; PIN</p>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px"><span class="bk" onclick="goScreen('s-role')" style="color:#fff">‹</span><span style="font-size:.9rem;font-weight:800" data-i18n="welcome_back">Welcome Back</span></div>
+    <p style="font-size:.76rem;opacity:.85" data-i18n="sign_in_sub">Sign in with email &amp; PIN</p>
   </div>
   <div class="sc" style="background:#fff">
     <div style="padding:24px 16px;display:flex;flex-direction:column;align-items:center">
       <div class="form-group"><label>Email</label><input id="si-email" type="email" placeholder="your@email.com"></div>
       <div class="form-group"><label>4-Digit PIN</label><input id="si-pin" type="password" inputmode="numeric" class="pin-input" placeholder="••••" maxlength="4"></div>
       <div id="si-error" class="error-msg"></div>
-      <button class="btn btn-t" id="si-btn" disabled onclick="signIn()" style="max-width:360px">Sign In</button>
-      <button class="btn-link" onclick="goScreen('s-role')">Create new account</button>
+      <button class="btn btn-t" id="si-btn" disabled onclick="signIn()" style="max-width:360px" data-i18n="sign_in">Sign In</button>
+      <button class="btn-link" onclick="goScreen('s-role')" data-i18n="create_new">Create new account</button>
     </div>
   </div>
 </div>
@@ -376,21 +376,21 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
 <div id="s-property" class="screen" style="background:#fff">
   <div class="sb">9:41<span>📶 🔋</span></div>
   <div style="background:linear-gradient(160deg,#00897B,#00695C);padding:16px 22px;color:#fff;flex-shrink:0">
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px"><span class="bk" onclick="goBack()" style="color:#fff">‹</span><span style="font-size:.9rem;font-weight:800">Your Property</span></div>
-    <p style="font-size:.76rem;opacity:.85">Tell us about your home</p>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px"><span class="bk" onclick="goBack()" style="color:#fff">‹</span><span style="font-size:.9rem;font-weight:800" data-i18n="your_property">Your Property</span></div>
+    <p style="font-size:.76rem;opacity:.85" data-i18n="tell_home">Tell us about your home</p>
   </div>
   <div class="sc" style="background:#fff">
     <div style="padding:16px;display:flex;flex-direction:column;align-items:center">
       <div class="prop-grid">
-        <div class="prop-item" onclick="pickPropType('house',this)"><div class="pi-icon">🏠</div><div class="pi-name">House</div></div>
-        <div class="prop-item" onclick="pickPropType('condo',this)"><div class="pi-icon">🏢</div><div class="pi-name">Condo</div></div>
-        <div class="prop-item" onclick="pickPropType('villa',this)"><div class="pi-icon">🌴</div><div class="pi-name">Villa</div></div>
-        <div class="prop-item" onclick="pickPropType('other',this)"><div class="pi-icon">🏗️</div><div class="pi-name">Other</div></div>
+        <div class="prop-item" onclick="pickPropType('house',this)"><div class="pi-icon">🏠</div><div class="pi-name" data-i18n="house">House</div></div>
+        <div class="prop-item" onclick="pickPropType('condo',this)"><div class="pi-icon">🏢</div><div class="pi-name" data-i18n="condo">Condo</div></div>
+        <div class="prop-item" onclick="pickPropType('villa',this)"><div class="pi-icon">🌴</div><div class="pi-name" data-i18n="villa">Villa</div></div>
+        <div class="prop-item" onclick="pickPropType('other',this)"><div class="pi-icon">🏗️</div><div class="pi-name" data-i18n="other">Other</div></div>
       </div>
-      <div class="form-group"><label>Property Name</label><input id="prop-name" type="text" placeholder="e.g. Deva Moon Villa"></div>
-      <div class="form-group"><label>Location / City</label><input id="prop-location" type="text" placeholder="e.g. Phuket"></div>
+      <div class="form-group"><label data-i18n="prop_name">Property Name</label><input id="prop-name" type="text" placeholder="e.g. Deva Moon Villa"></div>
+      <div class="form-group"><label data-i18n="location">Location / City</label><input id="prop-location" type="text" placeholder="e.g. Phuket"></div>
       <div id="prop-error" class="error-msg"></div>
-      <button class="btn btn-t" id="prop-btn" disabled onclick="createProperty()" style="max-width:360px">Continue</button>
+      <button class="btn btn-t" id="prop-btn" disabled onclick="createProperty()" style="max-width:360px" data-i18n="continue_btn">Continue</button>
     </div>
   </div>
 </div>
@@ -399,20 +399,20 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
 <div id="s-invite" class="screen" style="background:#fff">
   <div class="sb">9:41<span>📶 🔋</span></div>
   <div style="background:linear-gradient(160deg,#00897B,#00695C);padding:16px 22px;color:#fff;flex-shrink:0">
-    <span style="font-size:.9rem;font-weight:800">Invite Your Staff</span>
+    <span style="font-size:.9rem;font-weight:800" data-i18n="invite_staff">Invite Your Staff</span>
   </div>
   <div class="sc" style="background:#fff">
     <div style="padding:32px 16px;display:flex;flex-direction:column;align-items:center;text-align:center">
       <div style="font-size:2.5rem;margin-bottom:12px">🔗</div>
-      <h2 style="font-size:1.2rem;font-weight:900;color:#1F2937;margin-bottom:4px">Share This Code</h2>
+      <h2 style="font-size:1.2rem;font-weight:900;color:#1F2937;margin-bottom:4px" data-i18n="share_code">Share This Code</h2>
       <p style="font-size:.82rem;color:#6B7280;margin-bottom:24px;font-weight:600">Your workers enter this to join your household</p>
       <div class="invite-box">
-        <div class="ib-label">Invite Code</div>
+        <div class="ib-label" data-i18n="invite_code">Invite Code</div>
         <div class="ib-code" id="invite-code"></div>
-        <div class="ib-hint">Workers enter this code when they sign up</div>
+        <div class="ib-hint" data-i18n="workers_enter_code">Workers enter this code when they sign up</div>
       </div>
-      <button class="btn btn-t" onclick="goScreen('s-owner-home')" style="max-width:360px">Go to Dashboard</button>
-      <button class="btn-link" onclick="goScreen('s-owner-home')">Skip for now</button>
+      <button class="btn btn-t" onclick="goScreen('s-owner-home')" style="max-width:360px" data-i18n="go_dashboard">Go to Dashboard</button>
+      <button class="btn-link" onclick="goScreen('s-owner-home')" data-i18n="skip">Skip for now</button>
     </div>
   </div>
 </div>
@@ -421,8 +421,8 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
 <div id="s-worker-reg" class="screen" style="background:#fff">
   <div class="sb">9:41<span>📶 🔋</span></div>
   <div style="background:linear-gradient(160deg,#00897B,#00695C);padding:16px 22px;color:#fff;flex-shrink:0">
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px"><span class="bk" onclick="goBack()" style="color:#fff">‹</span><span style="font-size:.9rem;font-weight:800">Join a Household</span></div>
-    <p style="font-size:.76rem;opacity:.85">Create your worker account</p>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px"><span class="bk" onclick="goBack()" style="color:#fff">‹</span><span style="font-size:.9rem;font-weight:800" data-i18n="join_household">Join a Household</span></div>
+    <p style="font-size:.76rem;opacity:.85" data-i18n="worker_reg">Create your worker account</p>
   </div>
   <div class="sc" style="background:#fff">
     <div style="padding:16px;display:flex;flex-direction:column;align-items:center">
@@ -440,17 +440,17 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
 <div id="s-worker-join" class="screen" style="background:#fff">
   <div class="sb">9:41<span>📶 🔋</span></div>
   <div style="background:linear-gradient(160deg,#00897B,#00695C);padding:16px 22px;color:#fff;flex-shrink:0">
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px"><span class="bk" onclick="goBack()" style="color:#fff">‹</span><span style="font-size:.9rem;font-weight:800">Enter Invite Code</span></div>
-    <p style="font-size:.76rem;opacity:.85">Ask your employer for the code</p>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px"><span class="bk" onclick="goBack()" style="color:#fff">‹</span><span style="font-size:.9rem;font-weight:800" data-i18n="enter_invite">Enter Invite Code</span></div>
+    <p style="font-size:.76rem;opacity:.85" data-i18n="ask_employer">Ask your employer for the code</p>
   </div>
   <div class="sc" style="background:#fff">
     <div style="padding:24px 16px;display:flex;flex-direction:column;align-items:center">
       <div class="form-group"><input id="wj-code" type="text" style="text-align:center;font-size:1.5rem;letter-spacing:6px;font-weight:900;text-transform:uppercase" placeholder="ABC123" maxlength="6"></div>
-      <div class="form-group"><label>Your Role</label>
+      <div class="form-group"><label data-i18n="your_role">Your Role</label>
         <select id="wj-role"><option value="">Select role...</option><option>Cleaner</option><option>Cook</option><option>Driver</option><option>Nanny</option><option>Gardener</option><option>Other</option></select>
       </div>
       <div id="wj-error" class="error-msg"></div>
-      <button class="btn btn-t" id="wj-btn" disabled onclick="workerJoin()" style="max-width:360px">Join Household</button>
+      <button class="btn btn-t" id="wj-btn" disabled onclick="workerJoin()" style="max-width:360px" data-i18n="join_household">Join Household</button>
     </div>
   </div>
 </div>
@@ -470,8 +470,8 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
         <span class="b-bell" onclick="goScreen('s-notif')">🔔<span class="nbadge" id="notif-count" style="display:none">0</span></span>
       </div>
       <div class="stats">
-        <div class="stat"><span class="num" id="stat-workers">0</span><span class="lbl">Workers</span></div>
-        <div class="stat"><span class="num" id="stat-tasks">0</span><span class="lbl">Tasks today</span></div>
+        <div class="stat"><span class="num" id="stat-workers">0</span><span class="lbl" data-i18n="workers_label">Workers</span></div>
+        <div class="stat"><span class="num" id="stat-tasks">0</span><span class="lbl" data-i18n="tasks_today">Tasks today</span></div>
       </div>
     </div>
 
@@ -494,11 +494,11 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
     <div style="height:70px"></div>
   </div>
   <div class="bn">
-    <div class="ni active-o" onclick="goScreen('s-owner-home')"><span class="ic">🏠</span>Home</div>
-    <div class="ni" onclick="goScreen('s-payroll')"><span class="ic">💼</span>Payroll</div>
-    <div class="ni" onclick="goScreen('s-tasks')"><span class="ic">✅</span>Tasks</div>
-    <div class="ni" onclick="goScreen('s-chat-list')"><span class="ic">💬</span>Chat</div>
-    <div class="ni" onclick="goScreen('s-me')"><span class="ic">👤</span>Me</div>
+    <div class="ni active-o" onclick="goScreen('s-owner-home')"><span class="ic">🏠</span data-i18n="nav_home">Home</div>
+    <div class="ni" onclick="goScreen('s-payroll')"><span class="ic">💼</span data-i18n="nav_payroll">Payroll</div>
+    <div class="ni" onclick="goScreen('s-tasks')"><span class="ic">✅</span data-i18n="nav_tasks">Tasks</div>
+    <div class="ni" onclick="goScreen('s-chat-list')"><span class="ic">💬</span data-i18n="nav_chat">Chat</div>
+    <div class="ni" onclick="goScreen('s-me')"><span class="ic">👤</span data-i18n="nav_me">Me</div>
   </div>
 </div>
 
@@ -550,7 +550,7 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
   <div class="bn">
     <div class="ni active-w"><span class="ic">🏠</span>Home</div>
     <div class="ni"><span class="ic">📋</span>Tasks</div>
-    <div class="ni"><span class="ic">📅</span>Schedule</div>
+    <div class="ni"><span class="ic">📅</span data-i18n="nav_schedule">Schedule</div>
     <div class="ni"><span class="ic">💬</span>Chat</div>
     <div class="ni"><span class="ic">👤</span>Me</div>
   </div>
@@ -564,10 +564,10 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
     <div onclick="goScreen('s-create-task')" style="background:#FF7043;color:#fff;font-size:.78rem;font-weight:900;padding:7px 16px;border-radius:20px;cursor:pointer;flex-shrink:0;box-shadow:0 2px 8px rgba(255,112,67,.4);display:flex;align-items:center;gap:4px"><span style="font-size:1rem;line-height:1">＋</span> New Task</div>
   </div>
   <div style="padding:8px 12px 6px;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;flex-shrink:0;background:#fff">
-    <span class="task-filter active" data-filter="all" onclick="filterTasks(this)">All</span>
-    <span class="task-filter" data-filter="not-started" onclick="filterTasks(this)">Pending</span>
-    <span class="task-filter" data-filter="in-progress" onclick="filterTasks(this)">In Progress</span>
-    <span class="task-filter" data-filter="done" onclick="filterTasks(this)">Done</span>
+    <span class="task-filter active" data-filter="all" onclick="filterTasks(this)" data-i18n="all">All</span>
+    <span class="task-filter" data-filter="not-started" onclick="filterTasks(this)" data-i18n="pending">Pending</span>
+    <span class="task-filter" data-filter="in-progress" onclick="filterTasks(this)" data-i18n="in_progress">In Progress</span>
+    <span class="task-filter" data-filter="done" onclick="filterTasks(this)" data-i18n="done">Done</span>
   </div>
   <div class="sc" style="background:#F9FAFB;padding-top:8px" id="tasks-list"></div>
   <div class="bn">
@@ -582,7 +582,7 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
 <!-- ═══ CREATE TASK ═══ -->
 <div id="s-create-task" class="screen">
   <div class="sb" style="background:#00695C">9:41<span>📶 🔋</span></div>
-  <div class="tn owner-tn"><span class="bk" onclick="goBack()" style="color:#1F2937">‹</span><h2>New Task</h2></div>
+  <div class="tn owner-tn"><span class="bk" onclick="goBack()" style="color:#1F2937">‹</span><h2 data-i18n="new_task">New Task</h2></div>
   <div class="sc" style="background:#F9FAFB">
     <div style="padding:16px;display:flex;flex-direction:column;gap:14px">
       <div><label class="flabel">What needs to be done?</label><input id="ct-title" class="finput" type="text" placeholder="e.g. Clean the pool"></div>
@@ -612,7 +612,7 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
         </div>
       </div>
       <div id="ct-summary" style="background:#E0F2F1;border-radius:12px;padding:12px 14px;display:flex;gap:10px;align-items:flex-start"><span style="font-size:1rem;flex-shrink:0">✅</span><div id="ct-summary-text" style="font-size:.78rem;font-weight:800;color:#00695C;line-height:1.6">Fill in the details above</div></div>
-      <button class="btn btn-t" onclick="createTask()">Send Task →</button>
+      <button class="btn btn-t" onclick="createTask()" data-i18n="send_task">Send Task →</button>
     </div>
   </div>
 </div>
@@ -648,7 +648,7 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
   <div class="sb" style="background:#00695C">9:41<span>📶 🔋</span></div>
   <div class="tn owner-tn">
     <span class="bk" onclick="goBack()" style="color:#1F2937">‹</span>
-    <h2>My Workers</h2>
+    <h2 data-i18n="my_workers">My Workers</h2>
     <div onclick="goScreen('s-add-worker')" style="background:#FF7043;color:#fff;font-size:.78rem;font-weight:900;padding:7px 16px;border-radius:20px;cursor:pointer;flex-shrink:0;box-shadow:0 2px 8px rgba(255,112,67,.4);display:flex;align-items:center;gap:4px"><span style="font-size:1rem;line-height:1">＋</span> Add</div>
   </div>
   <div class="sc" id="workers-full-list"><div style="height:8px"></div></div>
@@ -734,13 +734,13 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
       <div class="prole" id="me-email">—</div>
     </div>
     <div class="me-card">
-      <div class="me-item" onclick="goScreen('s-invite')"><span class="mi-icon">🔗</span><span class="mi-text">Invite Code</span><span class="mi-arrow">›</span></div>
+      <div class="me-item" onclick="goScreen('s-invite')"><span class="mi-icon">🔗</span><span class="mi-text" data-i18n="invite_code_menu">Invite Code</span><span class="mi-arrow">›</span></div>
       <div class="me-item"><span class="mi-icon">🌐</span><span class="mi-text" id="me-lang">Language: English</span><span class="mi-arrow">›</span></div>
-      <div class="me-item" onclick="goScreen('s-notif')"><span class="mi-icon">🔔</span><span class="mi-text">Notifications</span><span class="mi-arrow">›</span></div>
-      <div class="me-item"><span class="mi-icon">⚙️</span><span class="mi-text">Settings</span><span class="mi-arrow">›</span></div>
+      <div class="me-item" onclick="goScreen('s-notif')"><span class="mi-icon">🔔</span><span class="mi-text" data-i18n="notifications">Notifications</span><span class="mi-arrow">›</span></div>
+      <div class="me-item"><span class="mi-icon">⚙️</span><span class="mi-text" data-i18n="settings">Settings</span><span class="mi-arrow">›</span></div>
     </div>
     <div class="me-card" style="margin-top:4px">
-      <div class="me-item" onclick="doLogout()" style="justify-content:center"><span style="color:#E53935;font-size:.9rem;font-weight:800">Log Out</span></div>
+      <div class="me-item" onclick="doLogout()" style="justify-content:center"><span style="color:#E53935;font-size:.9rem;font-weight:800" data-i18n="log_out">Log Out</span></div>
     </div>
     <div style="text-align:center;padding:16px"><p style="font-size:.68rem;color:#9CA3AF;font-weight:700">BaanTask v1.0 · Phase 2</p></div>
   </div>
@@ -858,6 +858,7 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
 </div>
 
 </div><!-- end #app -->
+<script src="i18n.js"></script>
 <script>
 // ══════════════════════════════════════
 //  STATE
@@ -958,6 +959,7 @@ const splashInterval = setInterval(() => {
       document.getElementById('lang-sub').textContent = l.sub;
       document.getElementById('lang-continue-btn').textContent = l.cont;
       document.getElementById('lang-continue-btn').disabled = false;
+      if (typeof applyLang === 'function') applyLang();
     };
     buttons.push(btn);
     grid.appendChild(btn);
@@ -1157,7 +1159,11 @@ async function workerJoin() {
 async function loadPropertyData(propId) {
   try { const r = await fetch('/api/property/'+propId); const d = await r.json(); if (d.ok) myProperty = d.property; } catch(e) {}
 }
-function getGreeting() { const h = new Date().getHours(); return h<12?'Good morning':h<17?'Good afternoon':'Good evening'; }
+function getGreeting() {
+  const h = new Date().getHours();
+  if (typeof t === 'function') return h<12 ? t('good_morning') : h<17 ? t('good_afternoon') : t('good_evening');
+  return h<12?'Good morning 👋':h<17?'Good afternoon 👋':'Good evening 👋';
+}
 
 const AVATAR_COLORS = ['#00897B,#00695C','#F57C00,#E65100','#1976D2,#1565C0','#AD1457,#880E4F','#7B1FA2,#6A1B9A','#00838F,#006064','#C62828,#B71C1C','#2E7D32,#1B5E20'];
 function avatarGrad(i) { const c = AVATAR_COLORS[i % AVATAR_COLORS.length].split(','); return `linear-gradient(135deg,${c[0]},${c[1]})`; }
