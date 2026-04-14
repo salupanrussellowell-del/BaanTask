@@ -134,6 +134,24 @@ const I18N = {
   quick_actions: { en:'Quick Actions', th:'การดำเนินการด่วน', ru:'Быстрые действия', ph:'Quick Actions', mm:'မြန်ဆန်လုပ်ဆောင်ချက်', zh:'快捷操作', de:'Schnellaktionen', fr:'Actions rapides', ar:'إجراءات سريعة', id:'Aksi Cepat' },
   expenses: { en:'Expenses', th:'ค่าใช้จ่าย', ru:'Расходы', ph:'Expenses', mm:'စရိတ်များ', zh:'支出', de:'Ausgaben', fr:'Dépenses', ar:'النفقات', id:'Pengeluaran' },
   schedule: { en:'Schedule', th:'ตารางงาน', ru:'Расписание', ph:'Schedule', mm:'အချိန်ဇယား', zh:'排班', de:'Zeitplan', fr:'Planning', ar:'الجدول', id:'Jadwal' },
+  // ── Worker dashboard ──
+  my_tasks: { en:'My Tasks', th:'งานของฉัน', ru:'Мои задачи', ph:'Mga Tasks Ko', mm:'ကျွန်တော့် Tasks', zh:'我的任务', de:'Meine Aufgaben', fr:'Mes tâches', ar:'مهامي', id:'Tugas Saya' },
+  no_tasks_yet: { en:'No tasks assigned yet', th:'ยังไม่มีงานที่มอบหมาย', ru:'Задач пока нет', ph:'Wala pang tasks', mm:'တာဝန်ပေးထားတဲ့ task မရှိသေးပါ', zh:'还没有分配任务', de:'Noch keine Aufgaben', fr:'Aucune tâche assignée', ar:'لا توجد مهام بعد', id:'Belum ada tugas' },
+  start_task: { en:'▶ Start', th:'▶ เริ่ม', ru:'▶ Начать', ph:'▶ Simulan', mm:'▶ စတင်ပါ', zh:'▶ 开始', de:'▶ Starten', fr:'▶ Commencer', ar:'▶ ابدأ', id:'▶ Mulai' },
+  complete_task: { en:'✅ Done', th:'✅ เสร็จ', ru:'✅ Готово', ph:'✅ Tapos', mm:'✅ ပြီးပြီ', zh:'✅ 完成', de:'✅ Erledigt', fr:'✅ Terminé', ar:'✅ تم', id:'✅ Selesai' },
+  task_completed: { en:'Task completed!', th:'งานเสร็จสิ้น!', ru:'Задача выполнена!', ph:'Task tapos na!', mm:'Task ပြီးပါပြီ!', zh:'任务完成！', de:'Aufgabe erledigt!', fr:'Tâche terminée !', ar:'تم إنجاز المهمة!', id:'Tugas selesai!' },
+  today: { en:'Today', th:'วันนี้', ru:'Сегодня', ph:'Ngayon', mm:'ယနေ့', zh:'今天', de:'Heute', fr:"Aujourd'hui", ar:'اليوم', id:'Hari ini' },
+  tomorrow: { en:'Tomorrow', th:'พรุ่งนี้', ru:'Завтра', ph:'Bukas', mm:'မနက်ဖြန်', zh:'明天', de:'Morgen', fr:'Demain', ar:'غداً', id:'Besok' },
+  this_week: { en:'This Week', th:'สัปดาห์นี้', ru:'На этой неделе', ph:'Ngayong linggo', mm:'ဒီအပတ်', zh:'本周', de:'Diese Woche', fr:'Cette semaine', ar:'هذا الأسبوع', id:'Minggu ini' },
+  no_schedule: { en:'No scheduled tasks', th:'ไม่มีงานตามกำหนดการ', ru:'Нет запланированных задач', ph:'Walang naka-schedule na tasks', mm:'စီစဉ်ထားတဲ့ task မရှိပါ', zh:'没有计划任务', de:'Keine geplanten Aufgaben', fr:'Aucune tâche planifiée', ar:'لا توجد مهام مجدولة', id:'Tidak ada tugas terjadwal' },
+  my_profile: { en:'My Profile', th:'โปรไฟล์ของฉัน', ru:'Мой профиль', ph:'Profile Ko', mm:'ကျွန်တော့်ပရိုဖိုင်', zh:'我的资料', de:'Mein Profil', fr:'Mon profil', ar:'ملفي الشخصي', id:'Profil Saya' },
+  employer: { en:'Employer', th:'นายจ้าง', ru:'Работодатель', ph:'Employer', mm:'အလုပ်ရှင်', zh:'雇主', de:'Arbeitgeber', fr:'Employeur', ar:'صاحب العمل', id:'Majikan' },
+  my_role: { en:'My Role', th:'ตำแหน่งของฉัน', ru:'Моя роль', ph:'Role Ko', mm:'ကျွန်တော့်အခန်းကဏ္ဍ', zh:'我的角色', de:'Meine Rolle', fr:'Mon rôle', ar:'دوري', id:'Peran Saya' },
+  language: { en:'Language', th:'ภาษา', ru:'Язык', ph:'Wika', mm:'ဘာသာစကား', zh:'语言', de:'Sprache', fr:'Langue', ar:'اللغة', id:'Bahasa' },
+  joined: { en:'Joined', th:'เข้าร่วม', ru:'Присоединился', ph:'Sumali', mm:'ပါဝင်သည်', zh:'加入时间', de:'Beigetreten', fr:'Rejoint', ar:'انضم', id:'Bergabung' },
+  property: { en:'Property', th:'สถานที่', ru:'Объект', ph:'Property', mm:'အိမ်ခြံမြေ', zh:'房产', de:'Immobilie', fr:'Propriété', ar:'الملكية', id:'Properti' },
+  unassigned: { en:'Unassigned', th:'ยังไม่ได้มอบหมาย', ru:'Не назначено', ph:'Hindi pa naka-assign', mm:'တာဝန်မပေးရသေး', zh:'未分配', de:'Nicht zugewiesen', fr:'Non assigné', ar:'غير معين', id:'Belum ditugaskan' },
+  no_due_date: { en:'No due date', th:'ไม่มีกำหนด', ru:'Без срока', ph:'Walang due date', mm:'သတ်မှတ်ရက်မရှိ', zh:'无截止日期', de:'Kein Fälligkeitsdatum', fr:'Pas de date limite', ar:'بدون تاريخ استحقاق', id:'Tidak ada tenggat' },
 };
 
 // Language code mapping

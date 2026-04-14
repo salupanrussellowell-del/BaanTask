@@ -494,11 +494,11 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
     <div style="height:70px"></div>
   </div>
   <div class="bn">
-    <div class="ni active-o" onclick="goScreen('s-owner-home')"><span class="ic">🏠</span data-i18n="nav_home">Home</div>
-    <div class="ni" onclick="goScreen('s-payroll')"><span class="ic">💼</span data-i18n="nav_payroll">Payroll</div>
-    <div class="ni" onclick="goScreen('s-tasks')"><span class="ic">✅</span data-i18n="nav_tasks">Tasks</div>
-    <div class="ni" onclick="goScreen('s-chat-list')"><span class="ic">💬</span data-i18n="nav_chat">Chat</div>
-    <div class="ni" onclick="goScreen('s-me')"><span class="ic">👤</span data-i18n="nav_me">Me</div>
+    <div class="ni active-o" onclick="goScreen('s-owner-home')"><span class="ic">🏠</span><span data-i18n="nav_home">Home</span></div>
+    <div class="ni" onclick="goScreen('s-payroll')"><span class="ic">💼</span><span data-i18n="nav_payroll">Payroll</span></div>
+    <div class="ni" onclick="goScreen('s-tasks')"><span class="ic">✅</span><span data-i18n="nav_tasks">Tasks</span></div>
+    <div class="ni" onclick="goScreen('s-chat-list')"><span class="ic">💬</span><span data-i18n="nav_chat">Chat</span></div>
+    <div class="ni" onclick="goScreen('s-me')"><span class="ic">👤</span><span data-i18n="nav_me">Me</span></div>
   </div>
 </div>
 
@@ -506,17 +506,17 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
 <div id="s-workers-list" class="screen">
   <div class="sb" style="background:#00695C">9:41<span>📶 🔋</span></div>
   <div style="background:linear-gradient(160deg,#00897B,#00695C);padding:12px 16px;color:#fff;flex-shrink:0">
-    <div style="display:flex;align-items:center;gap:12px"><span class="bk" onclick="goScreen('s-owner-home')" style="color:#fff">‹</span><span style="font-size:.95rem;font-weight:900">My Workers</span></div>
+    <div style="display:flex;align-items:center;gap:12px"><span class="bk" onclick="goScreen('s-owner-home')" style="color:#fff">‹</span><span style="font-size:.95rem;font-weight:900" data-i18n="my_workers">My Workers</span></div>
   </div>
   <div class="sc" style="padding:12px" id="workers-list-body">
-    <p style="color:#9CA3AF;font-size:.85rem;text-align:center;font-weight:600;padding:20px">No workers yet. Share your invite code!</p>
+    <p style="color:#9CA3AF;font-size:.85rem;text-align:center;font-weight:600;padding:20px" data-i18n="no_workers">No workers yet. Share your invite code!</p>
   </div>
   <div class="bn">
-    <div class="ni" onclick="goScreen('s-owner-home')"><span class="ic">🏠</span>Home</div>
-    <div class="ni" onclick="goScreen('s-payroll')"><span class="ic">💼</span>Payroll</div>
-    <div class="ni" onclick=""><span class="ic">✅</span>Tasks</div>
-    <div class="ni" onclick=""><span class="ic">💬</span>Chat</div>
-    <div class="ni" onclick=""><span class="ic">👤</span>Me</div>
+    <div class="ni" onclick="goScreen('s-owner-home')"><span class="ic">🏠</span><span data-i18n="nav_home">Home</span></div>
+    <div class="ni" onclick="goScreen('s-payroll')"><span class="ic">💼</span><span data-i18n="nav_payroll">Payroll</span></div>
+    <div class="ni" onclick="goScreen('s-tasks')"><span class="ic">✅</span><span data-i18n="nav_tasks">Tasks</span></div>
+    <div class="ni" onclick="goScreen('s-chat-list')"><span class="ic">💬</span><span data-i18n="nav_chat">Chat</span></div>
+    <div class="ni" onclick="goScreen('s-me')"><span class="ic">👤</span><span data-i18n="nav_me">Me</span></div>
   </div>
 </div>
 
@@ -529,30 +529,37 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
         <div>
           <p class="b-greeting" id="wh-greeting">Good morning 👋</p>
           <h2 class="b-name" id="wh-name">—</h2>
+          <div id="wh-property-name" style="font-size:.72rem;opacity:.8;font-weight:600;margin-top:2px"></div>
         </div>
-        <span class="b-bell">🔔</span>
+        <span class="b-bell" onclick="goScreen('s-notif')">🔔</span>
       </div>
       <div class="stats">
-        <div class="stat"><span class="num">0</span><span class="lbl">Tasks today</span></div>
-        <div class="stat"><span class="num">—</span><span class="lbl">Next shift</span></div>
+        <div class="stat"><span class="num" id="wh-stat-tasks">0</span><span class="lbl" data-i18n="tasks_today">Tasks today</span></div>
+        <div class="stat"><span class="num" id="wh-stat-done">0</span><span class="lbl" data-i18n="done">Done</span></div>
+        <div class="stat"><span class="num" id="wh-stat-pending">0</span><span class="lbl" data-i18n="pending">Pending</span></div>
       </div>
     </div>
 
-    <div class="sh">Quick Actions</div>
+    <!-- My Tasks Today -->
+    <div class="sh"><span data-i18n="my_tasks">My Tasks</span> <span class="sa" onclick="goScreen('s-worker-tasks')" data-i18n="see_all">See all →</span></div>
+    <div id="wh-tasks-list" style="padding:0 0 8px"></div>
+
+    <!-- Quick Actions -->
+    <div class="sh" data-i18n="quick_actions">Quick Actions</div>
     <div style="padding:0 12px 16px;display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
-      <div style="background:#fff;border:2px solid #E5E7EB;border-radius:14px;padding:12px 4px;text-align:center;cursor:pointer"><span style="font-size:1.5rem;display:block">📋</span><span style="font-size:.65rem;font-weight:800;color:#6B7280">Tasks</span></div>
-      <div style="background:#fff;border:2px solid #E5E7EB;border-radius:14px;padding:12px 4px;text-align:center;cursor:pointer"><span style="font-size:1.5rem;display:block">📅</span><span style="font-size:.65rem;font-weight:800;color:#6B7280">Schedule</span></div>
-      <div style="background:#fff;border:2px solid #E5E7EB;border-radius:14px;padding:12px 4px;text-align:center;cursor:pointer"><span style="font-size:1.5rem;display:block">🧾</span><span style="font-size:.65rem;font-weight:800;color:#6B7280">Expenses</span></div>
-      <div style="background:#fff;border:2px solid #E5E7EB;border-radius:14px;padding:12px 4px;text-align:center;cursor:pointer"><span style="font-size:1.5rem;display:block">💬</span><span style="font-size:.65rem;font-weight:800;color:#6B7280">Chat</span></div>
+      <div onclick="goScreen('s-worker-tasks')" style="background:#fff;border:2px solid #E5E7EB;border-radius:14px;padding:12px 4px;text-align:center;cursor:pointer;-webkit-tap-highlight-color:transparent"><span style="font-size:1.5rem;display:block">📋</span><span style="font-size:.65rem;font-weight:800;color:#6B7280" data-i18n="nav_tasks">Tasks</span></div>
+      <div onclick="goScreen('s-worker-schedule')" style="background:#fff;border:2px solid #E5E7EB;border-radius:14px;padding:12px 4px;text-align:center;cursor:pointer;-webkit-tap-highlight-color:transparent"><span style="font-size:1.5rem;display:block">📅</span><span style="font-size:.65rem;font-weight:800;color:#6B7280" data-i18n="nav_schedule">Schedule</span></div>
+      <div style="background:#fff;border:2px solid #E5E7EB;border-radius:14px;padding:12px 4px;text-align:center;cursor:pointer;-webkit-tap-highlight-color:transparent"><span style="font-size:1.5rem;display:block">🧾</span><span style="font-size:.65rem;font-weight:800;color:#6B7280" data-i18n="expenses">Expenses</span></div>
+      <div onclick="goScreen('s-chat-list-w')" style="background:#fff;border:2px solid #E5E7EB;border-radius:14px;padding:12px 4px;text-align:center;cursor:pointer;-webkit-tap-highlight-color:transparent"><span style="font-size:1.5rem;display:block">💬</span><span style="font-size:.65rem;font-weight:800;color:#6B7280" data-i18n="nav_chat">Chat</span></div>
     </div>
     <div style="height:70px"></div>
   </div>
   <div class="bn">
-    <div class="ni active-w"><span class="ic">🏠</span>Home</div>
-    <div class="ni"><span class="ic">📋</span>Tasks</div>
-    <div class="ni"><span class="ic">📅</span data-i18n="nav_schedule">Schedule</div>
-    <div class="ni"><span class="ic">💬</span>Chat</div>
-    <div class="ni"><span class="ic">👤</span>Me</div>
+    <div class="ni active-w" onclick="goScreen('s-worker-home')"><span class="ic">🏠</span><span data-i18n="nav_home">Home</span></div>
+    <div class="ni" onclick="goScreen('s-worker-tasks')"><span class="ic">📋</span><span data-i18n="nav_tasks">Tasks</span></div>
+    <div class="ni" onclick="goScreen('s-worker-schedule')"><span class="ic">📅</span><span data-i18n="nav_schedule">Schedule</span></div>
+    <div class="ni" onclick="goScreen('s-chat-list-w')"><span class="ic">💬</span><span data-i18n="nav_chat">Chat</span></div>
+    <div class="ni" onclick="goScreen('s-worker-me')"><span class="ic">👤</span><span data-i18n="nav_me">Me</span></div>
   </div>
 </div>
 
@@ -571,11 +578,11 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
   </div>
   <div class="sc" style="background:#F9FAFB;padding-top:8px" id="tasks-list"></div>
   <div class="bn">
-    <div class="ni" onclick="goScreen('s-owner-home')"><span class="ic">🏠</span>Home</div>
-    <div class="ni" onclick="goScreen('s-payroll')"><span class="ic">💼</span>Payroll</div>
-    <div class="ni active-o"><span class="ic">✅</span>Tasks</div>
-    <div class="ni" onclick="goScreen('s-chat-list')"><span class="ic">💬</span>Chat</div>
-    <div class="ni" onclick="goScreen('s-me')"><span class="ic">👤</span>Me</div>
+    <div class="ni" onclick="goScreen('s-owner-home')"><span class="ic">🏠</span><span data-i18n="nav_home">Home</span></div>
+    <div class="ni" onclick="goScreen('s-payroll')"><span class="ic">💼</span><span data-i18n="nav_payroll">Payroll</span></div>
+    <div class="ni active-o"><span class="ic">✅</span><span data-i18n="nav_tasks">Tasks</span></div>
+    <div class="ni" onclick="goScreen('s-chat-list')"><span class="ic">💬</span><span data-i18n="nav_chat">Chat</span></div>
+    <div class="ni" onclick="goScreen('s-me')"><span class="ic">👤</span><span data-i18n="nav_me">Me</span></div>
   </div>
 </div>
 
@@ -653,11 +660,11 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
   </div>
   <div class="sc" id="workers-full-list"><div style="height:8px"></div></div>
   <div class="bn">
-    <div class="ni" onclick="goScreen('s-owner-home')"><span class="ic">🏠</span>Home</div>
-    <div class="ni" onclick="goScreen('s-payroll')"><span class="ic">💼</span>Payroll</div>
-    <div class="ni" onclick="goScreen('s-tasks')"><span class="ic">✅</span>Tasks</div>
-    <div class="ni" onclick="goScreen('s-chat-list')"><span class="ic">💬</span>Chat</div>
-    <div class="ni" onclick="goScreen('s-me')"><span class="ic">👤</span>Me</div>
+    <div class="ni" onclick="goScreen('s-owner-home')"><span class="ic">🏠</span><span data-i18n="nav_home">Home</span></div>
+    <div class="ni" onclick="goScreen('s-payroll')"><span class="ic">💼</span><span data-i18n="nav_payroll">Payroll</span></div>
+    <div class="ni" onclick="goScreen('s-tasks')"><span class="ic">✅</span><span data-i18n="nav_tasks">Tasks</span></div>
+    <div class="ni" onclick="goScreen('s-chat-list')"><span class="ic">💬</span><span data-i18n="nav_chat">Chat</span></div>
+    <div class="ni" onclick="goScreen('s-me')"><span class="ic">👤</span><span data-i18n="nav_me">Me</span></div>
   </div>
 </div>
 
@@ -698,11 +705,11 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
     </div>
   </div>
   <div class="bn">
-    <div class="ni" onclick="goScreen('s-owner-home')"><span class="ic">🏠</span>Home</div>
-    <div class="ni" onclick="goScreen('s-payroll')"><span class="ic">💼</span>Payroll</div>
-    <div class="ni" onclick="goScreen('s-tasks')"><span class="ic">✅</span>Tasks</div>
-    <div class="ni active-o"><span class="ic">💬</span>Chat</div>
-    <div class="ni" onclick="goScreen('s-me')"><span class="ic">👤</span>Me</div>
+    <div class="ni" onclick="goScreen('s-owner-home')"><span class="ic">🏠</span><span data-i18n="nav_home">Home</span></div>
+    <div class="ni" onclick="goScreen('s-payroll')"><span class="ic">💼</span><span data-i18n="nav_payroll">Payroll</span></div>
+    <div class="ni" onclick="goScreen('s-tasks')"><span class="ic">✅</span><span data-i18n="nav_tasks">Tasks</span></div>
+    <div class="ni active-o"><span class="ic">💬</span><span data-i18n="nav_chat">Chat</span></div>
+    <div class="ni" onclick="goScreen('s-me')"><span class="ic">👤</span><span data-i18n="nav_me">Me</span></div>
   </div>
 </div>
 
@@ -742,14 +749,14 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
     <div class="me-card" style="margin-top:4px">
       <div class="me-item" onclick="doLogout()" style="justify-content:center"><span style="color:#E53935;font-size:.9rem;font-weight:800" data-i18n="log_out">Log Out</span></div>
     </div>
-    <div style="text-align:center;padding:16px"><p style="font-size:.68rem;color:#9CA3AF;font-weight:700">BaanTask v1.0 · Phase 2</p></div>
+    <div style="text-align:center;padding:16px"><p style="font-size:.68rem;color:#9CA3AF;font-weight:700">BaanTask v1.0 · Phase 3</p></div>
   </div>
   <div class="bn">
-    <div class="ni" onclick="goScreen('s-owner-home')"><span class="ic">🏠</span>Home</div>
-    <div class="ni" onclick="goScreen('s-payroll')"><span class="ic">💼</span>Payroll</div>
-    <div class="ni" onclick="goScreen('s-tasks')"><span class="ic">✅</span>Tasks</div>
-    <div class="ni" onclick="goScreen('s-chat-list')"><span class="ic">💬</span>Chat</div>
-    <div class="ni active-o"><span class="ic">👤</span>Me</div>
+    <div class="ni" onclick="goScreen('s-owner-home')"><span class="ic">🏠</span><span data-i18n="nav_home">Home</span></div>
+    <div class="ni" onclick="goScreen('s-payroll')"><span class="ic">💼</span><span data-i18n="nav_payroll">Payroll</span></div>
+    <div class="ni" onclick="goScreen('s-tasks')"><span class="ic">✅</span><span data-i18n="nav_tasks">Tasks</span></div>
+    <div class="ni" onclick="goScreen('s-chat-list')"><span class="ic">💬</span><span data-i18n="nav_chat">Chat</span></div>
+    <div class="ni active-o"><span class="ic">👤</span><span data-i18n="nav_me">Me</span></div>
   </div>
 </div>
 
@@ -830,6 +837,129 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
   </div>
 </div>
 
+<!-- ═══ WORKER TASKS ═══ -->
+<div id="s-worker-tasks" class="screen">
+  <div class="sb" style="background:#BF360C">9:41<span>📶 🔋</span></div>
+  <div class="tn" style="background:#fff;border-bottom:1.5px solid #F3F4F6">
+    <h2>📋 <span data-i18n="my_tasks">My Tasks</span></h2>
+  </div>
+  <div style="padding:8px 12px 6px;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;flex-shrink:0;background:#fff">
+    <span class="task-filter active" data-filter="all" onclick="filterWorkerTasks(this)" data-i18n="all">All</span>
+    <span class="task-filter" data-filter="not-started" onclick="filterWorkerTasks(this)" data-i18n="pending">Pending</span>
+    <span class="task-filter" data-filter="in-progress" onclick="filterWorkerTasks(this)" data-i18n="in_progress">In Progress</span>
+    <span class="task-filter" data-filter="done" onclick="filterWorkerTasks(this)" data-i18n="done">Done</span>
+  </div>
+  <div class="sc" style="background:#F9FAFB;padding-top:8px" id="worker-tasks-list"></div>
+  <div class="bn">
+    <div class="ni" onclick="goScreen('s-worker-home')"><span class="ic">🏠</span><span data-i18n="nav_home">Home</span></div>
+    <div class="ni active-w" onclick="goScreen('s-worker-tasks')"><span class="ic">📋</span><span data-i18n="nav_tasks">Tasks</span></div>
+    <div class="ni" onclick="goScreen('s-worker-schedule')"><span class="ic">📅</span><span data-i18n="nav_schedule">Schedule</span></div>
+    <div class="ni" onclick="goScreen('s-chat-list-w')"><span class="ic">💬</span><span data-i18n="nav_chat">Chat</span></div>
+    <div class="ni" onclick="goScreen('s-worker-me')"><span class="ic">👤</span><span data-i18n="nav_me">Me</span></div>
+  </div>
+</div>
+
+<!-- ═══ WORKER TASK DETAIL ═══ -->
+<div id="s-worker-task-detail" class="screen">
+  <div class="sb" style="background:#BF360C">9:41<span>📶 🔋</span></div>
+  <div class="tn"><span class="bk" onclick="goBack()" style="color:#1F2937">‹</span><h2 id="wtd-title">Task Detail</h2></div>
+  <div class="sc" style="background:#F9FAFB;padding:14px">
+    <div style="background:#fff;border-radius:14px;padding:16px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.06)">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <div id="wtd-icon" style="width:44px;height:44px;background:#FBE9E7;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0">📋</div>
+        <div><div id="wtd-name" style="font-size:.96rem;font-weight:900;color:#1F2937"></div><div id="wtd-due" style="font-size:.72rem;color:#9CA3AF;margin-top:2px"></div></div>
+      </div>
+      <div id="wtd-desc" style="background:#F9FAFB;border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:.8rem;color:#4B5563;line-height:1.6"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <span id="wtd-priority" class="pill pill-gray"></span>
+        <span id="wtd-status" class="pill pill-gray"></span>
+        <span id="wtd-freq" style="padding:4px 10px;background:#E3F2FD;color:#1565C0;border-radius:20px;font-size:.68rem;font-weight:800"></span>
+      </div>
+    </div>
+    <div id="wtd-actions" style="background:#fff;border-radius:14px;padding:14px;box-shadow:0 1px 4px rgba(0,0,0,.06);margin-bottom:12px">
+      <div style="font-size:.72rem;font-weight:900;color:#9CA3AF;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Update Status</div>
+      <div style="display:flex;gap:8px">
+        <button class="btn" style="flex:1;font-size:.82rem;padding:10px;background:#E65100;color:#fff" onclick="workerUpdateTask('in-progress')" data-i18n="start_task">▶ Start</button>
+        <button class="btn" style="flex:1;font-size:.82rem;padding:10px;background:#43A047;color:#fff" onclick="workerUpdateTask('done')" data-i18n="complete_task">✅ Done</button>
+      </div>
+    </div>
+    <div id="wtd-done-msg" style="display:none;background:#E8F5E9;border-radius:14px;padding:16px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.06)">
+      <div style="font-size:2rem;margin-bottom:8px">🎉</div>
+      <div style="font-size:.9rem;font-weight:900;color:#2E7D32" data-i18n="task_completed">Task completed!</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ WORKER SCHEDULE ═══ -->
+<div id="s-worker-schedule" class="screen">
+  <div class="sb" style="background:#BF360C">9:41<span>📶 🔋</span></div>
+  <div class="tn"><h2>📅 <span data-i18n="nav_schedule">Schedule</span></h2></div>
+  <div class="sc" style="background:#F9FAFB" id="worker-schedule-body">
+    <div style="padding:12px"></div>
+  </div>
+  <div class="bn">
+    <div class="ni" onclick="goScreen('s-worker-home')"><span class="ic">🏠</span><span data-i18n="nav_home">Home</span></div>
+    <div class="ni" onclick="goScreen('s-worker-tasks')"><span class="ic">📋</span><span data-i18n="nav_tasks">Tasks</span></div>
+    <div class="ni active-w" onclick="goScreen('s-worker-schedule')"><span class="ic">📅</span><span data-i18n="nav_schedule">Schedule</span></div>
+    <div class="ni" onclick="goScreen('s-chat-list-w')"><span class="ic">💬</span><span data-i18n="nav_chat">Chat</span></div>
+    <div class="ni" onclick="goScreen('s-worker-me')"><span class="ic">👤</span><span data-i18n="nav_me">Me</span></div>
+  </div>
+</div>
+
+<!-- ═══ WORKER CHAT LIST ═══ -->
+<div id="s-chat-list-w" class="screen">
+  <div class="sb" style="background:#BF360C">9:41<span>📶 🔋</span></div>
+  <div class="tn"><h2>💬 <span data-i18n="nav_chat">Chat</span></h2></div>
+  <div class="sc" id="chat-list-w-body">
+    <div class="chat-item" onclick="goScreen('s-group-chat')">
+      <div class="wav" style="background:linear-gradient(135deg,#E65100,#BF360C);width:46px;height:46px;font-size:.82rem">👥</div>
+      <div class="ci-info"><div class="ci-name" data-i18n="staff_group">Staff Group Chat</div><div class="ci-msg" data-i18n="tap_open">Tap to open group chat</div></div>
+      <div class="ci-time">Now</div>
+    </div>
+  </div>
+  <div class="bn">
+    <div class="ni" onclick="goScreen('s-worker-home')"><span class="ic">🏠</span><span data-i18n="nav_home">Home</span></div>
+    <div class="ni" onclick="goScreen('s-worker-tasks')"><span class="ic">📋</span><span data-i18n="nav_tasks">Tasks</span></div>
+    <div class="ni" onclick="goScreen('s-worker-schedule')"><span class="ic">📅</span><span data-i18n="nav_schedule">Schedule</span></div>
+    <div class="ni active-w" onclick="goScreen('s-chat-list-w')"><span class="ic">💬</span><span data-i18n="nav_chat">Chat</span></div>
+    <div class="ni" onclick="goScreen('s-worker-me')"><span class="ic">👤</span><span data-i18n="nav_me">Me</span></div>
+  </div>
+</div>
+
+<!-- ═══ WORKER ME / PROFILE ═══ -->
+<div id="s-worker-me" class="screen">
+  <div class="sb" style="background:#BF360C">9:41<span>📶 🔋</span></div>
+  <div class="sc" style="background:#F9FAFB">
+    <div class="prof-hero" style="background:linear-gradient(135deg,#E65100,#BF360C)">
+      <div class="pav" id="wme-initials">??</div>
+      <div class="pname" id="wme-name">—</div>
+      <div class="prole" id="wme-role">—</div>
+    </div>
+    <div class="me-card">
+      <div style="padding:8px 14px 4px;font-size:.66rem;font-weight:900;color:#9CA3AF;text-transform:uppercase;letter-spacing:.06em" data-i18n="my_profile">My Profile</div>
+      <div class="me-item"><span class="mi-icon">🏠</span><span class="mi-text" id="wme-property">—</span></div>
+      <div class="me-item"><span class="mi-icon">💼</span><span class="mi-text" id="wme-jobrole">—</span></div>
+      <div class="me-item"><span class="mi-icon">🌐</span><span class="mi-text" id="wme-lang">Language: English</span></div>
+      <div class="me-item"><span class="mi-icon">📅</span><span class="mi-text" id="wme-joined">—</span></div>
+    </div>
+    <div class="me-card" style="margin-top:4px">
+      <div class="me-item" onclick="goScreen('s-notif')"><span class="mi-icon">🔔</span><span class="mi-text" data-i18n="notifications">Notifications</span><span class="mi-arrow">›</span></div>
+      <div class="me-item"><span class="mi-icon">⚙️</span><span class="mi-text" data-i18n="settings">Settings</span><span class="mi-arrow">›</span></div>
+    </div>
+    <div class="me-card" style="margin-top:4px">
+      <div class="me-item" onclick="doLogout()" style="justify-content:center"><span style="color:#E53935;font-size:.9rem;font-weight:800" data-i18n="log_out">Log Out</span></div>
+    </div>
+    <div style="text-align:center;padding:16px"><p style="font-size:.68rem;color:#9CA3AF;font-weight:700">BaanTask v1.0 · Phase 3</p></div>
+  </div>
+  <div class="bn">
+    <div class="ni" onclick="goScreen('s-worker-home')"><span class="ic">🏠</span><span data-i18n="nav_home">Home</span></div>
+    <div class="ni" onclick="goScreen('s-worker-tasks')"><span class="ic">📋</span><span data-i18n="nav_tasks">Tasks</span></div>
+    <div class="ni" onclick="goScreen('s-worker-schedule')"><span class="ic">📅</span><span data-i18n="nav_schedule">Schedule</span></div>
+    <div class="ni" onclick="goScreen('s-chat-list-w')"><span class="ic">💬</span><span data-i18n="nav_chat">Chat</span></div>
+    <div class="ni active-w" onclick="goScreen('s-worker-me')"><span class="ic">👤</span><span data-i18n="nav_me">Me</span></div>
+  </div>
+</div>
+
 <!-- ═══ PAYROLL / MONTHLY ═══ -->
 <div id="s-payroll" class="screen">
   <div class="sb" style="background:#00695C">9:41<span>📶 🔋</span></div>
@@ -849,11 +979,11 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
     <div style="height:70px"></div>
   </div>
   <div class="bn">
-    <div class="ni" onclick="goScreen('s-owner-home')"><span class="ic">🏠</span>Home</div>
-    <div class="ni active-o"><span class="ic">💼</span>Payroll</div>
-    <div class="ni" onclick="goScreen('s-tasks')"><span class="ic">✅</span>Tasks</div>
-    <div class="ni" onclick="goScreen('s-chat-list')"><span class="ic">💬</span>Chat</div>
-    <div class="ni" onclick="goScreen('s-me')"><span class="ic">👤</span>Me</div>
+    <div class="ni" onclick="goScreen('s-owner-home')"><span class="ic">🏠</span><span data-i18n="nav_home">Home</span></div>
+    <div class="ni active-o"><span class="ic">💼</span><span data-i18n="nav_payroll">Payroll</span></div>
+    <div class="ni" onclick="goScreen('s-tasks')"><span class="ic">✅</span><span data-i18n="nav_tasks">Tasks</span></div>
+    <div class="ni" onclick="goScreen('s-chat-list')"><span class="ic">💬</span><span data-i18n="nav_chat">Chat</span></div>
+    <div class="ni" onclick="goScreen('s-me')"><span class="ic">👤</span><span data-i18n="nav_me">Me</span></div>
   </div>
 </div>
 
@@ -897,7 +1027,11 @@ function goScreen(id, skipHistory) {
   if (id === 's-me') loadMeScreen();
   if (id === 's-add-worker') loadAddWorker();
   if (id === 's-payroll') loadPayroll();
+  if (id === 's-worker-tasks') loadWorkerTasks();
+  if (id === 's-worker-schedule') loadWorkerSchedule();
+  if (id === 's-worker-me') loadWorkerMe();
   if (id === 's-otp') { document.getElementById('otp-input').value = ''; document.getElementById('otp-btn').disabled = true; showError('otp-error',''); }
+  if (typeof applyLang === 'function') applyLang();
 }
 function goBack() { const prev = screenHistory.pop(); if (prev) goScreen(prev, true); }
 function showError(id, msg) { const el = document.getElementById(id); el.textContent = msg; el.style.display = msg ? 'block' : 'none'; }
@@ -1156,6 +1290,20 @@ async function workerJoin() {
 // ══════════════════════════════════════
 //  DATA HELPERS
 // ══════════════════════════════════════
+// Force Gregorian calendar (avoid Thai Buddhist Era year)
+function fmtDate(d) {
+  if (!d) return '';
+  const dt = new Date(d);
+  if (isNaN(dt)) return '';
+  return dt.toLocaleDateString('en-GB', { calendar: 'gregory', day: 'numeric', month: 'short', year: 'numeric' });
+}
+function fmtMonth(d) {
+  if (!d) return '';
+  const dt = new Date(d);
+  if (isNaN(dt)) return '';
+  return dt.toLocaleDateString('en-GB', { calendar: 'gregory', month: 'long', year: 'numeric' });
+}
+
 async function loadPropertyData(propId) {
   try { const r = await fetch('/api/property/'+propId); const d = await r.json(); if (d.ok) myProperty = d.property; } catch(e) {}
 }
@@ -1214,11 +1362,45 @@ async function loadWorkersList() {
   } catch(e) {}
 }
 
-function loadWorkerDashboard() {
+async function loadWorkerDashboard() {
   if (!me) return;
-  document.getElementById('wh-greeting').textContent = getGreeting() + ' 👋';
-  document.getElementById('wh-name').textContent = me.name;
-  document.getElementById('wh-property').textContent = myProperty ? myProperty.name : '';
+  document.getElementById('wh-greeting').textContent = getGreeting();
+  document.getElementById('wh-name').textContent = me.name || '—';
+  document.getElementById('wh-property-name').textContent = myProperty ? myProperty.name : '';
+  if (typeof applyLang === 'function') applyLang();
+
+  // Load worker's tasks
+  if (me.propertyId) {
+    try {
+      const r = await fetch('/api/tasks/' + me.propertyId);
+      const d = await r.json();
+      if (d.ok) {
+        const myTasks = d.tasks.filter(task => task.assigneeId && (task.assigneeId._id === me.id || task.assigneeId === me.id));
+        const pending = myTasks.filter(task => task.status === 'not-started');
+        const inProg = myTasks.filter(task => task.status === 'in-progress');
+        const done = myTasks.filter(task => task.status === 'done');
+        document.getElementById('wh-stat-tasks').textContent = myTasks.length - done.length;
+        document.getElementById('wh-stat-done').textContent = done.length;
+        document.getElementById('wh-stat-pending').textContent = pending.length;
+
+        // Show first few tasks on home
+        const tasksList = document.getElementById('wh-tasks-list');
+        const activeTasks = myTasks.filter(task => task.status !== 'done').slice(0, 3);
+        if (!activeTasks.length) {
+          tasksList.innerHTML = '<p style="text-align:center;color:#9CA3AF;font-size:.82rem;padding:12px;font-weight:600">' + t('no_tasks_yet') + '</p>';
+        } else {
+          tasksList.innerHTML = '';
+          activeTasks.forEach(task => {
+            const statusClass = task.priority === 'urgent' ? 'urgent' : task.status === 'in-progress' ? 'in-progress' : '';
+            const pillClass = task.status === 'in-progress' ? 'pill-b' : task.priority === 'urgent' ? 'pill-o' : 'pill-gray';
+            const statusLabel = task.status === 'in-progress' ? t('in_progress') : task.priority === 'urgent' ? t('urgent') : t('pending');
+            const due = task.dueDate ? fmtDate(task.dueDate) : '';
+            tasksList.innerHTML += '<div class="tcard ' + statusClass + '" onclick="openWorkerTaskDetail(\'' + task._id + '\')"><div class="tib">' + (task.category || '📋') + '</div><div class="ti"><h4>' + esc(task.title) + '</h4><p>' + (due ? due + ' · ' : '') + '<span class="pill ' + pillClass + '">' + statusLabel + '</span></p></div></div>';
+          });
+        }
+      }
+    } catch(e) {}
+  }
 }
 
 // ══════════════════════════════════════
@@ -1247,7 +1429,7 @@ function renderTasks() {
     const pillClass = t.status === 'done' ? 'pill-g' : t.status === 'in-progress' ? 'pill-b' : t.priority === 'urgent' ? 'pill-o' : 'pill-gray';
     const statusLabel = t.status === 'done' ? 'Done' : t.status === 'in-progress' ? 'In progress' : t.priority === 'urgent' ? 'Urgent' : 'Pending';
     const assignee = t.assigneeId ? (t.assigneeId.name || '—') : 'Unassigned';
-    const due = t.dueDate ? new Date(t.dueDate).toLocaleDateString() : '';
+    const due = t.dueDate ? fmtDate(t.dueDate) : '';
     const icon = t.category || '📋';
     list.innerHTML += `<div class="tcard ${statusClass}" onclick="openTaskDetail('${t._id}')"><div class="tib">${icon}</div><div class="ti"><h4>${esc(t.title)}</h4><p>👤 ${esc(assignee)}${due ? ' · ' + due : ''} · <span class="pill ${pillClass}">${statusLabel}</span></p></div></div>`;
   });
@@ -1319,7 +1501,7 @@ function openTaskDetail(taskId) {
   document.getElementById('td-title').textContent = 'Task Detail';
   document.getElementById('td-name').textContent = currentTask.title;
   document.getElementById('td-desc').textContent = currentTask.description || 'No description';
-  document.getElementById('td-due').textContent = currentTask.dueDate ? new Date(currentTask.dueDate).toLocaleDateString() + (currentTask.dueTime ? ' · ' + currentTask.dueTime : '') : 'No due date';
+  document.getElementById('td-due').textContent = currentTask.dueDate ? fmtDate(currentTask.dueDate) + (currentTask.dueTime ? ' · ' + currentTask.dueTime : '') : 'No due date';
   document.getElementById('td-priority').textContent = currentTask.priority;
   document.getElementById('td-priority').className = 'pill ' + (currentTask.priority === 'urgent' ? 'pill-o' : currentTask.priority === 'low' ? 'pill-b' : 'pill-gray');
   document.getElementById('td-worker').textContent = '👤 ' + (currentTask.assigneeId ? (currentTask.assigneeId.name || 'Assigned') : 'Unassigned');
@@ -1367,7 +1549,7 @@ function openWorkerProfile(profileId, userId) {
     document.getElementById('wp-role').textContent = (w.jobRole || 'Staff') + ' · ' + (u.lang || 'English');
     document.getElementById('wp-phone').textContent = u.phone || '—';
     document.getElementById('wp-lang').textContent = u.lang || 'English';
-    document.getElementById('wp-joined').textContent = w.joinDate ? new Date(w.joinDate).toLocaleDateString() : '—';
+    document.getElementById('wp-joined').textContent = w.joinDate ? fmtDate(w.joinDate) : '—';
     document.getElementById('wp-salary').textContent = w.salary ? '฿' + w.salary.toLocaleString() + ' / month' : '—';
     document.getElementById('wp-jobrole').textContent = w.jobRole || '—';
     goScreen('s-worker-profile');
@@ -1419,7 +1601,7 @@ function showQRCode() {
 async function loadPayroll() {
   if (!me || !me.propertyId) return;
   const now = new Date();
-  document.getElementById('payroll-month').textContent = now.toLocaleString('en', { month: 'long', year: 'numeric' });
+  document.getElementById('payroll-month').textContent = fmtMonth(now);
   try {
     const r = await fetch('/api/workers/' + me.propertyId);
     const d = await r.json();
@@ -1451,6 +1633,202 @@ async function loadPayroll() {
     });
     document.getElementById('payroll-total').textContent = '฿' + total.toLocaleString();
   } catch(e) {}
+}
+
+// ══════════════════════════════════════
+//  WORKER TASKS
+// ══════════════════════════════════════
+let workerTasks = [];
+let workerTaskFilter = 'all';
+let currentWorkerTask = null;
+
+async function loadWorkerTasks() {
+  if (!me || !me.propertyId) return;
+  try {
+    const r = await fetch('/api/tasks/' + me.propertyId);
+    const d = await r.json();
+    if (d.ok) {
+      workerTasks = d.tasks.filter(task => task.assigneeId && (task.assigneeId._id === me.id || task.assigneeId === me.id));
+      renderWorkerTasks();
+    }
+  } catch(e) {}
+}
+
+function renderWorkerTasks() {
+  const list = document.getElementById('worker-tasks-list');
+  if (!list) return;
+  const filtered = workerTaskFilter === 'all' ? workerTasks : workerTasks.filter(task => task.status === workerTaskFilter);
+  list.innerHTML = '';
+  if (!filtered.length) {
+    list.innerHTML = '<p style="text-align:center;color:#9CA3AF;font-size:.85rem;padding:30px;font-weight:600">' + t('no_tasks_yet') + '</p>';
+    return;
+  }
+  filtered.forEach(task => {
+    const statusClass = task.status === 'done' ? 'done' : task.priority === 'urgent' ? 'urgent' : task.status === 'in-progress' ? 'in-progress' : '';
+    const pillClass = task.status === 'done' ? 'pill-g' : task.status === 'in-progress' ? 'pill-b' : task.priority === 'urgent' ? 'pill-o' : 'pill-gray';
+    const statusLabel = task.status === 'done' ? t('done') : task.status === 'in-progress' ? t('in_progress') : task.priority === 'urgent' ? t('urgent') : t('pending');
+    const due = task.dueDate ? fmtDate(task.dueDate) : '';
+    list.innerHTML += '<div class="tcard ' + statusClass + '" onclick="openWorkerTaskDetail(\'' + task._id + '\')"><div class="tib">' + (task.category || '📋') + '</div><div class="ti"><h4>' + esc(task.title) + '</h4><p>' + (due ? due + ' · ' : '') + '<span class="pill ' + pillClass + '">' + statusLabel + '</span></p></div></div>';
+  });
+}
+
+function filterWorkerTasks(el) {
+  document.querySelectorAll('#s-worker-tasks .task-filter').forEach(f => f.classList.remove('active'));
+  el.classList.add('active');
+  workerTaskFilter = el.dataset.filter;
+  renderWorkerTasks();
+}
+
+function openWorkerTaskDetail(taskId) {
+  currentWorkerTask = workerTasks.find(task => task._id === taskId);
+  if (!currentWorkerTask) {
+    // might be from dashboard, reload
+    if (me && me.propertyId) {
+      fetch('/api/tasks/' + me.propertyId).then(r => r.json()).then(d => {
+        if (d.ok) {
+          workerTasks = d.tasks.filter(task => task.assigneeId && (task.assigneeId._id === me.id || task.assigneeId === me.id));
+          currentWorkerTask = workerTasks.find(task => task._id === taskId);
+          if (currentWorkerTask) showWorkerTaskDetail();
+        }
+      });
+    }
+    return;
+  }
+  showWorkerTaskDetail();
+}
+
+function showWorkerTaskDetail() {
+  const task = currentWorkerTask;
+  document.getElementById('wtd-name').textContent = task.title;
+  document.getElementById('wtd-desc').textContent = task.description || t('description');
+  document.getElementById('wtd-due').textContent = task.dueDate ? fmtDate(task.dueDate) + (task.dueTime ? ' · ' + task.dueTime : '') : t('no_due_date');
+  document.getElementById('wtd-priority').textContent = task.priority === 'urgent' ? t('urgent') : task.priority === 'low' ? t('low') : t('normal');
+  document.getElementById('wtd-priority').className = 'pill ' + (task.priority === 'urgent' ? 'pill-o' : task.priority === 'low' ? 'pill-b' : 'pill-gray');
+  const statusLabel = task.status === 'done' ? t('done') : task.status === 'in-progress' ? t('in_progress') : t('pending');
+  const statusPill = task.status === 'done' ? 'pill-g' : task.status === 'in-progress' ? 'pill-b' : 'pill-gray';
+  document.getElementById('wtd-status').textContent = statusLabel;
+  document.getElementById('wtd-status').className = 'pill ' + statusPill;
+  document.getElementById('wtd-freq').textContent = task.frequency === 'daily' ? t('daily') : task.frequency === 'weekly' ? t('weekly') : t('just_once');
+
+  // Show/hide action buttons based on status
+  if (task.status === 'done') {
+    document.getElementById('wtd-actions').style.display = 'none';
+    document.getElementById('wtd-done-msg').style.display = 'block';
+  } else {
+    document.getElementById('wtd-actions').style.display = 'block';
+    document.getElementById('wtd-done-msg').style.display = 'none';
+  }
+  goScreen('s-worker-task-detail');
+}
+
+async function workerUpdateTask(status) {
+  if (!currentWorkerTask) return;
+  try {
+    await fetch('/api/tasks/update', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ taskId: currentWorkerTask._id, status }) });
+    currentWorkerTask.status = status;
+    if (status === 'done') {
+      document.getElementById('wtd-actions').style.display = 'none';
+      document.getElementById('wtd-done-msg').style.display = 'block';
+      document.getElementById('wtd-status').textContent = t('done');
+      document.getElementById('wtd-status').className = 'pill pill-g';
+    } else {
+      document.getElementById('wtd-status').textContent = t('in_progress');
+      document.getElementById('wtd-status').className = 'pill pill-b';
+    }
+  } catch(e) {}
+}
+
+// ══════════════════════════════════════
+//  WORKER SCHEDULE
+// ══════════════════════════════════════
+async function loadWorkerSchedule() {
+  if (!me || !me.propertyId) return;
+  const body = document.getElementById('worker-schedule-body');
+  body.innerHTML = '<div style="padding:12px"></div>';
+  try {
+    const r = await fetch('/api/tasks/' + me.propertyId);
+    const d = await r.json();
+    if (!d.ok) return;
+    const myTasks = d.tasks.filter(task => task.assigneeId && (task.assigneeId._id === me.id || task.assigneeId === me.id) && task.status !== 'done');
+
+    // Group by date
+    const today = new Date(); today.setHours(0,0,0,0);
+    const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate() + 1);
+    const weekEnd = new Date(today); weekEnd.setDate(weekEnd.getDate() + 7);
+
+    const todayTasks = [];
+    const tomorrowTasks = [];
+    const weekTasks = [];
+    const noDateTasks = [];
+
+    myTasks.forEach(task => {
+      if (!task.dueDate) { noDateTasks.push(task); return; }
+      const d = new Date(task.dueDate); d.setHours(0,0,0,0);
+      if (d.getTime() === today.getTime()) todayTasks.push(task);
+      else if (d.getTime() === tomorrow.getTime()) tomorrowTasks.push(task);
+      else if (d > today && d <= weekEnd) weekTasks.push(task);
+      else if (d < today) noDateTasks.push(task); // overdue
+      else weekTasks.push(task);
+    });
+
+    let html = '<div style="padding:12px">';
+
+    function renderScheduleGroup(label, tasks, color) {
+      if (!tasks.length) return '';
+      let h = '<div style="margin-bottom:16px"><div style="font-size:.78rem;font-weight:900;color:' + color + ';margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em">' + label + '</div>';
+      tasks.forEach(task => {
+        const pillClass = task.status === 'in-progress' ? 'pill-b' : task.priority === 'urgent' ? 'pill-o' : 'pill-gray';
+        const statusLabel = task.status === 'in-progress' ? t('in_progress') : task.priority === 'urgent' ? t('urgent') : t('pending');
+        const time = task.dueTime || '';
+        h += '<div class="tcard" onclick="openWorkerTaskDetail(\'' + task._id + '\')" style="margin:0 0 8px"><div class="tib">' + (task.category || '📋') + '</div><div class="ti"><h4>' + esc(task.title) + '</h4><p>' + (time ? '🕐 ' + time + ' · ' : '') + '<span class="pill ' + pillClass + '">' + statusLabel + '</span></p></div></div>';
+      });
+      h += '</div>';
+      return h;
+    }
+
+    html += renderScheduleGroup('📌 ' + t('today'), todayTasks, '#E65100');
+    html += renderScheduleGroup('📅 ' + t('tomorrow'), tomorrowTasks, '#1976D2');
+    html += renderScheduleGroup('📆 ' + t('this_week'), weekTasks, '#00695C');
+    if (noDateTasks.length) html += renderScheduleGroup('📋 ' + t('no_due_date'), noDateTasks, '#9CA3AF');
+
+    if (!myTasks.length) {
+      html += '<div style="text-align:center;padding:40px 20px"><div style="font-size:2.5rem;margin-bottom:12px">📅</div><p style="font-size:.9rem;font-weight:800;color:#9CA3AF">' + t('no_schedule') + '</p></div>';
+    }
+
+    html += '</div>';
+    body.innerHTML = html;
+  } catch(e) {}
+}
+
+// ══════════════════════════════════════
+//  WORKER ME / PROFILE
+// ══════════════════════════════════════
+async function loadWorkerMe() {
+  if (!me) return;
+  const initials = (me.name || '??').split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+  document.getElementById('wme-initials').textContent = initials;
+  document.getElementById('wme-name').textContent = me.name || '—';
+  document.getElementById('wme-lang').textContent = t('language') + ': ' + (me.lang || 'English');
+
+  // Load worker profile data
+  if (me.propertyId) {
+    document.getElementById('wme-property').textContent = t('property') + ': ' + (myProperty ? myProperty.name : '—');
+    try {
+      const r = await fetch('/api/workers/' + me.propertyId);
+      const d = await r.json();
+      if (d.ok) {
+        const wp = d.workers.find(w => {
+          const u = w.userId || {};
+          return u._id === me.id;
+        });
+        if (wp) {
+          document.getElementById('wme-jobrole').textContent = t('my_role') + ': ' + (wp.jobRole || '—');
+          document.getElementById('wme-role').textContent = (wp.jobRole || 'Staff') + ' · ' + (me.lang || 'English');
+          document.getElementById('wme-joined').textContent = t('joined') + ': ' + (wp.joinDate ? fmtDate(wp.joinDate) : '—');
+        }
+      }
+    } catch(e) {}
+  }
 }
 
 function shareInvite(method) {

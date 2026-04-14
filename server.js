@@ -344,6 +344,14 @@ app.get('/api/tasks/:propertyId', async (req, res) => {
   } catch (e) { res.json({ ok: true, tasks: [] }); }
 });
 
+// Get tasks assigned to a specific worker
+app.get('/api/tasks/:propertyId/worker/:workerId', async (req, res) => {
+  try {
+    const tasks = await Task.find({ propertyId: req.params.propertyId, assigneeId: req.params.workerId }).sort({ createdAt: -1 });
+    res.json({ ok: true, tasks });
+  } catch (e) { res.json({ ok: true, tasks: [] }); }
+});
+
 app.post('/api/tasks/update', async (req, res) => {
   const { taskId, status, title, description, assigneeId, priority } = req.body;
   try {
