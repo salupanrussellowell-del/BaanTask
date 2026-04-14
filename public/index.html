@@ -325,7 +325,13 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
         <div class="gender-btn" onclick="pickGender('male',this)" data-i18n="male">Male</div>
         <div class="gender-btn" onclick="pickGender('female',this)" data-i18n="female">Female</div>
       </div>
-      <div class="form-group"><label data-i18n="dob">Date of Birth</label><input id="or-dob" type="date"></div>
+      <div class="form-group"><label data-i18n="dob">Date of Birth</label>
+        <div style="display:flex;gap:6px">
+          <select id="or-dob-day" class="finput" style="flex:1;padding:10px 6px;font-size:.85rem"><option value="">Day</option></select>
+          <select id="or-dob-month" class="finput" style="flex:1.4;padding:10px 6px;font-size:.85rem"><option value="">Month</option></select>
+          <select id="or-dob-year" class="finput" style="flex:1.2;padding:10px 6px;font-size:.85rem"><option value="">Year</option></select>
+        </div>
+      </div>
       <div class="form-group"><label data-i18n="pin_label">4-Digit PIN</label><input id="or-pin" type="password" inputmode="numeric" class="pin-input" placeholder="••••" maxlength="4"></div>
       <div id="or-error" class="error-msg"></div>
       <button class="btn btn-t" id="or-btn" disabled onclick="ownerRegister()" style="max-width:360px" data-i18n="send_code">Send Verification Code</button>
@@ -607,7 +613,13 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
         </div>
       </div>
       <div style="display:flex;gap:8px">
-        <div style="flex:1"><label class="flabel">Due date</label><input id="ct-date" type="date" class="finput"></div>
+        <div style="flex:1"><label class="flabel" data-i18n="due_date">Due date</label>
+          <div style="display:flex;gap:4px">
+            <select id="ct-date-day" class="finput" style="flex:1;padding:8px 4px;font-size:.82rem"><option value="">Day</option></select>
+            <select id="ct-date-month" class="finput" style="flex:1.2;padding:8px 4px;font-size:.82rem"><option value="">Mon</option></select>
+            <select id="ct-date-year" class="finput" style="flex:1;padding:8px 4px;font-size:.82rem"><option value="">Year</option></select>
+          </div>
+        </div>
         <div style="flex:1"><label class="flabel">Due time</label><input id="ct-time" type="time" class="finput"></div>
       </div>
       <div>
@@ -1116,7 +1128,8 @@ function checkOwnerReg() {
   const p = document.getElementById('or-pin').value;
   document.getElementById('or-btn').disabled = !(n && e && p.length === 4);
 }
-['or-name','or-email','or-phone','or-dob'].forEach(id => document.getElementById(id).addEventListener('input', checkOwnerReg));
+['or-name','or-email','or-phone'].forEach(id => document.getElementById(id).addEventListener('input', checkOwnerReg));
+['or-dob-day','or-dob-month','or-dob-year'].forEach(id => document.getElementById(id).addEventListener('change', checkOwnerReg));
 document.getElementById('or-pin').addEventListener('input', function() { this.value = this.value.replace(/\D/g,'').substring(0,4); checkOwnerReg(); });
 
 async function ownerRegister() {
@@ -1126,7 +1139,7 @@ async function ownerRegister() {
   showError('or-error','');
   document.getElementById('or-btn').disabled = true;
   document.getElementById('or-btn').textContent = 'Sending code...';
-  pendingReg = { name, email, pin, phone: document.getElementById('or-phone').value.trim(), gender: selectedGender, dob: document.getElementById('or-dob').value, role: 'owner' };
+  pendingReg = { name, email, pin, phone: document.getElementById('or-phone').value.trim(), gender: selectedGender, dob: getDateFromDropdowns('or-dob-day', 'or-dob-month', 'or-dob-year'), role: 'owner' };
   try {
     const r = await fetch('/api/send-otp', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({contact:email,name}) });
     const d = await r.json();
@@ -1304,6 +1317,31 @@ function fmtMonth(d) {
   return dt.toLocaleDateString('en-GB', { calendar: 'gregory', month: 'long', year: 'numeric' });
 }
 
+// Date dropdown helpers — avoid native date picker Buddhist Era issue
+const MONTHS_EN = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function populateDateDropdowns(dayId, monthId, yearId, yearStart, yearEnd) {
+  const dayEl = document.getElementById(dayId);
+  const monthEl = document.getElementById(monthId);
+  const yearEl = document.getElementById(yearId);
+  // Days 1-31
+  for (let d = 1; d <= 31; d++) dayEl.innerHTML += '<option value="' + d + '">' + d + '</option>';
+  // Months
+  MONTHS_EN.forEach((m, i) => monthEl.innerHTML += '<option value="' + (i + 1) + '">' + m + '</option>');
+  // Years
+  for (let y = yearEnd; y >= yearStart; y--) yearEl.innerHTML += '<option value="' + y + '">' + y + '</option>';
+}
+function getDateFromDropdowns(dayId, monthId, yearId) {
+  const d = document.getElementById(dayId).value;
+  const m = document.getElementById(monthId).value;
+  const y = document.getElementById(yearId).value;
+  if (!d || !m || !y) return '';
+  return y + '-' + String(m).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+}
+
+// Populate on load
+populateDateDropdowns('or-dob-day', 'or-dob-month', 'or-dob-year', 1950, 2026);
+populateDateDropdowns('ct-date-day', 'ct-date-month', 'ct-date-year', 2024, 2030);
+
 async function loadPropertyData(propId) {
   try { const r = await fetch('/api/property/'+propId); const d = await r.json(); if (d.ok) myProperty = d.property; } catch(e) {}
 }
@@ -1469,7 +1507,7 @@ async function createTask() {
         description: document.getElementById('ct-desc').value.trim(),
         assigneeId: document.getElementById('ct-assignee').value || null,
         frequency: selectedFreq,
-        dueDate: document.getElementById('ct-date').value || null,
+        dueDate: getDateFromDropdowns('ct-date-day', 'ct-date-month', 'ct-date-year') || null,
         dueTime: document.getElementById('ct-time').value || '',
         priority: selectedPri
       })
