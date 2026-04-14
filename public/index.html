@@ -7,7 +7,17 @@
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;display:flex;flex-direction:column;background:#fff;color:#333;overflow:hidden;position:relative}
+html{height:100%;background:#1a1a2e}
+body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;display:flex;justify-content:center;align-items:center;background:#1a1a2e;color:#333;overflow:hidden;margin:0}
+
+/* ── Phone frame ── */
+#app{width:100%;max-width:390px;height:100vh;height:100dvh;background:#fff;position:relative;overflow:hidden;display:flex;flex-direction:column}
+@media(min-width:500px){
+  #app{height:min(100vh,844px);border-radius:40px;box-shadow:0 0 0 8px #13161C,0 0 0 9px rgba(255,255,255,.04),0 40px 80px rgba(0,0,0,.8);margin:12px 0}
+}
+@media(max-width:499px){
+  html,body{background:#fff}
+}
 
 /* ── Screens ── */
 .screen{position:absolute;inset:0;display:none;flex-direction:column;background:#fff;z-index:1;overflow:hidden}
@@ -19,12 +29,13 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
 .bk{font-size:1.4rem;cursor:pointer;opacity:.9;line-height:1;padding:4px 8px;border:none;background:none;color:inherit}
 
 /* ── Buttons ── */
-.btn{display:block;width:100%;padding:14px;border-radius:14px;border:none;font-family:'Nunito',sans-serif;font-size:.95rem;font-weight:800;cursor:pointer;text-align:center;transition:opacity .15s}
+.btn{display:block;width:100%;padding:14px;border-radius:14px;border:none;font-family:'Nunito',sans-serif;font-size:.95rem;font-weight:800;cursor:pointer;text-align:center;transition:opacity .15s;-webkit-tap-highlight-color:transparent}
 .btn-t{background:#00897B;color:#fff}
 .btn-o{background:#E65100;color:#fff}
 .btn-outline{background:#fff;color:#075e54;border:2px solid #075e54}
 .btn:hover{opacity:.88}
 .btn:disabled{opacity:.4;cursor:default}
+.btn:active{transform:scale(.98)}
 .btn-link{background:none;border:none;color:#00897B;font-size:.85rem;cursor:pointer;text-decoration:underline;margin-top:10px;font-weight:700}
 
 /* ── Status bar ── */
@@ -33,7 +44,7 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
 /* ── Forms ── */
 .form-group{margin-bottom:14px;width:100%;max-width:360px}
 .form-group label{display:block;font-size:.78rem;color:#6B7280;margin-bottom:4px;font-weight:700}
-.form-group input,.form-group select,.form-group textarea{width:100%;padding:12px 14px;border:2px solid #E5E7EB;border-radius:12px;font-size:.95rem;outline:none;background:#F9FAFB;font-family:'Nunito',sans-serif;font-weight:600}
+.form-group input,.form-group select,.form-group textarea{width:100%;padding:12px 14px;border:2px solid #E5E7EB;border-radius:12px;font-size:.95rem;outline:none;background:#F9FAFB;font-family:'Nunito',sans-serif;font-weight:600;-webkit-appearance:none}
 .form-group input:focus,.form-group select:focus{border-color:#00897B;background:#fff}
 .error-msg{color:#c62828;font-size:.82rem;text-align:center;margin-bottom:10px;display:none;font-weight:700}
 .success-msg{color:#2e7d32;font-size:.82rem;text-align:center;margin-bottom:10px;display:none;font-weight:700}
@@ -42,12 +53,12 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
 
 /* ── Gender toggle ── */
 .gender-row{display:flex;gap:8px;width:100%;max-width:360px;margin-bottom:14px}
-.gender-btn{flex:1;padding:12px;border:2px solid #E5E7EB;border-radius:12px;text-align:center;cursor:pointer;font-size:.92rem;font-weight:700;background:#F9FAFB;transition:all .15s;font-family:'Nunito',sans-serif}
+.gender-btn{flex:1;padding:12px;border:2px solid #E5E7EB;border-radius:12px;text-align:center;cursor:pointer;font-size:.92rem;font-weight:700;background:#F9FAFB;transition:all .15s;font-family:'Nunito',sans-serif;-webkit-tap-highlight-color:transparent}
 .gender-btn.selected{border-color:#00897B;background:#E0F2F1;color:#00695C}
 
 /* ── Property type ── */
 .prop-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;width:100%;max-width:360px;margin-bottom:16px}
-.prop-item{padding:20px 12px;border:2px solid #E5E7EB;border-radius:14px;text-align:center;cursor:pointer;transition:all .15s;background:#F9FAFB}
+.prop-item{padding:20px 12px;border:2px solid #E5E7EB;border-radius:14px;text-align:center;cursor:pointer;transition:all .15s;background:#F9FAFB;-webkit-tap-highlight-color:transparent}
 .prop-item.selected{border-color:#00897B;background:#E0F2F1}
 .prop-item .pi-icon{font-size:2rem;margin-bottom:4px}
 .prop-item .pi-name{font-size:.88rem;font-weight:700}
@@ -58,46 +69,64 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
 .invite-box .ib-code{font-size:2.4rem;font-weight:900;letter-spacing:8px;color:#00695C;font-family:'DM Sans',monospace}
 .invite-box .ib-hint{font-size:.72rem;color:#9CA3AF;margin-top:10px;font-weight:600}
 
-/* ── Dashboard ── */
-.dash-header{background:linear-gradient(160deg,#00897B,#00695C);color:#fff;padding:20px 22px 40px}
-.dash-header .dh-greeting{font-size:.82rem;opacity:.8;font-weight:600}
-.dash-header .dh-name{font-size:1.3rem;font-weight:900}
-.dash-header .dh-property{font-size:.75rem;opacity:.7;margin-top:2px;font-weight:600}
-.stat-row{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:0 16px;margin-top:-24px}
-.stat-card{background:#fff;border-radius:14px;padding:14px;box-shadow:0 2px 12px rgba(0,0,0,.08)}
-.stat-card .sc-num{font-size:1.5rem;font-weight:900;color:#00695C}
-.stat-card .sc-label{font-size:.72rem;color:#9CA3AF;margin-top:2px;font-weight:700}
-.dash-section{padding:16px}
-.dash-section h3{font-size:1rem;font-weight:800;margin-bottom:10px;color:#1F2937}
-.quick-actions{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:20px}
-.qa-btn{display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;border:2px solid #E5E7EB;border-radius:14px;cursor:pointer;background:#fff;font-size:.7rem;color:#6B7280;font-weight:700;font-family:'Nunito',sans-serif}
-.qa-btn .qa-icon{font-size:1.5rem}
-.qa-btn:active{background:#E0F2F1;border-color:#00897B}
+/* ── Dashboard banner (exact mockup) ── */
+.banner{padding:16px;color:#fff;flex-shrink:0}
+.banner.owner{background:linear-gradient(135deg,#00897B,#00695C)}
+.banner.worker{background:linear-gradient(135deg,#E65100,#BF360C)}
+.banner .b-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.banner .b-greeting{font-size:.76rem;opacity:.8;font-weight:600}
+.banner .b-name{font-size:1.05rem;font-weight:900}
+.banner .b-bell{font-size:1.5rem;cursor:pointer;position:relative}
+.banner .b-bell .nbadge{position:absolute;top:-6px;right:-6px;background:#E53935;color:#fff;font-size:.55rem;font-weight:900;width:14px;height:14px;border-radius:50%;display:flex;align-items:center;justify-content:center}
 
-/* ── Bottom nav ── */
-.bottom-nav{display:flex;border-top:1.5px solid #E5E7EB;background:#fff;padding:6px 0 env(safe-area-inset-bottom,4px);flex-shrink:0}
-.bottom-nav .nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 0;cursor:pointer;font-size:.65rem;color:#9CA3AF;font-weight:700}
-.bottom-nav .nav-item.active{color:#00897B}
-.bottom-nav .nav-item .ni-icon{font-size:1.3rem}
+/* ── Stat cards in banner (exact mockup) ── */
+.stats{display:flex;gap:7px;margin-top:10px}
+.stat{background:rgba(255,255,255,.18);border-radius:11px;padding:8px 10px;flex:1;text-align:center}
+.stat .num{font-size:1.2rem;font-weight:900;display:block}
+.stat .lbl{font-size:.6rem;opacity:.85;font-weight:800}
+
+/* ── Section headings (exact mockup) ── */
+.sh{padding:12px 14px 5px;font-size:.9rem;font-weight:900;color:#1F2937;display:flex;justify-content:space-between;align-items:center}
+.sa{font-size:.74rem;font-weight:700;color:#00897B;cursor:pointer}
+
+/* ── Worker avatar (exact mockup) ── */
+.wav{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.82rem;font-weight:900;color:#fff;flex-shrink:0;border:2.5px solid rgba(255,255,255,.35)}
+
+/* ── Worker horizontal scroll ── */
+.worker-scroll{padding:0 12px 10px;display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.worker-scroll::-webkit-scrollbar{display:none}
+.worker-chip{display:flex;flex-direction:column;align-items:center;gap:5px;flex-shrink:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.worker-chip .wc-name{font-size:.62rem;font-weight:800;color:#1F2937}
+.worker-chip .wc-status{font-size:.56rem;font-weight:800}
+
+/* ── Expense card (exact mockup) ── */
+.expense-card{margin:4px 12px 16px;background:linear-gradient(135deg,#00695C,#004D40);border-radius:14px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.expense-card:active{opacity:.85}
+
+/* ── Bottom nav (exact mockup) ── */
+.bn{background:#fff;border-top:1px solid #EDEEF0;display:flex;padding:7px 0 max(10px,env(safe-area-inset-bottom));flex-shrink:0}
+.bn .ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:.58rem;font-weight:800;color:#9CA3AF;cursor:pointer;position:relative;-webkit-tap-highlight-color:transparent;transition:color .15s}
+.bn .ni.active-o{color:#00897B}
+.bn .ni.active-w{color:#E65100}
+.bn .ni .ic{font-size:1.25rem}
+.bn .ni .nbadge{position:absolute;top:-2px;right:16px;background:#E53935;color:#fff;font-size:.55rem;font-weight:900;width:14px;height:14px;border-radius:50%;display:flex;align-items:center;justify-content:center}
 
 /* ── Worker list items ── */
-.worker-item{display:flex;align-items:center;gap:12px;padding:14px;border:2px solid #E5E7EB;border-radius:14px;margin-bottom:8px;cursor:pointer;background:#fff}
+.worker-item{display:flex;align-items:center;gap:12px;padding:14px;border:2px solid #E5E7EB;border-radius:14px;margin-bottom:8px;cursor:pointer;background:#fff;-webkit-tap-highlight-color:transparent}
 .worker-item:active{background:#F9FAFB}
-.worker-item .wi-avatar{width:44px;height:44px;border-radius:50%;background:#E0F2F1;display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:800;color:#00695C}
+.worker-item .wi-avatar{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.82rem;font-weight:900;color:#fff;flex-shrink:0}
 .worker-item .wi-info{flex:1}
 .worker-item .wi-name{font-size:.92rem;font-weight:800}
 .worker-item .wi-role{font-size:.75rem;color:#9CA3AF;font-weight:600}
-.worker-item .wi-status{width:8px;height:8px;border-radius:50%;background:#25d366}
+.worker-item .wi-dot{width:10px;height:10px;border-radius:50%;background:#4CAF50;flex-shrink:0}
 
 /* ── Top bar ── */
 .top-bar{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1.5px solid #E5E7EB;background:#fff;flex-shrink:0}
 .top-bar .tb-title{font-size:1.1rem;font-weight:800;flex:1}
-
-/* ── Screen center helper ── */
-.screen-pad{padding:24px 20px;align-items:center}
 </style>
 </head>
 <body>
+<div id="app">
 
 <!-- ═══════════════════════════════════════ -->
 <!--  SPLASH (exact mockup)                -->
@@ -341,91 +370,115 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
   </div>
 </div>
 
-<!-- ═══ OWNER HOME ═══ -->
+<!-- ═══ OWNER HOME (exact mockup) ═══ -->
 <div id="s-owner-home" class="screen">
-  <div class="dash-header">
-    <div class="dh-greeting" id="dh-greeting">Good morning</div>
-    <div class="dh-name" id="dh-name">—</div>
-    <div class="dh-property" id="dh-property">—</div>
-  </div>
-  <div style="flex:1;overflow-y:auto;background:#F9FAFB">
-    <div class="stat-row">
-      <div class="stat-card"><div class="sc-num" id="stat-workers">0</div><div class="sc-label">Workers</div></div>
-      <div class="stat-card"><div class="sc-num" id="stat-tasks">0</div><div class="sc-label">Active Tasks</div></div>
-      <div class="stat-card"><div class="sc-num" id="stat-expenses">฿0</div><div class="sc-label">Expenses</div></div>
-      <div class="stat-card"><div class="sc-num" id="stat-attendance">—</div><div class="sc-label">Attendance</div></div>
-    </div>
-    <div class="dash-section">
-      <h3>Quick Actions</h3>
-      <div class="quick-actions">
-        <div class="qa-btn"><span class="qa-icon">📝</span>New Task</div>
-        <div class="qa-btn" onclick="goScreen('s-workers-list')"><span class="qa-icon">👥</span>Workers</div>
-        <div class="qa-btn" onclick="goScreen('s-invite')"><span class="qa-icon">🔗</span>Invite</div>
-        <div class="qa-btn"><span class="qa-icon">💬</span>Chat</div>
+  <div class="sb" style="background:#00695C">9:41<span>📶 🔋</span></div>
+  <div class="sc">
+    <!-- Banner -->
+    <div class="banner owner">
+      <div class="b-row">
+        <div>
+          <p class="b-greeting" id="dh-greeting">Good morning 👋</p>
+          <h2 class="b-name" id="dh-name">—</h2>
+        </div>
+        <span class="b-bell">🔔<span class="nbadge" id="notif-count" style="display:none">0</span></span>
+      </div>
+      <div class="stats">
+        <div class="stat"><span class="num" id="stat-workers">0</span><span class="lbl">Workers</span></div>
+        <div class="stat"><span class="num" id="stat-tasks">0</span><span class="lbl">Tasks today</span></div>
       </div>
     </div>
-    <div class="dash-section">
-      <h3>My Workers</h3>
-      <div id="dash-workers"></div>
+
+    <!-- Today's Workers -->
+    <div class="sh">Today's Workers <span class="sa" onclick="goScreen('s-workers-list')">See all →</span></div>
+    <div class="worker-scroll" id="dash-workers-scroll"></div>
+
+    <!-- Expense card -->
+    <div class="expense-card" id="dash-expense-card">
+      <div>
+        <div style="font-size:.7rem;color:rgba(255,255,255,.7);font-weight:700;margin-bottom:4px">💰 Expenses this month</div>
+        <div style="font-size:1.4rem;font-weight:900;color:#fff" id="stat-expenses">฿0</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:.74rem;color:rgba(255,255,255,.7);font-weight:700">See all →</div>
+      </div>
     </div>
-    <div style="height:80px"></div>
+
+    <!-- Quick Actions -->
+    <div class="sh">Quick Actions</div>
+    <div style="padding:0 12px 16px;display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+      <div style="background:#fff;border:2px solid #E5E7EB;border-radius:14px;padding:12px 4px;text-align:center;cursor:pointer;-webkit-tap-highlight-color:transparent" onclick=""><span style="font-size:1.5rem;display:block">📝</span><span style="font-size:.65rem;font-weight:800;color:#6B7280">New Task</span></div>
+      <div style="background:#fff;border:2px solid #E5E7EB;border-radius:14px;padding:12px 4px;text-align:center;cursor:pointer;-webkit-tap-highlight-color:transparent" onclick="goScreen('s-workers-list')"><span style="font-size:1.5rem;display:block">👥</span><span style="font-size:.65rem;font-weight:800;color:#6B7280">Workers</span></div>
+      <div style="background:#fff;border:2px solid #E5E7EB;border-radius:14px;padding:12px 4px;text-align:center;cursor:pointer;-webkit-tap-highlight-color:transparent" onclick="goScreen('s-invite')"><span style="font-size:1.5rem;display:block">🔗</span><span style="font-size:.65rem;font-weight:800;color:#6B7280">Invite</span></div>
+      <div style="background:#fff;border:2px solid #E5E7EB;border-radius:14px;padding:12px 4px;text-align:center;cursor:pointer;-webkit-tap-highlight-color:transparent"><span style="font-size:1.5rem;display:block">💬</span><span style="font-size:.65rem;font-weight:800;color:#6B7280">Chat</span></div>
+    </div>
+
+    <div style="height:70px"></div>
   </div>
-  <div class="bottom-nav">
-    <div class="nav-item active" onclick="goScreen('s-owner-home')"><span class="ni-icon">🏠</span>Home</div>
-    <div class="nav-item" onclick="goScreen('s-workers-list')"><span class="ni-icon">👥</span>Workers</div>
-    <div class="nav-item"><span class="ni-icon">📋</span>Tasks</div>
-    <div class="nav-item"><span class="ni-icon">💬</span>Chat</div>
-    <div class="nav-item"><span class="ni-icon">👤</span>Me</div>
+  <div class="bn">
+    <div class="ni active-o" onclick="goScreen('s-owner-home')"><span class="ic">🏠</span>Home</div>
+    <div class="ni" onclick=""><span class="ic">💼</span>Payroll</div>
+    <div class="ni" onclick=""><span class="ic">✅</span>Tasks</div>
+    <div class="ni" onclick=""><span class="ic">💬</span>Chat</div>
+    <div class="ni" onclick=""><span class="ic">👤</span>Me</div>
   </div>
 </div>
 
 <!-- ═══ WORKERS LIST ═══ -->
 <div id="s-workers-list" class="screen">
-  <div class="top-bar"><span class="bk" onclick="goScreen('s-owner-home')">‹</span><span class="tb-title">My Workers</span></div>
-  <div style="flex:1;overflow-y:auto;padding:16px;background:#F9FAFB" id="workers-list-body">
-    <p style="color:#9CA3AF;font-size:.88rem;text-align:center;font-weight:600">No workers yet. Share your invite code!</p>
+  <div class="sb" style="background:#00695C">9:41<span>📶 🔋</span></div>
+  <div style="background:linear-gradient(160deg,#00897B,#00695C);padding:12px 16px;color:#fff;flex-shrink:0">
+    <div style="display:flex;align-items:center;gap:12px"><span class="bk" onclick="goScreen('s-owner-home')" style="color:#fff">‹</span><span style="font-size:.95rem;font-weight:900">My Workers</span></div>
   </div>
-  <div class="bottom-nav">
-    <div class="nav-item" onclick="goScreen('s-owner-home')"><span class="ni-icon">🏠</span>Home</div>
-    <div class="nav-item active"><span class="ni-icon">👥</span>Workers</div>
-    <div class="nav-item"><span class="ni-icon">📋</span>Tasks</div>
-    <div class="nav-item"><span class="ni-icon">💬</span>Chat</div>
-    <div class="nav-item"><span class="ni-icon">👤</span>Me</div>
+  <div class="sc" style="padding:12px" id="workers-list-body">
+    <p style="color:#9CA3AF;font-size:.85rem;text-align:center;font-weight:600;padding:20px">No workers yet. Share your invite code!</p>
+  </div>
+  <div class="bn">
+    <div class="ni" onclick="goScreen('s-owner-home')"><span class="ic">🏠</span>Home</div>
+    <div class="ni" onclick=""><span class="ic">💼</span>Payroll</div>
+    <div class="ni" onclick=""><span class="ic">✅</span>Tasks</div>
+    <div class="ni" onclick=""><span class="ic">💬</span>Chat</div>
+    <div class="ni" onclick=""><span class="ic">👤</span>Me</div>
   </div>
 </div>
 
 <!-- ═══ WORKER HOME ═══ -->
 <div id="s-worker-home" class="screen">
-  <div class="dash-header">
-    <div class="dh-greeting" id="wh-greeting">Good morning</div>
-    <div class="dh-name" id="wh-name">—</div>
-    <div class="dh-property" id="wh-property">—</div>
-  </div>
-  <div style="flex:1;overflow-y:auto;background:#F9FAFB">
-    <div class="stat-row">
-      <div class="stat-card"><div class="sc-num">0</div><div class="sc-label">Tasks Today</div></div>
-      <div class="stat-card"><div class="sc-num">—</div><div class="sc-label">Next Shift</div></div>
-    </div>
-    <div class="dash-section">
-      <h3>Quick Actions</h3>
-      <div class="quick-actions">
-        <div class="qa-btn"><span class="qa-icon">📋</span>Tasks</div>
-        <div class="qa-btn"><span class="qa-icon">📅</span>Schedule</div>
-        <div class="qa-btn"><span class="qa-icon">🧾</span>Expenses</div>
-        <div class="qa-btn"><span class="qa-icon">💬</span>Chat</div>
+  <div class="sb" style="background:#BF360C">9:41<span>📶 🔋</span></div>
+  <div class="sc">
+    <div class="banner worker">
+      <div class="b-row">
+        <div>
+          <p class="b-greeting" id="wh-greeting">Good morning 👋</p>
+          <h2 class="b-name" id="wh-name">—</h2>
+        </div>
+        <span class="b-bell">🔔</span>
+      </div>
+      <div class="stats">
+        <div class="stat"><span class="num">0</span><span class="lbl">Tasks today</span></div>
+        <div class="stat"><span class="num">—</span><span class="lbl">Next shift</span></div>
       </div>
     </div>
-    <div style="height:80px"></div>
+
+    <div class="sh">Quick Actions</div>
+    <div style="padding:0 12px 16px;display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+      <div style="background:#fff;border:2px solid #E5E7EB;border-radius:14px;padding:12px 4px;text-align:center;cursor:pointer"><span style="font-size:1.5rem;display:block">📋</span><span style="font-size:.65rem;font-weight:800;color:#6B7280">Tasks</span></div>
+      <div style="background:#fff;border:2px solid #E5E7EB;border-radius:14px;padding:12px 4px;text-align:center;cursor:pointer"><span style="font-size:1.5rem;display:block">📅</span><span style="font-size:.65rem;font-weight:800;color:#6B7280">Schedule</span></div>
+      <div style="background:#fff;border:2px solid #E5E7EB;border-radius:14px;padding:12px 4px;text-align:center;cursor:pointer"><span style="font-size:1.5rem;display:block">🧾</span><span style="font-size:.65rem;font-weight:800;color:#6B7280">Expenses</span></div>
+      <div style="background:#fff;border:2px solid #E5E7EB;border-radius:14px;padding:12px 4px;text-align:center;cursor:pointer"><span style="font-size:1.5rem;display:block">💬</span><span style="font-size:.65rem;font-weight:800;color:#6B7280">Chat</span></div>
+    </div>
+    <div style="height:70px"></div>
   </div>
-  <div class="bottom-nav">
-    <div class="nav-item active"><span class="ni-icon">🏠</span>Home</div>
-    <div class="nav-item"><span class="ni-icon">📋</span>Tasks</div>
-    <div class="nav-item"><span class="ni-icon">📅</span>Schedule</div>
-    <div class="nav-item"><span class="ni-icon">💬</span>Chat</div>
-    <div class="nav-item"><span class="ni-icon">👤</span>Me</div>
+  <div class="bn">
+    <div class="ni active-w"><span class="ic">🏠</span>Home</div>
+    <div class="ni"><span class="ic">📋</span>Tasks</div>
+    <div class="ni"><span class="ic">📅</span>Schedule</div>
+    <div class="ni"><span class="ic">💬</span>Chat</div>
+    <div class="ni"><span class="ic">👤</span>Me</div>
   </div>
 </div>
 
+</div><!-- end #app -->
 <script>
 // ══════════════════════════════════════
 //  STATE
@@ -712,20 +765,29 @@ async function loadPropertyData(propId) {
 }
 function getGreeting() { const h = new Date().getHours(); return h<12?'Good morning':h<17?'Good afternoon':'Good evening'; }
 
+const AVATAR_COLORS = ['#00897B,#00695C','#F57C00,#E65100','#1976D2,#1565C0','#AD1457,#880E4F','#7B1FA2,#6A1B9A','#00838F,#006064','#C62828,#B71C1C','#2E7D32,#1B5E20'];
+function avatarGrad(i) { const c = AVATAR_COLORS[i % AVATAR_COLORS.length].split(','); return `linear-gradient(135deg,${c[0]},${c[1]})`; }
+
 async function loadOwnerDashboard() {
   if (!me) return;
-  document.getElementById('dh-greeting').textContent = getGreeting();
-  document.getElementById('dh-name').textContent = me.name;
-  document.getElementById('dh-property').textContent = myProperty ? `${myProperty.name} · ${myProperty.inviteCode}` : '';
+  document.getElementById('dh-greeting').textContent = getGreeting() + ' 👋';
+  const propName = myProperty ? myProperty.name : '';
+  document.getElementById('dh-name').textContent = me.name + (propName ? ' · ' + propName : '');
   if (myProperty) document.getElementById('invite-code').textContent = myProperty.inviteCode;
   if (me.propertyId) {
     try {
       const r = await fetch('/api/workers/'+me.propertyId); const d = await r.json();
       if (d.ok) {
         document.getElementById('stat-workers').textContent = d.workers.length;
-        const wl = document.getElementById('dash-workers'); wl.innerHTML = '';
-        if (!d.workers.length) { wl.innerHTML = '<p style="color:#9CA3AF;font-size:.85rem;font-weight:600">No workers yet. Share your invite code!</p>'; }
-        d.workers.forEach(w => { const u = w.userId||{}; wl.innerHTML += `<div class="worker-item"><div class="wi-avatar">${(u.name||'?')[0].toUpperCase()}</div><div class="wi-info"><div class="wi-name">${u.name||'—'}</div><div class="wi-role">${w.jobRole||'Staff'}</div></div><div class="wi-status"></div></div>`; });
+        const scroll = document.getElementById('dash-workers-scroll'); scroll.innerHTML = '';
+        if (!d.workers.length) {
+          scroll.innerHTML = '<div style="padding:8px 4px;font-size:.78rem;color:#9CA3AF;font-weight:600">No workers yet — share your invite code!</div>';
+        }
+        d.workers.forEach((w, i) => {
+          const u = w.userId||{};
+          const initials = (u.name||'??').split(' ').map(n=>n[0]).join('').toUpperCase().substring(0,2);
+          scroll.innerHTML += `<div class="worker-chip"><div style="position:relative"><div class="wav" style="background:${avatarGrad(i)}">${initials}</div><div style="position:absolute;bottom:0;right:0;width:13px;height:13px;background:#4CAF50;border-radius:50%;border:2px solid #fff"></div></div><span class="wc-name">${u.name||'—'}</span><span class="wc-status" style="color:#43A047">✓ Active</span></div>`;
+        });
       }
     } catch(e) {}
     try { const r = await fetch('/api/tasks/'+me.propertyId); const d = await r.json(); if (d.ok) document.getElementById('stat-tasks').textContent = d.tasks.filter(t=>t.status!=='done').length; } catch(e) {}
@@ -737,8 +799,12 @@ async function loadWorkersList() {
   try {
     const r = await fetch('/api/workers/'+me.propertyId); const d = await r.json();
     const body = document.getElementById('workers-list-body'); body.innerHTML = '';
-    if (!d.ok||!d.workers.length) { body.innerHTML = '<p style="color:#9CA3AF;font-size:.88rem;text-align:center;font-weight:600">No workers yet.</p>'; return; }
-    d.workers.forEach(w => { const u = w.userId||{}; body.innerHTML += `<div class="worker-item"><div class="wi-avatar">${(u.name||'?')[0].toUpperCase()}</div><div class="wi-info"><div class="wi-name">${u.name||'—'}</div><div class="wi-role">${w.jobRole||'Staff'} · ฿${w.salary||0}/mo</div></div><div class="wi-status"></div></div>`; });
+    if (!d.ok||!d.workers.length) { body.innerHTML = '<p style="color:#9CA3AF;font-size:.85rem;text-align:center;font-weight:600;padding:20px">No workers yet. Share your invite code!</p>'; return; }
+    d.workers.forEach((w,i) => {
+      const u = w.userId||{};
+      const initials = (u.name||'??').split(' ').map(n=>n[0]).join('').toUpperCase().substring(0,2);
+      body.innerHTML += `<div class="worker-item"><div class="wi-avatar" style="background:${avatarGrad(i)}">${initials}</div><div class="wi-info"><div class="wi-name">${u.name||'—'}</div><div class="wi-role">${w.jobRole||'Staff'}${w.salary?' · ฿'+w.salary+'/mo':''}</div></div><div class="wi-dot"></div></div>`;
+    });
   } catch(e) {}
 }
 
