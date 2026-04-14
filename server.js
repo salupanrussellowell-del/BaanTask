@@ -13,31 +13,115 @@ const client = new Anthropic();
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-const LANGUAGES = ['Russian', 'Thai', 'English', 'Filipino', 'Myanmar', 'Chinese'];
+const LANGUAGES = ['English','Thai','Russian','Filipino','Myanmar','Chinese','German','French','Arabic','Indonesian'];
 
 console.log('[STARTUP] BaanTask server starting...');
 console.log('[STARTUP] ANTHROPIC_API_KEY set:', !!process.env.ANTHROPIC_API_KEY);
 console.log('[STARTUP] MONGODB_URI set:', !!process.env.MONGODB_URI);
 console.log('[STARTUP] RESEND_API_KEY set:', !!process.env.RESEND_API_KEY);
 
-// ── Resend email client ──
-
+// ── Resend ──
 let resend = null;
 if (process.env.RESEND_API_KEY) {
   resend = new Resend(process.env.RESEND_API_KEY);
-  console.log('[STARTUP] Resend email client ready');
-} else {
-  console.warn('[STARTUP] RESEND_API_KEY not set — OTP codes will be logged to console only');
+  console.log('[STARTUP] Resend ready');
 }
 
-// ── Mongoose schemas ──
+// ══════════════════════════════════════
+//  MONGOOSE SCHEMAS — Full App
+// ══════════════════════════════════════
 
 const userSchema = new mongoose.Schema({
-  name: { type: String, required: true, unique: true },
+  name: { type: String, required: true },
+  email: { type: String, default: '' },
+  phone: { type: String, default: '' },
   pinHash: { type: String, default: '' },
-  contact: { type: String, default: '' },
-  lang: { type: String, required: true },
+  role: { type: String, enum: ['owner', 'worker'], required: true },
+  lang: { type: String, default: 'English' },
+  gender: { type: String, default: '' },
+  dob: { type: String, default: '' },
+  photo: { type: String, default: '' },
   emailVerified: { type: Boolean, default: false },
+  propertyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Property', default: null },
+  createdAt: { type: Date, default: Date.now }
+});
+userSchema.index({ email: 1 });
+
+const propertySchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  type: { type: String, enum: ['house', 'condo', 'villa', 'other'], default: 'house' },
+  location: { type: String, default: '' },
+  ownerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  inviteCode: { type: String, unique: true },
+  createdAt: { type: Date, default: Date.now }
+});
+
+const workerProfileSchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  propertyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Property', required: true },
+  jobRole: { type: String, default: '' }, // cleaner, cook, driver, nanny, gardener, other
+  salary: { type: Number, default: 0 },
+  contractType: { type: String, enum: ['live-in', 'live-out', 'other'], default: 'live-in' },
+  skills: [{ type: String }],
+  bio: { type: String, default: '' },
+  status: { type: String, enum: ['active', 'inactive'], default: 'active' },
+  joinDate: { type: Date, default: Date.now }
+});
+
+const taskSchema = new mongoose.Schema({
+  propertyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Property', required: true },
+  title: { type: String, required: true },
+  description: { type: String, default: '' },
+  assigneeId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+  category: { type: String, default: '' },
+  frequency: { type: String, enum: ['once', 'daily', 'weekly'], default: 'once' },
+  dueDate: { type: Date, default: null },
+  dueTime: { type: String, default: '' },
+  priority: { type: String, enum: ['urgent', 'normal', 'low'], default: 'normal' },
+  status: { type: String, enum: ['not-started', 'in-progress', 'done'], default: 'not-started' },
+  translations: { type: Map, of: String, default: {} },
+  createdAt: { type: Date, default: Date.now }
+});
+
+const attendanceSchema = new mongoose.Schema({
+  propertyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Property' },
+  workerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  date: { type: String, required: true }, // YYYY-MM-DD
+  status: { type: String, enum: ['present', 'late', 'absent', 'off'], default: 'present' },
+  checkInTime: { type: Date, default: null },
+  reason: { type: String, default: '' }
+});
+
+const expenseSchema = new mongoose.Schema({
+  propertyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Property' },
+  workerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  amount: { type: Number, required: true },
+  category: { type: String, default: '' },
+  store: { type: String, default: '' },
+  date: { type: Date, default: Date.now },
+  receiptImage: { type: String, default: '' },
+  status: { type: String, enum: ['pending', 'approved', 'reimbursed'], default: 'pending' }
+});
+
+const chatSchema = new mongoose.Schema({
+  propertyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Property' },
+  type: { type: String, enum: ['direct', 'group'], default: 'direct' },
+  members: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  name: { type: String, default: '' },
+  lastMessage: { type: String, default: '' },
+  lastMessageAt: { type: Date, default: Date.now }
+});
+
+const messageSchema = new mongoose.Schema({
+  chatId: { type: mongoose.Schema.Types.ObjectId, ref: 'Chat', required: true, index: true },
+  senderId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  senderLang: { type: String, default: 'English' },
+  text: { type: String, required: true },
+  replyTo: { type: mongoose.Schema.Types.ObjectId, default: null, ref: 'Message' },
+  translations: { type: Map, of: String, default: {} },
+  reactions: { type: Map, of: [String], default: {} },
+  pinned: { type: Boolean, default: false },
+  edited: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now }
 });
 
@@ -48,337 +132,251 @@ const otpSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
-const roomSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  code: { type: String, required: true, unique: true },
-  createdBy: { type: String, required: true },
-  members: [{ type: String }],
-  createdAt: { type: Date, default: Date.now }
-});
-
-const messageSchema = new mongoose.Schema({
-  roomCode: { type: String, required: true, index: true },
-  sender: { type: String, required: true },
-  senderLang: { type: String, required: true },
-  text: { type: String, required: true },
-  replyTo: { type: mongoose.Schema.Types.ObjectId, default: null, ref: 'Message' },
-  translations: { type: Map, of: String, default: {} },
-  reactions: { type: Map, of: [String], default: {} },
-  createdAt: { type: Date, default: Date.now }
-});
-
 const User = mongoose.model('User', userSchema);
-const OTP = mongoose.model('OTP', otpSchema);
-const Room = mongoose.model('Room', roomSchema);
+const Property = mongoose.model('Property', propertySchema);
+const WorkerProfile = mongoose.model('WorkerProfile', workerProfileSchema);
+const Task = mongoose.model('Task', taskSchema);
+const Attendance = mongoose.model('Attendance', attendanceSchema);
+const Expense = mongoose.model('Expense', expenseSchema);
+const Chat = mongoose.model('Chat', chatSchema);
 const Message = mongoose.model('Message', messageSchema);
+const OTP = mongoose.model('OTP', otpSchema);
 
 // ── Connect to MongoDB ──
-
 let dbConnected = false;
-
 async function connectDB() {
   let uri = process.env.MONGODB_URI;
   if (!uri) { console.error('[DB] MONGODB_URI not set!'); return; }
   try {
     const url = new URL(uri);
-    if (!url.pathname || url.pathname === '/' || url.pathname === '') {
-      url.pathname = '/baantask';
-      uri = url.toString();
-    }
-    console.log(`[DB] Connecting to: ${url.pathname.substring(1) || '(none)'}`);
+    if (!url.pathname || url.pathname === '/' || url.pathname === '') { url.pathname = '/baantask'; uri = url.toString(); }
   } catch (e) { /* */ }
-
   try {
     await mongoose.connect(uri, { serverSelectionTimeoutMS: 30000, socketTimeoutMS: 45000 });
     dbConnected = true;
     console.log('[DB] Connected to MongoDB Atlas');
-  } catch (e) {
-    console.error('[DB] Connection failed:', e.message);
-  }
+  } catch (e) { console.error('[DB] Connection failed:', e.message); }
 }
 
 // ── Helpers ──
-
-function genRoomCode() { return crypto.randomBytes(3).toString('hex').toUpperCase(); }
+function genCode() { return crypto.randomBytes(3).toString('hex').toUpperCase(); }
 function genOTP() { return String(Math.floor(100000 + Math.random() * 900000)); }
 
 // ── Translate ──
-
 async function translateOne(text, fromLang, toLang) {
-  if (!process.env.ANTHROPIC_API_KEY) return null;
+  if (!process.env.ANTHROPIC_API_KEY || fromLang === toLang) return null;
   try {
-    const response = await client.messages.create({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 500,
-      messages: [{ role: 'user', content: `You are a translator. Translate the following text from ${fromLang} to ${toLang}. Output ONLY the translated text, nothing else. No quotes, no labels, no explanations.\n\nText to translate: ${text}` }]
+    const r = await client.messages.create({
+      model: 'claude-haiku-4-5-20251001', max_tokens: 500,
+      messages: [{ role: 'user', content: `Translate from ${fromLang} to ${toLang}. Output ONLY the translation.\n\n${text}` }]
     });
-    return response.content[0].text.trim();
-  } catch (e) {
-    console.error(`[TRANSLATE FAIL] ${fromLang}->${toLang}: ${e.message}`);
-    return null;
-  }
+    return r.content[0].text.trim();
+  } catch (e) { return null; }
 }
 
-// ── OTP Routes ──
+// ══════════════════════════════════════
+//  AUTH ROUTES
+// ══════════════════════════════════════
 
+// Send OTP
 app.post('/api/send-otp', async (req, res) => {
   const { contact, name } = req.body;
   if (!contact) return res.status(400).json({ ok: false, error: 'Email required' });
-
-  const normalizedContact = contact.trim().toLowerCase();
+  const nc = contact.trim().toLowerCase();
   const code = genOTP();
-  const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
-
-  console.log(`[OTP] Generating for ${normalizedContact}: ${code} (type: ${typeof code})`);
-
-  try {
-    await OTP.create({ contact: normalizedContact, otp: String(code), expiresAt });
-    console.log(`[OTP] Saved to DB: contact="${normalizedContact}" otp="${code}"`);
-
-  } catch (e) {
-    console.error('[OTP] DB save failed:', e.message);
-  }
+  try { await OTP.create({ contact: nc, otp: code, expiresAt: new Date(Date.now() + 10 * 60000) }); } catch (e) { /**/ }
 
   if (resend) {
     try {
-      const { data, error } = await resend.emails.send({
-        from: 'BaanTask <onboarding@resend.dev>',
-        to: [contact],
+      const { error } = await resend.emails.send({
+        from: 'BaanTask <onboarding@resend.dev>', to: [nc],
         subject: 'Your BaanTask verification code',
-        html: `<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:400px;margin:0 auto;padding:24px;">
-          <h2 style="color:#075e54;margin:0 0 16px;">BaanTask</h2>
-          <p style="color:#333;margin:0 0 8px;">Hi ${name || 'there'},</p>
-          <p style="color:#555;margin:0 0 20px;">Here is your verification code:</p>
-          <div style="background:#f0f4f0;border-radius:12px;padding:24px;text-align:center;margin:0 0 20px;">
-            <span style="font-size:36px;font-weight:800;letter-spacing:8px;color:#075e54;">${code}</span>
-          </div>
-          <p style="color:#999;font-size:13px;margin:0;">This code expires in 10 minutes.</p>
-        </div>`
+        html: `<div style="font-family:sans-serif;max-width:400px;margin:0 auto;padding:24px;"><h2 style="color:#075e54;">BaanTask</h2><p>Hi ${name || 'there'},</p><p>Your code:</p><div style="background:#f0f4f0;border-radius:12px;padding:24px;text-align:center;margin:16px 0;"><span style="font-size:36px;font-weight:800;letter-spacing:8px;color:#075e54;">${code}</span></div><p style="color:#999;font-size:13px;">Expires in 10 minutes.</p></div>`
       });
-      if (error) {
-        console.error('[OTP] ========================================');
-        console.error('[OTP] Resend FAILED for:', contact);
-        console.error('[OTP] Error:', JSON.stringify(error));
-        console.error('[OTP] ========================================');
-        // Fall through to console fallback
-      } else {
-        console.log(`[OTP] Email sent to ${contact} via Resend (id: ${data?.id})`);
-        return res.json({ ok: true, method: 'email' });
-      }
-    } catch (e) {
-      console.error('[OTP] ========================================');
-      console.error('[OTP] Resend exception for:', contact);
-      console.error('[OTP] Message:', e.message);
-      console.error('[OTP] Full error:', JSON.stringify(e, Object.getOwnPropertyNames(e)));
-      console.error('[OTP] ========================================');
-      // Fall through to console fallback
-    }
+      if (!error) { console.log(`[OTP] Sent to ${nc}`); return res.json({ ok: true, method: 'email' }); }
+    } catch (e) { /**/ }
   }
-
-  // Fallback: log OTP clearly in console
-  console.log('[OTP] ========================================');
-  console.log(`[OTP CODE] ====> ${code} <==== for ${contact}`);
-  console.log('[OTP] ========================================');
+  console.log(`[OTP CODE] ====> ${code} <==== for ${nc}`);
   res.json({ ok: true, method: 'console' });
 });
 
-// Verify OTP + create/update user in one step
+// Verify OTP + register/login
 app.post('/api/verify-otp', async (req, res) => {
-  const { contact, otp, name, pin, lang } = req.body;
-  if (!contact || !otp) return res.status(400).json({ ok: false, error: 'Email and code required' });
-  if (!name || !pin || !lang) return res.status(400).json({ ok: false, error: 'Name, PIN, and language required' });
-
-  const normalizedContact = contact.trim().toLowerCase();
-  const otpString = String(otp).trim();
-
-  console.log(`[OTP VERIFY] contact="${normalizedContact}" code="${otpString}"`);
-
+  const { contact, otp, name, pin, lang, role } = req.body;
+  if (!contact || !otp || !name || !pin || !lang) return res.status(400).json({ ok: false, error: 'All fields required' });
+  const nc = contact.trim().toLowerCase();
   try {
-    // Check OTP
-    const record = await OTP.findOne({
-      contact: normalizedContact,
-      otp: otpString,
-      expiresAt: { $gt: new Date() }
-    }).sort({ createdAt: -1 });
+    const record = await OTP.findOne({ contact: nc, otp: String(otp).trim(), expiresAt: { $gt: new Date() } }).sort({ createdAt: -1 });
+    if (!record) return res.json({ ok: false, error: 'Invalid or expired code' });
+    await OTP.deleteMany({ contact: nc });
 
-    if (!record) {
-      const all = await OTP.find({ contact: normalizedContact }).lean();
-      console.log(`[OTP VERIFY] NOT FOUND. Records for contact: ${all.length}`);
-      all.forEach((r, i) => console.log(`[OTP VERIFY]   #${i}: otp="${r.otp}" expired=${r.expiresAt < new Date()}`));
-      return res.json({ ok: false, error: 'Invalid or expired code' });
-    }
-
-    // OTP valid — clean up
-    await OTP.deleteMany({ contact: normalizedContact });
-    console.log(`[OTP VERIFY] Code verified for ${normalizedContact}`);
-
-    // Now create or update user (same logic as /api/login but skips PIN check for new OTP-verified users)
     const pinHash = await bcrypt.hash(pin, 10);
-    let user = await User.findOne({ name });
-
+    let user = await User.findOne({ email: nc });
     if (user) {
-      user.pinHash = pinHash;
-      user.lang = lang;
-      user.contact = normalizedContact;
+      user.pinHash = pinHash; user.lang = lang; user.name = name;
+      if (role) user.role = role;
       user.emailVerified = true;
       await user.save();
-      console.log(`[OTP VERIFY] Updated user: ${name}`);
     } else {
-      user = await User.create({ name, pinHash, contact: normalizedContact, lang, emailVerified: true });
-      console.log(`[OTP VERIFY] Created new user: ${name}`);
+      user = await User.create({ name, email: nc, pinHash, lang, role: role || 'owner', emailVerified: true });
     }
-
-    res.json({ ok: true, user: { name: user.name, lang: user.lang } });
-  } catch (e) {
-    console.error('[OTP VERIFY ERROR]', e.message);
-    res.json({ ok: false, error: 'Verification failed: ' + e.message });
-  }
+    console.log(`[AUTH] Verified + logged in: ${name} (${user.role})`);
+    res.json({ ok: true, user: { id: user._id, name: user.name, role: user.role, lang: user.lang, propertyId: user.propertyId } });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
-// ── PIN Login ──
-
+// PIN login (returning users)
 app.post('/api/login', async (req, res) => {
-  const { name, pin, contact, lang } = req.body;
-  if (!name || !pin || !lang) {
-    return res.status(400).json({ ok: false, error: 'Name, PIN, and language required' });
-  }
-  if (!/^\d{4}$/.test(pin)) {
-    return res.status(400).json({ ok: false, error: 'PIN must be exactly 4 digits' });
-  }
-
-  console.log(`[LOGIN] Attempt: ${name} (${lang})`);
-
+  const { email, pin, lang } = req.body;
+  if (!email || !pin) return res.status(400).json({ ok: false, error: 'Email and PIN required' });
   try {
-    const existing = await User.findOne({ name });
+    const user = await User.findOne({ email: email.trim().toLowerCase() });
+    if (!user) return res.json({ ok: false, error: 'Account not found' });
+    if (!user.pinHash) return res.json({ ok: false, error: 'Please verify email first' });
+    const match = await bcrypt.compare(pin, user.pinHash);
+    if (!match) return res.json({ ok: false, error: 'Wrong PIN' });
+    if (lang) { user.lang = lang; await user.save(); }
+    console.log(`[LOGIN] ${user.name} (${user.role})`);
+    res.json({ ok: true, user: { id: user._id, name: user.name, role: user.role, lang: user.lang, email: user.email, phone: user.phone, gender: user.gender, dob: user.dob, propertyId: user.propertyId } });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
 
-    if (existing) {
-      if (!existing.pinHash) {
-        existing.pinHash = await bcrypt.hash(pin, 10);
-        existing.lang = lang;
-        if (contact) { existing.contact = contact; existing.emailVerified = true; }
-        await existing.save();
-        return res.json({ ok: true, user: { name: existing.name, lang: existing.lang } });
-      }
+// ══════════════════════════════════════
+//  OWNER SETUP ROUTES
+// ══════════════════════════════════════
 
-      const match = await bcrypt.compare(pin, existing.pinHash);
-      if (!match) return res.json({ ok: false, error: 'Wrong PIN' });
+// Update owner profile (gender, dob, phone)
+app.post('/api/user/update', async (req, res) => {
+  const { userId, name, phone, gender, dob } = req.body;
+  if (!userId) return res.status(400).json({ ok: false, error: 'userId required' });
+  try {
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ ok: false, error: 'User not found' });
+    if (name) user.name = name;
+    if (phone) user.phone = phone;
+    if (gender) user.gender = gender;
+    if (dob) user.dob = dob;
+    await user.save();
+    res.json({ ok: true, user: { id: user._id, name: user.name, phone: user.phone, gender: user.gender, dob: user.dob } });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
 
-      existing.lang = lang;
-      if (contact) { existing.contact = contact; existing.emailVerified = true; }
-      await existing.save();
-      return res.json({ ok: true, user: { name: existing.name, lang: existing.lang } });
+// Create property
+app.post('/api/property/create', async (req, res) => {
+  const { ownerId, name, type, location } = req.body;
+  if (!ownerId || !name) return res.status(400).json({ ok: false, error: 'Owner ID and property name required' });
+  try {
+    const code = genCode();
+    const prop = await Property.create({ name, type: type || 'house', location: location || '', ownerId, inviteCode: code });
+    // Link property to owner
+    await User.findByIdAndUpdate(ownerId, { propertyId: prop._id });
+    // Create group chat for the property
+    await Chat.create({ propertyId: prop._id, type: 'group', members: [ownerId], name: `${name} Staff` });
+    console.log(`[PROPERTY] Created "${name}" (${type}) code=${code}`);
+    res.json({ ok: true, property: { id: prop._id, name: prop.name, type: prop.type, location: prop.location, inviteCode: prop.inviteCode } });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+// Get property
+app.get('/api/property/:id', async (req, res) => {
+  try {
+    const prop = await Property.findById(req.params.id);
+    if (!prop) return res.json({ ok: false, error: 'Not found' });
+    const workers = await WorkerProfile.find({ propertyId: prop._id }).populate('userId', 'name email phone lang');
+    res.json({ ok: true, property: prop, workers });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+// ══════════════════════════════════════
+//  WORKER ROUTES
+// ══════════════════════════════════════
+
+// Worker joins via invite code
+app.post('/api/worker/join', async (req, res) => {
+  const { userId, inviteCode, jobRole, salary } = req.body;
+  if (!userId || !inviteCode) return res.status(400).json({ ok: false, error: 'userId and inviteCode required' });
+  try {
+    const prop = await Property.findOne({ inviteCode: inviteCode.toUpperCase() });
+    if (!prop) return res.json({ ok: false, error: 'Invalid invite code' });
+
+    // Check if already joined
+    const existing = await WorkerProfile.findOne({ userId, propertyId: prop._id });
+    if (existing) return res.json({ ok: true, message: 'Already a member', propertyId: prop._id });
+
+    await WorkerProfile.create({ userId, propertyId: prop._id, jobRole: jobRole || '', salary: salary || 0 });
+    await User.findByIdAndUpdate(userId, { propertyId: prop._id, role: 'worker' });
+    // Add to group chat
+    const groupChat = await Chat.findOne({ propertyId: prop._id, type: 'group' });
+    if (groupChat && !groupChat.members.includes(userId)) {
+      groupChat.members.push(userId);
+      await groupChat.save();
     }
-
-    const pinHash = await bcrypt.hash(pin, 10);
-    const user = await User.create({ name, pinHash, contact: contact || '', lang, emailVerified: !!contact });
-    console.log(`[LOGIN] New user: ${name}`);
-    res.json({ ok: true, user: { name: user.name, lang: user.lang }, isNew: true });
-  } catch (e) {
-    console.error('[LOGIN ERROR]', e.message);
-    res.status(500).json({ ok: false, error: 'Login failed: ' + e.message });
-  }
+    console.log(`[WORKER] Joined property "${prop.name}"`);
+    res.json({ ok: true, propertyId: prop._id, propertyName: prop.name });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
-// ── Room Routes ──
-
-app.post('/api/rooms/create', async (req, res) => {
-  const { name, userName } = req.body;
-  if (!name || !userName) return res.status(400).json({ ok: false, error: 'Room name and user name required' });
+// List workers for a property
+app.get('/api/workers/:propertyId', async (req, res) => {
   try {
-    let code;
-    for (let i = 0; i < 10; i++) { code = genRoomCode(); if (!(await Room.findOne({ code }))) break; }
-    const room = await Room.create({ name, code, createdBy: userName, members: [userName] });
-    console.log(`[ROOM] Created "${name}" code=${code} by ${userName}`);
-    res.json({ ok: true, room: { name: room.name, code: room.code, members: room.members } });
-  } catch (e) { res.status(500).json({ ok: false, error: 'Failed to create room' }); }
+    const profiles = await WorkerProfile.find({ propertyId: req.params.propertyId, status: 'active' }).populate('userId', 'name email phone lang');
+    res.json({ ok: true, workers: profiles });
+  } catch (e) { res.json({ ok: true, workers: [] }); }
 });
 
-app.post('/api/rooms/join', async (req, res) => {
-  const { code, userName } = req.body;
-  if (!code || !userName) return res.status(400).json({ ok: false, error: 'Code and user name required' });
+// ══════════════════════════════════════
+//  TASK ROUTES
+// ══════════════════════════════════════
+
+app.post('/api/tasks/create', async (req, res) => {
+  const { propertyId, title, description, assigneeId, category, frequency, dueDate, dueTime, priority } = req.body;
+  if (!propertyId || !title) return res.status(400).json({ ok: false, error: 'Property and title required' });
   try {
-    const room = await Room.findOne({ code: code.toUpperCase() });
-    if (!room) return res.json({ ok: false, error: 'Invalid invite code' });
-    if (!room.members.includes(userName)) { room.members.push(userName); await room.save(); }
-    res.json({ ok: true, room: { name: room.name, code: room.code, members: room.members } });
-  } catch (e) { res.status(500).json({ ok: false, error: 'Failed to join room' }); }
+    const task = await Task.create({ propertyId, title, description, assigneeId, category, frequency, dueDate, dueTime, priority });
+    res.json({ ok: true, task });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
-app.get('/api/rooms/:code', async (req, res) => {
+app.get('/api/tasks/:propertyId', async (req, res) => {
   try {
-    const room = await Room.findOne({ code: req.params.code.toUpperCase() });
-    if (!room) return res.json({ ok: false, error: 'Room not found' });
-    res.json({ ok: true, room: { name: room.name, code: room.code, members: room.members } });
-  } catch (e) { res.status(500).json({ ok: false, error: 'Failed to get room' }); }
+    const tasks = await Task.find({ propertyId: req.params.propertyId }).sort({ createdAt: -1 }).populate('assigneeId', 'name');
+    res.json({ ok: true, tasks });
+  } catch (e) { res.json({ ok: true, tasks: [] }); }
 });
 
-// ── Message Routes ──
-
-app.get('/api/messages', async (req, res) => {
-  const { lang, room } = req.query;
-  if (!lang || !room) return res.json([]);
+app.post('/api/tasks/update', async (req, res) => {
+  const { taskId, status, title, description, assigneeId, priority } = req.body;
   try {
-    const msgs = await Message.find({ roomCode: room }).sort({ createdAt: 1 }).lean();
-    for (const m of msgs) {
-      if (m.senderLang === lang) continue;
-      const t = m.translations instanceof Map ? Object.fromEntries(m.translations) : (m.translations || {});
-      if (t[lang]) continue;
-      const translated = await translateOne(m.text, m.senderLang, lang);
-      if (translated) {
-        await Message.updateOne({ _id: m._id }, { $set: { [`translations.${lang}`]: translated } });
-        if (m.translations instanceof Map) m.translations.set(lang, translated);
-        else { m.translations = m.translations || {}; m.translations[lang] = translated; }
-      }
-    }
-    const byId = {};
-    msgs.forEach(m => { byId[m._id.toString()] = m; });
-    const result = msgs.map(m => {
-      const tr = m.translations instanceof Map ? Object.fromEntries(m.translations) : (m.translations || {});
-      const re = m.reactions instanceof Map ? Object.fromEntries(m.reactions) : (m.reactions || {});
-      let rp = null;
-      if (m.replyTo) { const o = byId[m.replyTo.toString()]; if (o) { const ot = o.translations instanceof Map ? Object.fromEntries(o.translations) : (o.translations || {}); rp = { sender: o.sender, text: o.senderLang === lang ? o.text : (ot[lang] || o.text) }; } }
-      return { id: m._id.toString(), sender: m.sender, senderLang: m.senderLang, text: m.text, translation: m.senderLang === lang ? null : (tr[lang] || null), reactions: re, replyTo: rp, time: m.createdAt };
-    });
-    res.json(result);
-  } catch (e) { console.error('[MESSAGES ERROR]', e.message); res.json([]); }
+    const task = await Task.findById(taskId);
+    if (!task) return res.status(404).json({ ok: false });
+    if (status) task.status = status;
+    if (title) task.title = title;
+    if (description) task.description = description;
+    if (assigneeId) task.assigneeId = assigneeId;
+    if (priority) task.priority = priority;
+    await task.save();
+    res.json({ ok: true, task });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
-app.post('/api/send', async (req, res) => {
-  const { text, sender, lang, roomCode, replyTo } = req.body;
-  if (!text || !sender || !lang || !roomCode) return res.status(400).json({ ok: false, error: 'Missing fields' });
-  if (!dbConnected) return res.status(503).json({ ok: false, error: 'Database not connected' });
+// ══════════════════════════════════════
+//  CHAT / MESSAGE ROUTES (kept for Phase 5)
+// ══════════════════════════════════════
+
+app.get('/api/chats/:propertyId/:userId', async (req, res) => {
   try {
-    const msg = await Message.create({ roomCode, sender, senderLang: lang, text, replyTo: replyTo || null });
-    console.log(`[SEND] ${sender} in ${roomCode}: "${text.substring(0, 50)}"`);
-    res.json({ ok: true, id: msg._id.toString() });
-  } catch (e) { res.status(500).json({ ok: false, error: 'Failed to save' }); }
+    const chats = await Chat.find({ propertyId: req.params.propertyId, members: req.params.userId }).sort({ lastMessageAt: -1 });
+    res.json({ ok: true, chats });
+  } catch (e) { res.json({ ok: true, chats: [] }); }
 });
 
-app.post('/api/react', async (req, res) => {
-  const { messageId, emoji, userName } = req.body;
-  if (!messageId || !emoji || !userName) return res.status(400).json({ error: 'Missing fields' });
-  try {
-    const msg = await Message.findById(messageId);
-    if (!msg) return res.status(404).json({ error: 'Not found' });
-    const users = msg.reactions.get(emoji) || [];
-    const idx = users.indexOf(userName);
-    if (idx >= 0) { users.splice(idx, 1); if (!users.length) msg.reactions.delete(emoji); else msg.reactions.set(emoji, users); }
-    else { users.push(userName); msg.reactions.set(emoji, users); }
-    await msg.save();
-    res.json({ ok: true });
-  } catch (e) { res.status(500).json({ error: 'Failed' }); }
-});
+// ══════════════════════════════════════
+//  HEALTH / ADMIN
+// ══════════════════════════════════════
 
-app.post('/api/delete', async (req, res) => {
-  const { messageId, userName } = req.body;
-  if (!messageId || !userName) return res.status(400).json({ ok: false, error: 'Missing fields' });
-  try {
-    const msg = await Message.findById(messageId);
-    if (!msg) return res.status(404).json({ ok: false, error: 'Not found' });
-    if (msg.sender !== userName) return res.status(403).json({ ok: false, error: 'Not your message' });
-    await Message.deleteOne({ _id: messageId });
-    res.json({ ok: true });
-  } catch (e) { res.status(500).json({ ok: false, error: 'Failed' }); }
+app.get('/status', async (req, res) => {
+  const dbOk = mongoose.connection.readyState === 1;
+  res.json({ db: dbOk, api: !!process.env.ANTHROPIC_API_KEY, resend: !!resend });
 });
 
 app.get('/admin/clear-messages', async (req, res) => {
@@ -386,15 +384,7 @@ app.get('/admin/clear-messages', async (req, res) => {
   catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
-app.get('/status', async (req, res) => {
-  const dbOk = mongoose.connection.readyState === 1;
-  const hasKey = !!process.env.ANTHROPIC_API_KEY;
-  const hasResend = !!resend;
-  let apiOk = false;
-  if (hasKey) { try { await client.messages.create({ model: 'claude-haiku-4-5-20251001', max_tokens: 5, messages: [{ role: 'user', content: 'ok' }] }); apiOk = true; } catch (e) { /* */ } }
-  res.json({ db: dbOk, api: apiOk, resend: hasResend });
-});
-
+// ── Start ──
 connectDB().then(() => {
   const PORT = process.env.PORT || 3000;
   app.listen(PORT, () => console.log(`[STARTUP] BaanTask running on port ${PORT}`));
