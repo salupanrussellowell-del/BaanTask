@@ -450,16 +450,17 @@ let screenHistory = [];
 // ══════════════════════════════════════
 //  NAVIGATION
 // ══════════════════════════════════════
-function goScreen(id) {
+function goScreen(id, skipHistory) {
   const cur = document.querySelector('.screen.active');
-  if (cur && cur.id !== id) screenHistory.push(cur.id);
+  if (cur && cur.id !== id && !skipHistory) screenHistory.push(cur.id);
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   if (id === 's-owner-home') loadOwnerDashboard();
   if (id === 's-workers-list') loadWorkersList();
   if (id === 's-worker-home') loadWorkerDashboard();
+  if (id === 's-otp') { document.getElementById('otp-input').value = ''; document.getElementById('otp-btn').disabled = true; showError('otp-error',''); }
 }
-function goBack() { const prev = screenHistory.pop(); if (prev) goScreen(prev); }
+function goBack() { const prev = screenHistory.pop(); if (prev) goScreen(prev, true); }
 function showError(id, msg) { const el = document.getElementById(id); el.textContent = msg; el.style.display = msg ? 'block' : 'none'; }
 
 // ══════════════════════════════════════
@@ -610,8 +611,10 @@ async function verifyOTP() {
     }
     me.email = pendingReg.email; me.lang = selectedLang;
     localStorage.setItem('bt_user', JSON.stringify(me));
-    if (me.role === 'owner') { me.propertyId ? (await loadPropertyData(me.propertyId), goScreen('s-owner-home')) : goScreen('s-property'); }
-    else { goScreen('s-worker-join'); }
+    if (me.role === 'owner') {
+      if (me.propertyId) { await loadPropertyData(me.propertyId); goScreen('s-owner-home'); }
+      else { goScreen('s-property'); }
+    } else { goScreen('s-worker-join'); }
   } catch(e) { showError('otp-error','Network error'); }
   finally { document.getElementById('otp-btn').disabled = false; document.getElementById('otp-btn').textContent = 'Verify & Continue'; }
 }

@@ -307,7 +307,7 @@ app.post('/api/worker/join', async (req, res) => {
     await User.findByIdAndUpdate(userId, { propertyId: prop._id, role: 'worker' });
     // Add to group chat
     const groupChat = await Chat.findOne({ propertyId: prop._id, type: 'group' });
-    if (groupChat && !groupChat.members.includes(userId)) {
+    if (groupChat && !groupChat.members.some(m => m.toString() === userId.toString())) {
       groupChat.members.push(userId);
       await groupChat.save();
     }
