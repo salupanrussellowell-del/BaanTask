@@ -4,278 +4,372 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>BaanTask</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;height:100vh;height:100dvh;display:flex;flex-direction:column;background:#fff;color:#333;overflow:hidden}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;display:flex;flex-direction:column;background:#fff;color:#333;overflow:hidden;position:relative}
 
 /* ── Screens ── */
-.screen{position:absolute;top:0;left:0;right:0;bottom:0;display:none;flex-direction:column;background:#fff;overflow-y:auto;z-index:1}
+.screen{position:absolute;inset:0;display:none;flex-direction:column;background:#fff;z-index:1;overflow:hidden}
 .screen.active{display:flex}
+.sc{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;background:#F9FAFB;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.sc::-webkit-scrollbar{display:none}
 
-/* ── Splash ── */
-#s-splash{background:linear-gradient(135deg,#075e54 0%,#25d366 100%);align-items:center;justify-content:center;color:#fff;text-align:center}
-#s-splash .logo{font-size:3rem;margin-bottom:8px}
-#s-splash h1{font-size:1.8rem;font-weight:700;margin-bottom:4px}
-#s-splash p{opacity:.8;font-size:.9rem}
-.splash-pills{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:24px;padding:0 20px}
-.splash-pills span{background:rgba(255,255,255,.2);padding:6px 14px;border-radius:20px;font-size:.78rem}
+/* ── Back button ── */
+.bk{font-size:1.4rem;cursor:pointer;opacity:.9;line-height:1;padding:4px 8px;border:none;background:none;color:inherit}
 
-/* ── Common ── */
-.screen-pad{padding:24px 20px}
-.screen-center{align-items:center;justify-content:center;text-align:center}
-h2{color:#075e54;font-size:1.4rem;margin-bottom:6px}
-.subtitle{color:#888;font-size:.88rem;margin-bottom:24px;text-align:center}
-.form-group{margin-bottom:14px;width:100%;max-width:360px}
-.form-group label{display:block;font-size:.8rem;color:#666;margin-bottom:4px;font-weight:500}
-.form-group input,.form-group select,.form-group textarea{width:100%;padding:12px 14px;border:1.5px solid #ddd;border-radius:10px;font-size:1rem;outline:none;background:#fafafa}
-.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:#25d366;background:#fff}
-.form-group textarea{resize:none;height:80px}
-.btn{width:100%;max-width:360px;padding:14px;border:none;border-radius:10px;font-size:1.05rem;font-weight:600;cursor:pointer;margin-bottom:10px;transition:opacity .2s}
-.btn-green{background:#25d366;color:#fff}
+/* ── Buttons ── */
+.btn{display:block;width:100%;padding:14px;border-radius:14px;border:none;font-family:'Nunito',sans-serif;font-size:.95rem;font-weight:800;cursor:pointer;text-align:center;transition:opacity .15s}
+.btn-t{background:#00897B;color:#fff}
+.btn-o{background:#E65100;color:#fff}
 .btn-outline{background:#fff;color:#075e54;border:2px solid #075e54}
+.btn:hover{opacity:.88}
 .btn:disabled{opacity:.4;cursor:default}
-.btn-link{background:none;border:none;color:#075e54;font-size:.88rem;cursor:pointer;text-decoration:underline;margin-top:8px}
-.error-msg{color:#c62828;font-size:.85rem;text-align:center;margin-bottom:10px;display:none}
-.success-msg{color:#2e7d32;font-size:.85rem;text-align:center;margin-bottom:10px;display:none}
+.btn-link{background:none;border:none;color:#00897B;font-size:.85rem;cursor:pointer;text-decoration:underline;margin-top:10px;font-weight:700}
 
-/* ── Language grid ── */
-.lang-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;width:100%;max-width:360px;margin-bottom:24px}
-.lang-item{display:flex;align-items:center;gap:10px;padding:12px 14px;border:2px solid #eee;border-radius:12px;cursor:pointer;transition:all .15s;background:#fff}
-.lang-item:hover{border-color:#a5d6a7}
-.lang-item.selected{border-color:#25d366;background:#e8f5e9}
-.lang-item .flag{font-size:1.4rem}
-.lang-item .lname{font-size:.92rem;font-weight:500}
+/* ── Status bar ── */
+.sb{color:#fff;font-size:.66rem;font-weight:700;padding:10px 22px 7px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;background:#00695C}
 
-/* ── Role cards ── */
-.role-cards{display:flex;gap:16px;width:100%;max-width:360px;margin-bottom:24px}
-.role-card{flex:1;padding:28px 16px;border:2px solid #eee;border-radius:16px;text-align:center;cursor:pointer;transition:all .15s}
-.role-card:hover{border-color:#a5d6a7}
-.role-card.selected{border-color:#25d366;background:#e8f5e9}
-.role-card .rc-icon{font-size:2.4rem;margin-bottom:8px}
-.role-card .rc-title{font-size:1.05rem;font-weight:600;color:#333}
-.role-card .rc-desc{font-size:.78rem;color:#888;margin-top:4px}
-
-/* ── Property type ── */
-.prop-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;width:100%;max-width:360px;margin-bottom:16px}
-.prop-item{padding:20px 12px;border:2px solid #eee;border-radius:14px;text-align:center;cursor:pointer;transition:all .15s}
-.prop-item:hover{border-color:#a5d6a7}
-.prop-item.selected{border-color:#25d366;background:#e8f5e9}
-.prop-item .pi-icon{font-size:2rem;margin-bottom:4px}
-.prop-item .pi-name{font-size:.88rem;font-weight:500}
+/* ── Forms ── */
+.form-group{margin-bottom:14px;width:100%;max-width:360px}
+.form-group label{display:block;font-size:.78rem;color:#6B7280;margin-bottom:4px;font-weight:700}
+.form-group input,.form-group select,.form-group textarea{width:100%;padding:12px 14px;border:2px solid #E5E7EB;border-radius:12px;font-size:.95rem;outline:none;background:#F9FAFB;font-family:'Nunito',sans-serif;font-weight:600}
+.form-group input:focus,.form-group select:focus{border-color:#00897B;background:#fff}
+.error-msg{color:#c62828;font-size:.82rem;text-align:center;margin-bottom:10px;display:none;font-weight:700}
+.success-msg{color:#2e7d32;font-size:.82rem;text-align:center;margin-bottom:10px;display:none;font-weight:700}
+.pin-input{text-align:center;font-size:1.8rem;letter-spacing:12px;font-weight:900}
+.otp-input{text-align:center;font-size:1.8rem;letter-spacing:10px;font-weight:900}
 
 /* ── Gender toggle ── */
 .gender-row{display:flex;gap:8px;width:100%;max-width:360px;margin-bottom:14px}
-.gender-btn{flex:1;padding:12px;border:2px solid #eee;border-radius:10px;text-align:center;cursor:pointer;font-size:.95rem;font-weight:500;background:#fff;transition:all .15s}
-.gender-btn.selected{border-color:#25d366;background:#e8f5e9}
+.gender-btn{flex:1;padding:12px;border:2px solid #E5E7EB;border-radius:12px;text-align:center;cursor:pointer;font-size:.92rem;font-weight:700;background:#F9FAFB;transition:all .15s;font-family:'Nunito',sans-serif}
+.gender-btn.selected{border-color:#00897B;background:#E0F2F1;color:#00695C}
 
-/* ── PIN input ── */
-.pin-input{text-align:center;font-size:1.8rem;letter-spacing:12px;font-weight:700}
-.otp-input{text-align:center;font-size:1.8rem;letter-spacing:10px;font-weight:700}
+/* ── Property type ── */
+.prop-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;width:100%;max-width:360px;margin-bottom:16px}
+.prop-item{padding:20px 12px;border:2px solid #E5E7EB;border-radius:14px;text-align:center;cursor:pointer;transition:all .15s;background:#F9FAFB}
+.prop-item.selected{border-color:#00897B;background:#E0F2F1}
+.prop-item .pi-icon{font-size:2rem;margin-bottom:4px}
+.prop-item .pi-name{font-size:.88rem;font-weight:700}
 
-/* ── QR / Invite code display ── */
-.invite-box{text-align:center;background:#f0f4f0;border:2px dashed #25d366;border-radius:14px;padding:24px;margin-bottom:20px;width:100%;max-width:360px}
-.invite-box .ib-label{font-size:.82rem;color:#888;margin-bottom:8px}
-.invite-box .ib-code{font-size:2.4rem;font-weight:800;letter-spacing:8px;color:#075e54;font-family:monospace}
-.invite-box .ib-hint{font-size:.78rem;color:#aaa;margin-top:8px}
+/* ── Invite code display ── */
+.invite-box{text-align:center;background:#E0F2F1;border:2.5px dashed #00897B;border-radius:16px;padding:28px;margin-bottom:20px;width:100%;max-width:360px}
+.invite-box .ib-label{font-size:.78rem;color:#6B7280;margin-bottom:8px;font-weight:700}
+.invite-box .ib-code{font-size:2.4rem;font-weight:900;letter-spacing:8px;color:#00695C;font-family:'DM Sans',monospace}
+.invite-box .ib-hint{font-size:.72rem;color:#9CA3AF;margin-top:10px;font-weight:600}
 
-/* ── Owner dashboard ── */
-.dash-header{background:#075e54;color:#fff;padding:20px;padding-top:12px}
-.dash-header .dh-greeting{font-size:.85rem;opacity:.8}
-.dash-header .dh-name{font-size:1.3rem;font-weight:700}
-.dash-header .dh-property{font-size:.78rem;opacity:.7;margin-top:2px}
-.stat-row{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:16px;margin-top:-20px}
-.stat-card{background:#fff;border-radius:12px;padding:14px;box-shadow:0 2px 8px rgba(0,0,0,.08)}
-.stat-card .sc-num{font-size:1.5rem;font-weight:700;color:#075e54}
-.stat-card .sc-label{font-size:.75rem;color:#888;margin-top:2px}
-.dash-section{padding:0 16px 16px}
-.dash-section h3{font-size:1rem;font-weight:600;margin-bottom:10px;color:#333}
+/* ── Dashboard ── */
+.dash-header{background:linear-gradient(160deg,#00897B,#00695C);color:#fff;padding:20px 22px 40px}
+.dash-header .dh-greeting{font-size:.82rem;opacity:.8;font-weight:600}
+.dash-header .dh-name{font-size:1.3rem;font-weight:900}
+.dash-header .dh-property{font-size:.75rem;opacity:.7;margin-top:2px;font-weight:600}
+.stat-row{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:0 16px;margin-top:-24px}
+.stat-card{background:#fff;border-radius:14px;padding:14px;box-shadow:0 2px 12px rgba(0,0,0,.08)}
+.stat-card .sc-num{font-size:1.5rem;font-weight:900;color:#00695C}
+.stat-card .sc-label{font-size:.72rem;color:#9CA3AF;margin-top:2px;font-weight:700}
+.dash-section{padding:16px}
+.dash-section h3{font-size:1rem;font-weight:800;margin-bottom:10px;color:#1F2937}
 .quick-actions{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:20px}
-.qa-btn{display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;border:1.5px solid #eee;border-radius:12px;cursor:pointer;background:#fff;font-size:.72rem;color:#555;font-weight:500}
+.qa-btn{display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;border:2px solid #E5E7EB;border-radius:14px;cursor:pointer;background:#fff;font-size:.7rem;color:#6B7280;font-weight:700;font-family:'Nunito',sans-serif}
 .qa-btn .qa-icon{font-size:1.5rem}
-.qa-btn:active{background:#e8f5e9}
+.qa-btn:active{background:#E0F2F1;border-color:#00897B}
 
 /* ── Bottom nav ── */
-.bottom-nav{display:flex;border-top:1px solid #eee;background:#fff;padding:6px 0 env(safe-area-inset-bottom, 4px);flex-shrink:0}
-.bottom-nav .nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 0;cursor:pointer;font-size:.68rem;color:#999}
-.bottom-nav .nav-item.active{color:#075e54}
+.bottom-nav{display:flex;border-top:1.5px solid #E5E7EB;background:#fff;padding:6px 0 env(safe-area-inset-bottom,4px);flex-shrink:0}
+.bottom-nav .nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 0;cursor:pointer;font-size:.65rem;color:#9CA3AF;font-weight:700}
+.bottom-nav .nav-item.active{color:#00897B}
 .bottom-nav .nav-item .ni-icon{font-size:1.3rem}
 
 /* ── Worker list items ── */
-.worker-item{display:flex;align-items:center;gap:12px;padding:12px;border:1px solid #eee;border-radius:12px;margin-bottom:8px;cursor:pointer}
-.worker-item:active{background:#f5f5f5}
-.worker-item .wi-avatar{width:44px;height:44px;border-radius:50%;background:#e8f5e9;display:flex;align-items:center;justify-content:center;font-size:1.2rem;font-weight:600;color:#075e54}
+.worker-item{display:flex;align-items:center;gap:12px;padding:14px;border:2px solid #E5E7EB;border-radius:14px;margin-bottom:8px;cursor:pointer;background:#fff}
+.worker-item:active{background:#F9FAFB}
+.worker-item .wi-avatar{width:44px;height:44px;border-radius:50%;background:#E0F2F1;display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:800;color:#00695C}
 .worker-item .wi-info{flex:1}
-.worker-item .wi-name{font-size:.95rem;font-weight:600}
-.worker-item .wi-role{font-size:.78rem;color:#888}
+.worker-item .wi-name{font-size:.92rem;font-weight:800}
+.worker-item .wi-role{font-size:.75rem;color:#9CA3AF;font-weight:600}
 .worker-item .wi-status{width:8px;height:8px;border-radius:50%;background:#25d366}
 
-/* ── Back header ── */
-.top-bar{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid #eee;background:#fff;flex-shrink:0}
-.top-bar .back-btn{font-size:1.2rem;cursor:pointer;padding:4px}
-.top-bar .tb-title{font-size:1.1rem;font-weight:600;flex:1}
+/* ── Top bar ── */
+.top-bar{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1.5px solid #E5E7EB;background:#fff;flex-shrink:0}
+.top-bar .tb-title{font-size:1.1rem;font-weight:800;flex:1}
+
+/* ── Screen center helper ── */
+.screen-pad{padding:24px 20px;align-items:center}
 </style>
 </head>
 <body>
 
-<!-- ═══ SPLASH ═══ -->
-<div id="s-splash" class="screen active">
-  <div class="logo">🏠</div>
-  <h1>BaanTask</h1>
-  <p>Home Staff Management</p>
-  <div class="splash-pills">
-    <span>Tasks</span><span>Chat</span><span>Payroll</span><span>Attendance</span><span>Translation</span><span>Expenses</span>
+<!-- ═══════════════════════════════════════ -->
+<!--  SPLASH (exact mockup)                -->
+<!-- ═══════════════════════════════════════ -->
+<div class="screen active" id="s-splash" style="background:linear-gradient(165deg,#004D40 0%,#00695C 45%,#00897B 100%);justify-content:center;align-items:center;text-align:center;padding:40px 28px;overflow:hidden">
+  <div style="position:absolute;width:320px;height:320px;border-radius:50%;border:1.5px solid rgba(255,255,255,.06);top:50%;left:50%;transform:translate(-50%,-50%)"></div>
+  <div style="position:absolute;width:240px;height:240px;border-radius:50%;border:1.5px solid rgba(255,255,255,.08);top:50%;left:50%;transform:translate(-50%,-50%)"></div>
+  <div style="position:absolute;width:160px;height:160px;border-radius:50%;border:1.5px solid rgba(255,255,255,.1);top:50%;left:50%;transform:translate(-50%,-50%)"></div>
+  <div id="splash-content" style="position:relative;z-index:1;opacity:0;transform:translateY(20px);transition:opacity .6s ease,transform .6s ease">
+    <div style="width:88px;height:88px;background:rgba(255,255,255,.15);border-radius:26px;display:flex;align-items:center;justify-content:center;font-size:2.8rem;margin:0 auto 20px;box-shadow:0 8px 32px rgba(0,0,0,.25);backdrop-filter:blur(8px)">🏠</div>
+    <h1 style="font-size:2rem;font-weight:900;color:#fff;letter-spacing:-.04em;margin-bottom:6px">BaanTask</h1>
+    <p style="font-size:.84rem;color:rgba(255,255,255,.75);font-weight:600;margin-bottom:32px;line-height:1.6">Manage your home staff<br>in any language</p>
+    <div style="display:flex;flex-wrap:wrap;gap:7px;justify-content:center;margin-bottom:36px">
+      <span style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:20px;padding:5px 12px;font-size:.68rem;font-weight:700;color:#fff;backdrop-filter:blur(4px)">🌐 AI Translation</span>
+      <span style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:20px;padding:5px 12px;font-size:.68rem;font-weight:700;color:#fff;backdrop-filter:blur(4px)">✅ Task Management</span>
+      <span style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:20px;padding:5px 12px;font-size:.68rem;font-weight:700;color:#fff;backdrop-filter:blur(4px)">🧾 Expense Tracking</span>
+      <span style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:20px;padding:5px 12px;font-size:.68rem;font-weight:700;color:#fff;backdrop-filter:blur(4px)">📅 Scheduling</span>
+    </div>
+    <div style="width:120px;height:3px;background:rgba(255,255,255,.2);border-radius:2px;margin:0 auto 24px;overflow:hidden">
+      <div id="splash-bar" style="height:100%;width:0%;background:#fff;border-radius:2px;transition:width .1s linear"></div>
+    </div>
+    <p id="splash-label" style="font-size:.7rem;color:rgba(255,255,255,.5);font-weight:700">Loading…</p>
+  </div>
+  <div style="position:absolute;bottom:24px;left:0;right:0;text-align:center;z-index:1">
+    <p style="font-size:.64rem;color:rgba(255,255,255,.3);font-weight:700">Made for expats in Thailand 🇹🇭</p>
   </div>
 </div>
 
-<!-- ═══ LANGUAGE SELECT ═══ -->
-<div id="s-lang" class="screen screen-pad screen-center">
-  <h2>Choose Your Language</h2>
-  <p class="subtitle">You can change this later</p>
-  <div class="lang-grid" id="lang-grid"></div>
-  <button class="btn btn-green" id="lang-next-btn" disabled onclick="langNext()">Continue</button>
-</div>
-
-<!-- ═══ ROLE SELECT ═══ -->
-<div id="s-role" class="screen screen-pad screen-center">
-  <h2>I am...</h2>
-  <p class="subtitle">Choose your role</p>
-  <div class="role-cards">
-    <div class="role-card" onclick="pickRole('owner',this)">
-      <div class="rc-icon">👔</div>
-      <div class="rc-title">Home Owner</div>
-      <div class="rc-desc">Manage staff & property</div>
-    </div>
-    <div class="role-card" onclick="pickRole('worker',this)">
-      <div class="rc-icon">🛠️</div>
-      <div class="rc-title">Worker</div>
-      <div class="rc-desc">Join a household</div>
+<!-- ═══════════════════════════════════════ -->
+<!--  LANGUAGE SELECT (exact mockup)        -->
+<!-- ═══════════════════════════════════════ -->
+<div class="screen" id="s-lang" style="background:#fff">
+  <div class="sb">9:41<span>📶 🔋</span></div>
+  <div style="background:linear-gradient(160deg,#00897B,#00695C);padding:20px 22px 16px;text-align:center;color:#fff;flex-shrink:0">
+    <div style="font-size:2rem;margin-bottom:4px">🏠</div>
+    <h2 style="font-size:1.2rem;font-weight:900;margin-bottom:2px;color:#fff">BaanTask</h2>
+    <p style="font-size:.76rem;opacity:.85" id="lang-sub">Choose your language</p>
+  </div>
+  <div class="sc" style="background:#fff">
+    <div style="padding:12px 14px 6px">
+      <div style="border:2px solid #E5E7EB;border-radius:12px;padding:9px 12px;display:flex;align-items:center;gap:8px;margin-bottom:12px;background:#F9FAFB">
+        <span style="color:#9CA3AF;font-size:.9rem">🔍</span>
+        <span style="font-size:.82rem;color:#9CA3AF">Search language...</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px" id="lang-grid"></div>
     </div>
   </div>
-  <button class="btn btn-green" id="role-next-btn" disabled onclick="roleNext()">Continue</button>
+  <div style="padding:12px 14px 16px;background:#fff;border-top:1.5px solid #F3F4F6;flex-shrink:0">
+    <button class="btn btn-t" id="lang-continue-btn" disabled onclick="langNext()">Continue →</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ -->
+<!--  ROLE SELECT (exact mockup)            -->
+<!-- ═══════════════════════════════════════ -->
+<div class="screen" id="s-role">
+  <div class="sb">9:41<span>📶 🔋</span></div>
+  <div style="background:linear-gradient(160deg,#00897B,#00695C);padding:22px 22px 18px;text-align:center;color:#fff;flex-shrink:0">
+    <div style="display:flex;align-items:center;padding-bottom:8px"><span class="bk" onclick="goBack()" style="color:#fff">‹</span></div>
+    <h2 style="font-size:1.2rem;font-weight:900;margin-bottom:3px;color:#fff">Who are you?</h2>
+    <p style="font-size:.78rem;opacity:.85">Choose so we can set up the right app for you</p>
+  </div>
+  <div class="sc" style="background:#fff">
+    <div style="padding:20px 16px;display:flex;flex-direction:column;gap:14px">
+      <div onclick="selectedRole='owner';goScreen('s-owner-reg')" style="background:#E0F2F1;border:2.5px solid #00897B;border-radius:18px;padding:18px;cursor:pointer;display:flex;align-items:center;gap:14px">
+        <span style="font-size:2.2rem">🏠</span>
+        <div style="flex:1">
+          <div style="font-size:.98rem;font-weight:900;color:#00695C">I'm an Owner</div>
+          <div style="font-size:.74rem;color:#00897B;margin-top:3px;line-height:1.5">I hire and manage household staff</div>
+          <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+            <span style="background:#fff;border:1.5px solid #00897B;color:#00695C;font-size:.62rem;font-weight:800;padding:2px 8px;border-radius:10px">📅 Scheduling</span>
+            <span style="background:#fff;border:1.5px solid #00897B;color:#00695C;font-size:.62rem;font-weight:800;padding:2px 8px;border-radius:10px">✅ Tasks</span>
+            <span style="background:#fff;border:1.5px solid #00897B;color:#00695C;font-size:.62rem;font-weight:800;padding:2px 8px;border-radius:10px">💰 Expenses</span>
+            <span style="background:#fff;border:1.5px solid #00897B;color:#00695C;font-size:.62rem;font-weight:800;padding:2px 8px;border-radius:10px">💬 Chat</span>
+          </div>
+        </div>
+        <span style="font-size:1.3rem;color:#00897B">→</span>
+      </div>
+      <div onclick="selectedRole='worker';goScreen('s-worker-reg')" style="background:#F9FAFB;border:2.5px solid #E5E7EB;border-radius:18px;padding:18px;cursor:pointer;display:flex;align-items:center;gap:14px">
+        <span style="font-size:2.2rem">🧹</span>
+        <div style="flex:1">
+          <div style="font-size:.98rem;font-weight:900;color:#1F2937">I'm a Worker</div>
+          <div style="font-size:.74rem;color:#6B7280;margin-top:3px;line-height:1.5">I work at someone's home</div>
+          <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+            <span style="background:#fff;border:1.5px solid #E5E7EB;color:#6B7280;font-size:.62rem;font-weight:800;padding:2px 8px;border-radius:10px">📋 See tasks</span>
+            <span style="background:#fff;border:1.5px solid #E5E7EB;color:#6B7280;font-size:.62rem;font-weight:800;padding:2px 8px;border-radius:10px">💬 Chat</span>
+            <span style="background:#fff;border:1.5px solid #E5E7EB;color:#6B7280;font-size:.62rem;font-weight:800;padding:2px 8px;border-radius:10px">💰 Get paid</span>
+          </div>
+        </div>
+        <span style="font-size:1.3rem;color:#9CA3AF">→</span>
+      </div>
+      <p style="font-size:.72rem;color:#9CA3AF;text-align:center;font-weight:700">Not sure? Choose Owner — you can switch later in Settings</p>
+    </div>
+  </div>
 </div>
 
 <!-- ═══ OWNER REGISTER ═══ -->
-<div id="s-owner-reg" class="screen screen-pad screen-center">
-  <h2>Create Your Account</h2>
-  <p class="subtitle">Owner registration</p>
-  <div class="form-group"><label>Full Name</label><input id="or-name" type="text" placeholder="Your full name" maxlength="40"></div>
-  <div class="form-group"><label>Email</label><input id="or-email" type="email" placeholder="your@email.com"></div>
-  <div class="form-group"><label>Phone (optional)</label><input id="or-phone" type="tel" placeholder="+66 81 234 5678"></div>
-  <label style="font-size:.8rem;color:#666;margin-bottom:4px;width:100%;max-width:360px">Gender</label>
-  <div class="gender-row">
-    <div class="gender-btn" onclick="pickGender('male',this)">Male</div>
-    <div class="gender-btn" onclick="pickGender('female',this)">Female</div>
+<div id="s-owner-reg" class="screen" style="background:#fff">
+  <div class="sb">9:41<span>📶 🔋</span></div>
+  <div style="background:linear-gradient(160deg,#00897B,#00695C);padding:16px 22px;color:#fff;flex-shrink:0">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px"><span class="bk" onclick="goBack()" style="color:#fff">‹</span><span style="font-size:.9rem;font-weight:800">Create Account</span></div>
+    <p style="font-size:.76rem;opacity:.85">Owner registration</p>
   </div>
-  <div class="form-group"><label>Date of Birth</label><input id="or-dob" type="date"></div>
-  <div class="form-group"><label>4-Digit PIN</label><input id="or-pin" type="password" inputmode="numeric" class="pin-input" placeholder="••••" maxlength="4"></div>
-  <div id="or-error" class="error-msg"></div>
-  <button class="btn btn-green" id="or-btn" disabled onclick="ownerRegister()">Send Verification Code</button>
-  <button class="btn-link" onclick="goScreen('s-signin')">Already have an account? Sign in</button>
+  <div class="sc" style="background:#fff">
+    <div style="padding:16px;display:flex;flex-direction:column;align-items:center">
+      <div class="form-group"><label>Full Name</label><input id="or-name" type="text" placeholder="Your full name" maxlength="40"></div>
+      <div class="form-group"><label>Email</label><input id="or-email" type="email" placeholder="your@email.com"></div>
+      <div class="form-group"><label>Phone (optional)</label><input id="or-phone" type="tel" placeholder="+66 81 234 5678"></div>
+      <label style="font-size:.78rem;color:#6B7280;margin-bottom:4px;width:100%;max-width:360px;font-weight:700">Gender</label>
+      <div class="gender-row">
+        <div class="gender-btn" onclick="pickGender('male',this)">Male</div>
+        <div class="gender-btn" onclick="pickGender('female',this)">Female</div>
+      </div>
+      <div class="form-group"><label>Date of Birth</label><input id="or-dob" type="date"></div>
+      <div class="form-group"><label>4-Digit PIN</label><input id="or-pin" type="password" inputmode="numeric" class="pin-input" placeholder="••••" maxlength="4"></div>
+      <div id="or-error" class="error-msg"></div>
+      <button class="btn btn-t" id="or-btn" disabled onclick="ownerRegister()" style="max-width:360px">Send Verification Code</button>
+      <button class="btn-link" onclick="goScreen('s-signin')">Already have an account? Sign in</button>
+    </div>
+  </div>
 </div>
 
 <!-- ═══ OTP VERIFY ═══ -->
-<div id="s-otp" class="screen screen-pad screen-center">
-  <h2>Check Your Email</h2>
-  <p class="subtitle" id="otp-subtitle">Enter the 6-digit code</p>
-  <div class="form-group"><input id="otp-input" type="text" inputmode="numeric" class="otp-input" placeholder="000000" maxlength="6"></div>
-  <div id="otp-error" class="error-msg"></div>
-  <div id="otp-success" class="success-msg"></div>
-  <button class="btn btn-green" id="otp-btn" disabled onclick="verifyOTP()">Verify & Continue</button>
-  <button class="btn-link" onclick="resendOTP()">Resend code</button>
-  <button class="btn-link" onclick="goBack()">Back</button>
-</div>
-
-<!-- ═══ SIGN IN (returning) ═══ -->
-<div id="s-signin" class="screen screen-pad screen-center">
-  <h2>Welcome Back</h2>
-  <p class="subtitle">Sign in with your email &amp; PIN</p>
-  <div class="form-group"><label>Email</label><input id="si-email" type="email" placeholder="your@email.com"></div>
-  <div class="form-group"><label>4-Digit PIN</label><input id="si-pin" type="password" inputmode="numeric" class="pin-input" placeholder="••••" maxlength="4"></div>
-  <div id="si-error" class="error-msg"></div>
-  <button class="btn btn-green" id="si-btn" disabled onclick="signIn()">Sign In</button>
-  <button class="btn-link" onclick="goScreen('s-role')">Create new account</button>
-</div>
-
-<!-- ═══ OWNER: PROPERTY SETUP ═══ -->
-<div id="s-property" class="screen screen-pad screen-center">
-  <h2>Your Property</h2>
-  <p class="subtitle">Tell us about your home</p>
-  <div class="prop-grid">
-    <div class="prop-item" onclick="pickPropType('house',this)"><div class="pi-icon">🏠</div><div class="pi-name">House</div></div>
-    <div class="prop-item" onclick="pickPropType('condo',this)"><div class="pi-icon">🏢</div><div class="pi-name">Condo</div></div>
-    <div class="prop-item" onclick="pickPropType('villa',this)"><div class="pi-icon">🌴</div><div class="pi-name">Villa</div></div>
-    <div class="prop-item" onclick="pickPropType('other',this)"><div class="pi-icon">🏗️</div><div class="pi-name">Other</div></div>
+<div id="s-otp" class="screen" style="background:#fff">
+  <div class="sb">9:41<span>📶 🔋</span></div>
+  <div style="background:linear-gradient(160deg,#00897B,#00695C);padding:16px 22px;color:#fff;flex-shrink:0">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px"><span class="bk" onclick="goBack()" style="color:#fff">‹</span><span style="font-size:.9rem;font-weight:800">Verify Email</span></div>
   </div>
-  <div class="form-group"><label>Property Name</label><input id="prop-name" type="text" placeholder="e.g. Deva Moon Villa"></div>
-  <div class="form-group"><label>Location / City</label><input id="prop-location" type="text" placeholder="e.g. Phuket"></div>
-  <div id="prop-error" class="error-msg"></div>
-  <button class="btn btn-green" id="prop-btn" disabled onclick="createProperty()">Continue</button>
-</div>
-
-<!-- ═══ OWNER: QR / INVITE CODE ═══ -->
-<div id="s-invite" class="screen screen-pad screen-center">
-  <h2>Invite Your Staff</h2>
-  <p class="subtitle">Share this code with your workers</p>
-  <div class="invite-box">
-    <div class="ib-label">Invite Code</div>
-    <div class="ib-code" id="invite-code"></div>
-    <div class="ib-hint">Workers enter this code to join your household</div>
+  <div class="sc" style="background:#fff">
+    <div style="padding:32px 16px;display:flex;flex-direction:column;align-items:center;text-align:center">
+      <div style="font-size:2.5rem;margin-bottom:12px">📧</div>
+      <h2 style="font-size:1.2rem;font-weight:900;color:#1F2937;margin-bottom:4px">Check Your Email</h2>
+      <p style="font-size:.82rem;color:#6B7280;margin-bottom:24px;font-weight:600" id="otp-subtitle">Enter the 6-digit code</p>
+      <div class="form-group"><input id="otp-input" type="text" inputmode="numeric" class="otp-input" placeholder="000000" maxlength="6"></div>
+      <div id="otp-error" class="error-msg"></div>
+      <div id="otp-success" class="success-msg"></div>
+      <button class="btn btn-t" id="otp-btn" disabled onclick="verifyOTP()" style="max-width:360px">Verify & Continue</button>
+      <button class="btn-link" onclick="resendOTP()">Resend code</button>
+    </div>
   </div>
-  <button class="btn btn-green" onclick="goScreen('s-owner-home')">Go to Dashboard</button>
-  <button class="btn-link" onclick="goScreen('s-owner-home')">Skip for now</button>
 </div>
 
-<!-- ═══ WORKER: REGISTER / JOIN ═══ -->
-<div id="s-worker-reg" class="screen screen-pad screen-center">
-  <h2>Join a Household</h2>
-  <p class="subtitle">Create your account to get started</p>
-  <div class="form-group"><label>Full Name</label><input id="wr-name" type="text" placeholder="Your full name" maxlength="40"></div>
-  <div class="form-group"><label>Email</label><input id="wr-email" type="email" placeholder="your@email.com"></div>
-  <div class="form-group"><label>4-Digit PIN</label><input id="wr-pin" type="password" inputmode="numeric" class="pin-input" placeholder="••••" maxlength="4"></div>
-  <div id="wr-error" class="error-msg"></div>
-  <button class="btn btn-green" id="wr-btn" disabled onclick="workerRegister()">Send Verification Code</button>
-  <button class="btn-link" onclick="goScreen('s-signin')">Already have an account? Sign in</button>
-</div>
-
-<!-- ═══ WORKER: ENTER INVITE CODE ═══ -->
-<div id="s-worker-join" class="screen screen-pad screen-center">
-  <h2>Enter Invite Code</h2>
-  <p class="subtitle">Ask your employer for the 6-character code</p>
-  <div class="form-group"><input id="wj-code" type="text" style="text-align:center;font-size:1.5rem;letter-spacing:6px;font-weight:700;text-transform:uppercase" placeholder="ABC123" maxlength="6"></div>
-  <div class="form-group"><label>Your Role</label>
-    <select id="wj-role"><option value="">Select role...</option><option>Cleaner</option><option>Cook</option><option>Driver</option><option>Nanny</option><option>Gardener</option><option>Other</option></select>
+<!-- ═══ SIGN IN ═══ -->
+<div id="s-signin" class="screen" style="background:#fff">
+  <div class="sb">9:41<span>📶 🔋</span></div>
+  <div style="background:linear-gradient(160deg,#00897B,#00695C);padding:16px 22px;color:#fff;flex-shrink:0">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px"><span class="bk" onclick="goScreen('s-role')" style="color:#fff">‹</span><span style="font-size:.9rem;font-weight:800">Welcome Back</span></div>
+    <p style="font-size:.76rem;opacity:.85">Sign in with email &amp; PIN</p>
   </div>
-  <div id="wj-error" class="error-msg"></div>
-  <button class="btn btn-green" id="wj-btn" disabled onclick="workerJoin()">Join Household</button>
+  <div class="sc" style="background:#fff">
+    <div style="padding:24px 16px;display:flex;flex-direction:column;align-items:center">
+      <div class="form-group"><label>Email</label><input id="si-email" type="email" placeholder="your@email.com"></div>
+      <div class="form-group"><label>4-Digit PIN</label><input id="si-pin" type="password" inputmode="numeric" class="pin-input" placeholder="••••" maxlength="4"></div>
+      <div id="si-error" class="error-msg"></div>
+      <button class="btn btn-t" id="si-btn" disabled onclick="signIn()" style="max-width:360px">Sign In</button>
+      <button class="btn-link" onclick="goScreen('s-role')">Create new account</button>
+    </div>
+  </div>
 </div>
 
-<!-- ═══ OWNER HOME DASHBOARD ═══ -->
+<!-- ═══ PROPERTY SETUP ═══ -->
+<div id="s-property" class="screen" style="background:#fff">
+  <div class="sb">9:41<span>📶 🔋</span></div>
+  <div style="background:linear-gradient(160deg,#00897B,#00695C);padding:16px 22px;color:#fff;flex-shrink:0">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px"><span class="bk" onclick="goBack()" style="color:#fff">‹</span><span style="font-size:.9rem;font-weight:800">Your Property</span></div>
+    <p style="font-size:.76rem;opacity:.85">Tell us about your home</p>
+  </div>
+  <div class="sc" style="background:#fff">
+    <div style="padding:16px;display:flex;flex-direction:column;align-items:center">
+      <div class="prop-grid">
+        <div class="prop-item" onclick="pickPropType('house',this)"><div class="pi-icon">🏠</div><div class="pi-name">House</div></div>
+        <div class="prop-item" onclick="pickPropType('condo',this)"><div class="pi-icon">🏢</div><div class="pi-name">Condo</div></div>
+        <div class="prop-item" onclick="pickPropType('villa',this)"><div class="pi-icon">🌴</div><div class="pi-name">Villa</div></div>
+        <div class="prop-item" onclick="pickPropType('other',this)"><div class="pi-icon">🏗️</div><div class="pi-name">Other</div></div>
+      </div>
+      <div class="form-group"><label>Property Name</label><input id="prop-name" type="text" placeholder="e.g. Deva Moon Villa"></div>
+      <div class="form-group"><label>Location / City</label><input id="prop-location" type="text" placeholder="e.g. Phuket"></div>
+      <div id="prop-error" class="error-msg"></div>
+      <button class="btn btn-t" id="prop-btn" disabled onclick="createProperty()" style="max-width:360px">Continue</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ INVITE CODE ═══ -->
+<div id="s-invite" class="screen" style="background:#fff">
+  <div class="sb">9:41<span>📶 🔋</span></div>
+  <div style="background:linear-gradient(160deg,#00897B,#00695C);padding:16px 22px;color:#fff;flex-shrink:0">
+    <span style="font-size:.9rem;font-weight:800">Invite Your Staff</span>
+  </div>
+  <div class="sc" style="background:#fff">
+    <div style="padding:32px 16px;display:flex;flex-direction:column;align-items:center;text-align:center">
+      <div style="font-size:2.5rem;margin-bottom:12px">🔗</div>
+      <h2 style="font-size:1.2rem;font-weight:900;color:#1F2937;margin-bottom:4px">Share This Code</h2>
+      <p style="font-size:.82rem;color:#6B7280;margin-bottom:24px;font-weight:600">Your workers enter this to join your household</p>
+      <div class="invite-box">
+        <div class="ib-label">Invite Code</div>
+        <div class="ib-code" id="invite-code"></div>
+        <div class="ib-hint">Workers enter this code when they sign up</div>
+      </div>
+      <button class="btn btn-t" onclick="goScreen('s-owner-home')" style="max-width:360px">Go to Dashboard</button>
+      <button class="btn-link" onclick="goScreen('s-owner-home')">Skip for now</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ WORKER REGISTER ═══ -->
+<div id="s-worker-reg" class="screen" style="background:#fff">
+  <div class="sb">9:41<span>📶 🔋</span></div>
+  <div style="background:linear-gradient(160deg,#00897B,#00695C);padding:16px 22px;color:#fff;flex-shrink:0">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px"><span class="bk" onclick="goBack()" style="color:#fff">‹</span><span style="font-size:.9rem;font-weight:800">Join a Household</span></div>
+    <p style="font-size:.76rem;opacity:.85">Create your worker account</p>
+  </div>
+  <div class="sc" style="background:#fff">
+    <div style="padding:16px;display:flex;flex-direction:column;align-items:center">
+      <div class="form-group"><label>Full Name</label><input id="wr-name" type="text" placeholder="Your full name" maxlength="40"></div>
+      <div class="form-group"><label>Email</label><input id="wr-email" type="email" placeholder="your@email.com"></div>
+      <div class="form-group"><label>4-Digit PIN</label><input id="wr-pin" type="password" inputmode="numeric" class="pin-input" placeholder="••••" maxlength="4"></div>
+      <div id="wr-error" class="error-msg"></div>
+      <button class="btn btn-t" id="wr-btn" disabled onclick="workerRegister()" style="max-width:360px">Send Verification Code</button>
+      <button class="btn-link" onclick="goScreen('s-signin')">Already have an account? Sign in</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ WORKER JOIN ═══ -->
+<div id="s-worker-join" class="screen" style="background:#fff">
+  <div class="sb">9:41<span>📶 🔋</span></div>
+  <div style="background:linear-gradient(160deg,#00897B,#00695C);padding:16px 22px;color:#fff;flex-shrink:0">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px"><span class="bk" onclick="goBack()" style="color:#fff">‹</span><span style="font-size:.9rem;font-weight:800">Enter Invite Code</span></div>
+    <p style="font-size:.76rem;opacity:.85">Ask your employer for the code</p>
+  </div>
+  <div class="sc" style="background:#fff">
+    <div style="padding:24px 16px;display:flex;flex-direction:column;align-items:center">
+      <div class="form-group"><input id="wj-code" type="text" style="text-align:center;font-size:1.5rem;letter-spacing:6px;font-weight:900;text-transform:uppercase" placeholder="ABC123" maxlength="6"></div>
+      <div class="form-group"><label>Your Role</label>
+        <select id="wj-role"><option value="">Select role...</option><option>Cleaner</option><option>Cook</option><option>Driver</option><option>Nanny</option><option>Gardener</option><option>Other</option></select>
+      </div>
+      <div id="wj-error" class="error-msg"></div>
+      <button class="btn btn-t" id="wj-btn" disabled onclick="workerJoin()" style="max-width:360px">Join Household</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ OWNER HOME ═══ -->
 <div id="s-owner-home" class="screen">
   <div class="dash-header">
     <div class="dh-greeting" id="dh-greeting">Good morning</div>
     <div class="dh-name" id="dh-name">—</div>
     <div class="dh-property" id="dh-property">—</div>
   </div>
-  <div class="stat-row">
-    <div class="stat-card"><div class="sc-num" id="stat-workers">0</div><div class="sc-label">Workers</div></div>
-    <div class="stat-card"><div class="sc-num" id="stat-tasks">0</div><div class="sc-label">Active Tasks</div></div>
-    <div class="stat-card"><div class="sc-num" id="stat-expenses">฿0</div><div class="sc-label">Expenses</div></div>
-    <div class="stat-card"><div class="sc-num" id="stat-attendance">—</div><div class="sc-label">Attendance</div></div>
-  </div>
-  <div class="dash-section">
-    <h3>Quick Actions</h3>
-    <div class="quick-actions">
-      <div class="qa-btn" onclick="goScreen('s-create-task')"><span class="qa-icon">📝</span>New Task</div>
-      <div class="qa-btn" onclick="goScreen('s-workers-list')"><span class="qa-icon">👥</span>Workers</div>
-      <div class="qa-btn" onclick="goScreen('s-invite')"><span class="qa-icon">🔗</span>Invite</div>
-      <div class="qa-btn"><span class="qa-icon">💬</span>Chat</div>
+  <div style="flex:1;overflow-y:auto;background:#F9FAFB">
+    <div class="stat-row">
+      <div class="stat-card"><div class="sc-num" id="stat-workers">0</div><div class="sc-label">Workers</div></div>
+      <div class="stat-card"><div class="sc-num" id="stat-tasks">0</div><div class="sc-label">Active Tasks</div></div>
+      <div class="stat-card"><div class="sc-num" id="stat-expenses">฿0</div><div class="sc-label">Expenses</div></div>
+      <div class="stat-card"><div class="sc-num" id="stat-attendance">—</div><div class="sc-label">Attendance</div></div>
     </div>
+    <div class="dash-section">
+      <h3>Quick Actions</h3>
+      <div class="quick-actions">
+        <div class="qa-btn"><span class="qa-icon">📝</span>New Task</div>
+        <div class="qa-btn" onclick="goScreen('s-workers-list')"><span class="qa-icon">👥</span>Workers</div>
+        <div class="qa-btn" onclick="goScreen('s-invite')"><span class="qa-icon">🔗</span>Invite</div>
+        <div class="qa-btn"><span class="qa-icon">💬</span>Chat</div>
+      </div>
+    </div>
+    <div class="dash-section">
+      <h3>My Workers</h3>
+      <div id="dash-workers"></div>
+    </div>
+    <div style="height:80px"></div>
   </div>
-  <div class="dash-section">
-    <h3>My Workers</h3>
-    <div id="dash-workers"></div>
-  </div>
-  <div style="height:70px"></div>
   <div class="bottom-nav">
     <div class="nav-item active" onclick="goScreen('s-owner-home')"><span class="ni-icon">🏠</span>Home</div>
     <div class="nav-item" onclick="goScreen('s-workers-list')"><span class="ni-icon">👥</span>Workers</div>
@@ -287,14 +381,13 @@ h2{color:#075e54;font-size:1.4rem;margin-bottom:6px}
 
 <!-- ═══ WORKERS LIST ═══ -->
 <div id="s-workers-list" class="screen">
-  <div class="top-bar"><span class="back-btn" onclick="goScreen('s-owner-home')">←</span><span class="tb-title">My Workers</span></div>
-  <div class="screen-pad" id="workers-list-body">
-    <p class="subtitle">No workers yet. Share your invite code!</p>
+  <div class="top-bar"><span class="bk" onclick="goScreen('s-owner-home')">‹</span><span class="tb-title">My Workers</span></div>
+  <div style="flex:1;overflow-y:auto;padding:16px;background:#F9FAFB" id="workers-list-body">
+    <p style="color:#9CA3AF;font-size:.88rem;text-align:center;font-weight:600">No workers yet. Share your invite code!</p>
   </div>
-  <div style="height:70px"></div>
   <div class="bottom-nav">
     <div class="nav-item" onclick="goScreen('s-owner-home')"><span class="ni-icon">🏠</span>Home</div>
-    <div class="nav-item active" onclick="goScreen('s-workers-list')"><span class="ni-icon">👥</span>Workers</div>
+    <div class="nav-item active"><span class="ni-icon">👥</span>Workers</div>
     <div class="nav-item"><span class="ni-icon">📋</span>Tasks</div>
     <div class="nav-item"><span class="ni-icon">💬</span>Chat</div>
     <div class="nav-item"><span class="ni-icon">👤</span>Me</div>
@@ -308,20 +401,22 @@ h2{color:#075e54;font-size:1.4rem;margin-bottom:6px}
     <div class="dh-name" id="wh-name">—</div>
     <div class="dh-property" id="wh-property">—</div>
   </div>
-  <div class="stat-row">
-    <div class="stat-card"><div class="sc-num">0</div><div class="sc-label">Tasks Today</div></div>
-    <div class="stat-card"><div class="sc-num">—</div><div class="sc-label">Next Shift</div></div>
-  </div>
-  <div class="dash-section">
-    <h3>Quick Actions</h3>
-    <div class="quick-actions">
-      <div class="qa-btn"><span class="qa-icon">📋</span>Tasks</div>
-      <div class="qa-btn"><span class="qa-icon">📅</span>Schedule</div>
-      <div class="qa-btn"><span class="qa-icon">🧾</span>Expenses</div>
-      <div class="qa-btn"><span class="qa-icon">💬</span>Chat</div>
+  <div style="flex:1;overflow-y:auto;background:#F9FAFB">
+    <div class="stat-row">
+      <div class="stat-card"><div class="sc-num">0</div><div class="sc-label">Tasks Today</div></div>
+      <div class="stat-card"><div class="sc-num">—</div><div class="sc-label">Next Shift</div></div>
     </div>
+    <div class="dash-section">
+      <h3>Quick Actions</h3>
+      <div class="quick-actions">
+        <div class="qa-btn"><span class="qa-icon">📋</span>Tasks</div>
+        <div class="qa-btn"><span class="qa-icon">📅</span>Schedule</div>
+        <div class="qa-btn"><span class="qa-icon">🧾</span>Expenses</div>
+        <div class="qa-btn"><span class="qa-icon">💬</span>Chat</div>
+      </div>
+    </div>
+    <div style="height:80px"></div>
   </div>
-  <div style="height:70px"></div>
   <div class="bottom-nav">
     <div class="nav-item active"><span class="ni-icon">🏠</span>Home</div>
     <div class="nav-item"><span class="ni-icon">📋</span>Tasks</div>
@@ -335,18 +430,21 @@ h2{color:#075e54;font-size:1.4rem;margin-bottom:6px}
 // ══════════════════════════════════════
 //  STATE
 // ══════════════════════════════════════
-const LANGS = [
-  {code:'English',flag:'🇬🇧',name:'English'},{code:'Thai',flag:'🇹🇭',name:'ไทย'},
-  {code:'Russian',flag:'🇷🇺',name:'Русский'},{code:'Filipino',flag:'🇵🇭',name:'Filipino'},
-  {code:'Myanmar',flag:'🇲🇲',name:'မြန်မာ'},{code:'Chinese',flag:'🇨🇳',name:'中文'},
-  {code:'German',flag:'🇩🇪',name:'Deutsch'},{code:'French',flag:'🇫🇷',name:'Français'},
-  {code:'Arabic',flag:'🇸🇦',name:'العربية'},{code:'Indonesian',flag:'🇮🇩',name:'Indonesia'}
+const LANG_DATA = [
+  {code:'English',flag:'🇬🇧',name:'English',sub:'Choose your language',cont:'Continue →'},
+  {code:'Thai',flag:'🇹🇭',name:'ไทย',sub:'เลือกภาษาของคุณ',cont:'ต่อไป →'},
+  {code:'Russian',flag:'🇷🇺',name:'Русский',sub:'Выберите ваш язык',cont:'Продолжить →'},
+  {code:'Filipino',flag:'🇵🇭',name:'Filipino',sub:'Piliin ang iyong wika',cont:'Magpatuloy →'},
+  {code:'Myanmar',flag:'🇲🇲',name:'မြန်မာ',sub:'သင်၏ဘာသာစကားကိုရွေးပါ',cont:'ဆက်လက် →'},
+  {code:'Chinese',flag:'🇨🇳',name:'中文',sub:'选择您的语言',cont:'继续 →'},
+  {code:'German',flag:'🇩🇪',name:'Deutsch',sub:'Wähle deine Sprache',cont:'Weiter →'},
+  {code:'French',flag:'🇫🇷',name:'Français',sub:'Choisissez votre langue',cont:'Continuer →'},
+  {code:'Arabic',flag:'🇸🇦',name:'العربية',sub:'اختر لغتك',cont:'متابعة →'},
+  {code:'Indonesian',flag:'🇮🇩',name:'Indonesia',sub:'Pilih bahasa Anda',cont:'Lanjutkan →'}
 ];
-
-let me = null; // { id, name, role, lang, email, propertyId, ... }
-let myProperty = null; // { id, name, type, location, inviteCode }
+let me = null, myProperty = null;
 let selectedLang = null, selectedRole = null, selectedGender = '', selectedPropType = '';
-let pendingReg = {}; // temp registration data
+let pendingReg = {};
 let screenHistory = [];
 
 // ══════════════════════════════════════
@@ -357,76 +455,76 @@ function goScreen(id) {
   if (cur && cur.id !== id) screenHistory.push(cur.id);
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
-  // Trigger screen-specific init
   if (id === 's-owner-home') loadOwnerDashboard();
   if (id === 's-workers-list') loadWorkersList();
   if (id === 's-worker-home') loadWorkerDashboard();
 }
-function goBack() {
-  const prev = screenHistory.pop();
-  if (prev) goScreen(prev);
-}
+function goBack() { const prev = screenHistory.pop(); if (prev) goScreen(prev); }
 function showError(id, msg) { const el = document.getElementById(id); el.textContent = msg; el.style.display = msg ? 'block' : 'none'; }
 
 // ══════════════════════════════════════
-//  SPLASH → auto advance
+//  SPLASH — animated loading
 // ══════════════════════════════════════
 setTimeout(() => {
-  // Check if returning user
-  const saved = localStorage.getItem('bt_user');
-  if (saved) {
-    me = JSON.parse(saved);
-    selectedLang = me.lang;
-    goScreen('s-signin');
-    document.getElementById('si-email').value = me.email || '';
-    setTimeout(() => document.getElementById('si-pin').focus(), 100);
-  } else {
-    goScreen('s-lang');
+  const sc = document.getElementById('splash-content');
+  sc.style.opacity = '1'; sc.style.transform = 'translateY(0)';
+}, 200);
+
+let splashProgress = 0;
+const splashInterval = setInterval(() => {
+  splashProgress += Math.random() * 15 + 5;
+  if (splashProgress >= 100) { splashProgress = 100; clearInterval(splashInterval); }
+  document.getElementById('splash-bar').style.width = splashProgress + '%';
+  if (splashProgress >= 100) {
+    document.getElementById('splash-label').textContent = 'Ready!';
+    setTimeout(() => {
+      const saved = localStorage.getItem('bt_user');
+      if (saved) {
+        me = JSON.parse(saved);
+        selectedLang = me.lang;
+        goScreen('s-signin');
+        document.getElementById('si-email').value = me.email || '';
+        setTimeout(() => document.getElementById('si-pin').focus(), 100);
+      } else {
+        goScreen('s-lang');
+      }
+    }, 400);
   }
-}, 1800);
+}, 120);
 
 // ══════════════════════════════════════
-//  LANGUAGE SELECT
+//  LANGUAGE SELECT (mockup style)
 // ══════════════════════════════════════
 (function buildLangGrid() {
   const grid = document.getElementById('lang-grid');
-  LANGS.forEach(l => {
+  LANG_DATA.forEach((l, i) => {
     const div = document.createElement('div');
-    div.className = 'lang-item';
-    div.innerHTML = `<span class="flag">${l.flag}</span><span class="lname">${l.name}</span>`;
+    const isDefault = i === 0;
+    div.style.cssText = `background:${isDefault ? '#00897B' : '#F9FAFB'};color:${isDefault ? '#fff' : '#6B7280'};padding:11px 10px;border-radius:13px;text-align:center;cursor:pointer;border:2.5px solid ${isDefault ? '#00897B' : '#E5E7EB'}`;
+    div.innerHTML = `<div style="font-size:1.4rem">${l.flag}</div><div style="font-size:.82rem;font-weight:${isDefault?900:800};margin-top:5px">${l.name}${isDefault?' ✓':''}</div>`;
     div.onclick = () => {
-      grid.querySelectorAll('.lang-item').forEach(x => x.classList.remove('selected'));
-      div.classList.add('selected');
+      grid.querySelectorAll('div').forEach(d => { d.style.background='#F9FAFB'; d.style.color='#6B7280'; d.style.borderColor='#E5E7EB'; d.querySelector('div:last-child').textContent = d.querySelector('div:last-child').textContent.replace(' ✓',''); });
+      div.style.background='#00897B'; div.style.color='#fff'; div.style.borderColor='#00897B';
+      div.querySelector('div:last-child').textContent = l.name + ' ✓';
       selectedLang = l.code;
-      document.getElementById('lang-next-btn').disabled = false;
+      document.getElementById('lang-sub').textContent = l.sub;
+      document.getElementById('lang-continue-btn').textContent = l.cont;
+      document.getElementById('lang-continue-btn').disabled = false;
     };
     grid.appendChild(div);
   });
+  // Default English selected
+  selectedLang = 'English';
+  document.getElementById('lang-continue-btn').disabled = false;
 })();
 function langNext() { if (selectedLang) goScreen('s-role'); }
-
-// ══════════════════════════════════════
-//  ROLE SELECT
-// ══════════════════════════════════════
-function pickRole(role, el) {
-  document.querySelectorAll('.role-card').forEach(c => c.classList.remove('selected'));
-  el.classList.add('selected');
-  selectedRole = role;
-  document.getElementById('role-next-btn').disabled = false;
-}
-function roleNext() {
-  if (selectedRole === 'owner') goScreen('s-owner-reg');
-  else goScreen('s-worker-reg');
-}
 
 // ══════════════════════════════════════
 //  OWNER REGISTRATION
 // ══════════════════════════════════════
 function pickGender(g, el) {
   document.querySelectorAll('.gender-btn').forEach(b => b.classList.remove('selected'));
-  el.classList.add('selected');
-  selectedGender = g;
-  checkOwnerReg();
+  el.classList.add('selected'); selectedGender = g; checkOwnerReg();
 }
 function checkOwnerReg() {
   const n = document.getElementById('or-name').value.trim();
@@ -435,28 +533,23 @@ function checkOwnerReg() {
   document.getElementById('or-btn').disabled = !(n && e && p.length === 4);
 }
 ['or-name','or-email','or-phone','or-dob'].forEach(id => document.getElementById(id).addEventListener('input', checkOwnerReg));
-document.getElementById('or-pin').addEventListener('input', function() {
-  this.value = this.value.replace(/\D/g, '').substring(0, 4);
-  checkOwnerReg();
-});
+document.getElementById('or-pin').addEventListener('input', function() { this.value = this.value.replace(/\D/g,'').substring(0,4); checkOwnerReg(); });
 
 async function ownerRegister() {
   const name = document.getElementById('or-name').value.trim();
   const email = document.getElementById('or-email').value.trim();
   const pin = document.getElementById('or-pin').value;
-  showError('or-error', '');
+  showError('or-error','');
   document.getElementById('or-btn').disabled = true;
   document.getElementById('or-btn').textContent = 'Sending code...';
-
   pendingReg = { name, email, pin, phone: document.getElementById('or-phone').value.trim(), gender: selectedGender, dob: document.getElementById('or-dob').value, role: 'owner' };
-
   try {
-    const r = await fetch('/api/send-otp', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ contact: email, name }) });
+    const r = await fetch('/api/send-otp', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({contact:email,name}) });
     const d = await r.json();
     if (!d.ok) { showError('or-error', d.error); return; }
     document.getElementById('otp-subtitle').textContent = d.method === 'console' ? 'Check Render logs for the code' : `Code sent to ${email}`;
     goScreen('s-otp');
-  } catch (e) { showError('or-error', 'Network error'); }
+  } catch(e) { showError('or-error','Network error'); }
   finally { document.getElementById('or-btn').disabled = false; document.getElementById('or-btn').textContent = 'Send Verification Code'; }
 }
 
@@ -470,27 +563,22 @@ function checkWorkerReg() {
   document.getElementById('wr-btn').disabled = !(n && e && p.length === 4);
 }
 ['wr-name','wr-email'].forEach(id => document.getElementById(id).addEventListener('input', checkWorkerReg));
-document.getElementById('wr-pin').addEventListener('input', function() {
-  this.value = this.value.replace(/\D/g, '').substring(0, 4);
-  checkWorkerReg();
-});
+document.getElementById('wr-pin').addEventListener('input', function() { this.value = this.value.replace(/\D/g,'').substring(0,4); checkWorkerReg(); });
 
 async function workerRegister() {
   const name = document.getElementById('wr-name').value.trim();
   const email = document.getElementById('wr-email').value.trim();
   const pin = document.getElementById('wr-pin').value;
-  showError('wr-error', '');
+  showError('wr-error','');
   document.getElementById('wr-btn').disabled = true;
-
   pendingReg = { name, email, pin, role: 'worker' };
-
   try {
-    const r = await fetch('/api/send-otp', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ contact: email, name }) });
+    const r = await fetch('/api/send-otp', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({contact:email,name}) });
     const d = await r.json();
     if (!d.ok) { showError('wr-error', d.error); return; }
     document.getElementById('otp-subtitle').textContent = d.method === 'console' ? 'Check Render logs for the code' : `Code sent to ${email}`;
     goScreen('s-otp');
-  } catch (e) { showError('wr-error', 'Network error'); }
+  } catch(e) { showError('wr-error','Network error'); }
   finally { document.getElementById('wr-btn').disabled = false; }
 }
 
@@ -498,42 +586,33 @@ async function workerRegister() {
 //  OTP VERIFICATION
 // ══════════════════════════════════════
 document.getElementById('otp-input').addEventListener('input', function() {
-  this.value = this.value.replace(/\D/g, '').substring(0, 6);
+  this.value = this.value.replace(/\D/g,'').substring(0,6);
   document.getElementById('otp-btn').disabled = this.value.length !== 6;
 });
 
 async function verifyOTP() {
   const code = document.getElementById('otp-input').value.trim();
-  showError('otp-error', '');
+  showError('otp-error','');
   document.getElementById('otp-btn').disabled = true;
   document.getElementById('otp-btn').textContent = 'Verifying...';
-
   try {
     const r = await fetch('/api/verify-otp', {
-      method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ contact: pendingReg.email, otp: code, name: pendingReg.name, pin: pendingReg.pin, lang: selectedLang, role: pendingReg.role })
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ contact:pendingReg.email, otp:code, name:pendingReg.name, pin:pendingReg.pin, lang:selectedLang, role:pendingReg.role })
     });
     const d = await r.json();
     if (!d.ok) { showError('otp-error', d.error); document.getElementById('otp-btn').disabled = false; document.getElementById('otp-btn').textContent = 'Verify & Continue'; return; }
-
     me = d.user;
-    // Update profile fields if owner
     if (pendingReg.phone || pendingReg.gender || pendingReg.dob) {
-      await fetch('/api/user/update', { method: 'POST', headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ userId: me.id, phone: pendingReg.phone, gender: pendingReg.gender, dob: pendingReg.dob })
+      await fetch('/api/user/update', { method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({userId:me.id, phone:pendingReg.phone, gender:pendingReg.gender, dob:pendingReg.dob})
       });
     }
-    me.email = pendingReg.email;
-    me.lang = selectedLang;
+    me.email = pendingReg.email; me.lang = selectedLang;
     localStorage.setItem('bt_user', JSON.stringify(me));
-
-    if (me.role === 'owner') {
-      if (me.propertyId) { await loadPropertyData(me.propertyId); goScreen('s-owner-home'); }
-      else goScreen('s-property');
-    } else {
-      goScreen('s-worker-join');
-    }
-  } catch (e) { showError('otp-error', 'Network error'); }
+    if (me.role === 'owner') { me.propertyId ? (await loadPropertyData(me.propertyId), goScreen('s-owner-home')) : goScreen('s-property'); }
+    else { goScreen('s-worker-join'); }
+  } catch(e) { showError('otp-error','Network error'); }
   finally { document.getElementById('otp-btn').disabled = false; document.getElementById('otp-btn').textContent = 'Verify & Continue'; }
 }
 
@@ -541,13 +620,13 @@ async function resendOTP() {
   showError('otp-error','');
   try {
     await fetch('/api/send-otp', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({contact:pendingReg.email,name:pendingReg.name}) });
-    const s = document.getElementById('otp-success'); s.textContent = 'New code sent!'; s.style.display = 'block';
+    const s = document.getElementById('otp-success'); s.textContent='New code sent!'; s.style.display='block';
     setTimeout(()=>{s.style.display='none'},3000);
   } catch(e) { showError('otp-error','Failed to resend'); }
 }
 
 // ══════════════════════════════════════
-//  SIGN IN (returning user)
+//  SIGN IN
 // ══════════════════════════════════════
 ['si-email','si-pin'].forEach(id => document.getElementById(id).addEventListener('input', () => {
   const e = document.getElementById('si-email').value.trim();
@@ -562,20 +641,14 @@ async function signIn() {
   showError('si-error','');
   document.getElementById('si-btn').disabled = true;
   try {
-    const r = await fetch('/api/login', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({email, pin, lang: selectedLang || 'English'}) });
+    const r = await fetch('/api/login', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({email,pin,lang:selectedLang||'English'}) });
     const d = await r.json();
     if (!d.ok) { showError('si-error', d.error); document.getElementById('si-btn').disabled = false; return; }
-    me = d.user;
-    me.email = email;
+    me = d.user; me.email = email;
     localStorage.setItem('bt_user', JSON.stringify(me));
-
-    if (me.propertyId) {
-      await loadPropertyData(me.propertyId);
-      goScreen(me.role === 'owner' ? 's-owner-home' : 's-worker-home');
-    } else {
-      goScreen(me.role === 'owner' ? 's-property' : 's-worker-join');
-    }
-  } catch (e) { showError('si-error','Network error'); document.getElementById('si-btn').disabled = false; }
+    if (me.propertyId) { await loadPropertyData(me.propertyId); goScreen(me.role==='owner'?'s-owner-home':'s-worker-home'); }
+    else { goScreen(me.role==='owner'?'s-property':'s-worker-join'); }
+  } catch(e) { showError('si-error','Network error'); document.getElementById('si-btn').disabled = false; }
 }
 
 // ══════════════════════════════════════
@@ -583,13 +656,9 @@ async function signIn() {
 // ══════════════════════════════════════
 function pickPropType(t, el) {
   document.querySelectorAll('.prop-item').forEach(i => i.classList.remove('selected'));
-  el.classList.add('selected');
-  selectedPropType = t;
-  checkPropReady();
+  el.classList.add('selected'); selectedPropType = t; checkPropReady();
 }
-function checkPropReady() {
-  document.getElementById('prop-btn').disabled = !(selectedPropType && document.getElementById('prop-name').value.trim());
-}
+function checkPropReady() { document.getElementById('prop-btn').disabled = !(selectedPropType && document.getElementById('prop-name').value.trim()); }
 ['prop-name','prop-location'].forEach(id => document.getElementById(id).addEventListener('input', checkPropReady));
 
 async function createProperty() {
@@ -598,17 +667,14 @@ async function createProperty() {
   showError('prop-error','');
   document.getElementById('prop-btn').disabled = true;
   try {
-    const r = await fetch('/api/property/create', { method:'POST', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({ ownerId: me.id, name, type: selectedPropType, location })
-    });
+    const r = await fetch('/api/property/create', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ownerId:me.id,name,type:selectedPropType,location}) });
     const d = await r.json();
     if (!d.ok) { showError('prop-error', d.error); document.getElementById('prop-btn').disabled = false; return; }
-    myProperty = d.property;
-    me.propertyId = myProperty.id;
+    myProperty = d.property; me.propertyId = myProperty.id;
     localStorage.setItem('bt_user', JSON.stringify(me));
     document.getElementById('invite-code').textContent = myProperty.inviteCode;
     goScreen('s-invite');
-  } catch (e) { showError('prop-error','Network error'); document.getElementById('prop-btn').disabled = false; }
+  } catch(e) { showError('prop-error','Network error'); document.getElementById('prop-btn').disabled = false; }
 }
 
 // ══════════════════════════════════════
@@ -625,35 +691,23 @@ async function workerJoin() {
   showError('wj-error','');
   document.getElementById('wj-btn').disabled = true;
   try {
-    const r = await fetch('/api/worker/join', { method:'POST', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({ userId: me.id, inviteCode: code, jobRole: role })
-    });
+    const r = await fetch('/api/worker/join', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({userId:me.id,inviteCode:code,jobRole:role}) });
     const d = await r.json();
     if (!d.ok) { showError('wj-error', d.error); document.getElementById('wj-btn').disabled = false; return; }
     me.propertyId = d.propertyId;
     localStorage.setItem('bt_user', JSON.stringify(me));
     await loadPropertyData(d.propertyId);
     goScreen('s-worker-home');
-  } catch (e) { showError('wj-error','Network error'); document.getElementById('wj-btn').disabled = false; }
+  } catch(e) { showError('wj-error','Network error'); document.getElementById('wj-btn').disabled = false; }
 }
 
 // ══════════════════════════════════════
-//  LOAD DATA HELPERS
+//  DATA HELPERS
 // ══════════════════════════════════════
 async function loadPropertyData(propId) {
-  try {
-    const r = await fetch('/api/property/' + propId);
-    const d = await r.json();
-    if (d.ok) myProperty = d.property;
-  } catch (e) { /**/ }
+  try { const r = await fetch('/api/property/'+propId); const d = await r.json(); if (d.ok) myProperty = d.property; } catch(e) {}
 }
-
-function getGreeting() {
-  const h = new Date().getHours();
-  if (h < 12) return 'Good morning';
-  if (h < 17) return 'Good afternoon';
-  return 'Good evening';
-}
+function getGreeting() { const h = new Date().getHours(); return h<12?'Good morning':h<17?'Good afternoon':'Good evening'; }
 
 async function loadOwnerDashboard() {
   if (!me) return;
@@ -661,45 +715,28 @@ async function loadOwnerDashboard() {
   document.getElementById('dh-name').textContent = me.name;
   document.getElementById('dh-property').textContent = myProperty ? `${myProperty.name} · ${myProperty.inviteCode}` : '';
   if (myProperty) document.getElementById('invite-code').textContent = myProperty.inviteCode;
-
-  // Load workers
   if (me.propertyId) {
     try {
-      const r = await fetch('/api/workers/' + me.propertyId);
-      const d = await r.json();
+      const r = await fetch('/api/workers/'+me.propertyId); const d = await r.json();
       if (d.ok) {
         document.getElementById('stat-workers').textContent = d.workers.length;
-        const wl = document.getElementById('dash-workers');
-        wl.innerHTML = '';
-        if (!d.workers.length) { wl.innerHTML = '<p style="color:#888;font-size:.88rem">No workers yet. Share your invite code!</p>'; }
-        d.workers.forEach(w => {
-          const u = w.userId || {};
-          wl.innerHTML += `<div class="worker-item"><div class="wi-avatar">${(u.name||'?')[0].toUpperCase()}</div><div class="wi-info"><div class="wi-name">${u.name||'—'}</div><div class="wi-role">${w.jobRole||'Staff'}</div></div><div class="wi-status"></div></div>`;
-        });
+        const wl = document.getElementById('dash-workers'); wl.innerHTML = '';
+        if (!d.workers.length) { wl.innerHTML = '<p style="color:#9CA3AF;font-size:.85rem;font-weight:600">No workers yet. Share your invite code!</p>'; }
+        d.workers.forEach(w => { const u = w.userId||{}; wl.innerHTML += `<div class="worker-item"><div class="wi-avatar">${(u.name||'?')[0].toUpperCase()}</div><div class="wi-info"><div class="wi-name">${u.name||'—'}</div><div class="wi-role">${w.jobRole||'Staff'}</div></div><div class="wi-status"></div></div>`; });
       }
-    } catch (e) { /**/ }
-
-    try {
-      const r = await fetch('/api/tasks/' + me.propertyId);
-      const d = await r.json();
-      if (d.ok) document.getElementById('stat-tasks').textContent = d.tasks.filter(t => t.status !== 'done').length;
-    } catch (e) { /**/ }
+    } catch(e) {}
+    try { const r = await fetch('/api/tasks/'+me.propertyId); const d = await r.json(); if (d.ok) document.getElementById('stat-tasks').textContent = d.tasks.filter(t=>t.status!=='done').length; } catch(e) {}
   }
 }
 
 async function loadWorkersList() {
-  if (!me || !me.propertyId) return;
+  if (!me||!me.propertyId) return;
   try {
-    const r = await fetch('/api/workers/' + me.propertyId);
-    const d = await r.json();
-    const body = document.getElementById('workers-list-body');
-    body.innerHTML = '';
-    if (!d.ok || !d.workers.length) { body.innerHTML = '<p class="subtitle">No workers yet. Share your invite code!</p>'; return; }
-    d.workers.forEach(w => {
-      const u = w.userId || {};
-      body.innerHTML += `<div class="worker-item"><div class="wi-avatar">${(u.name||'?')[0].toUpperCase()}</div><div class="wi-info"><div class="wi-name">${u.name||'—'}</div><div class="wi-role">${w.jobRole||'Staff'} · ฿${w.salary||0}/mo</div></div><div class="wi-status"></div></div>`;
-    });
-  } catch (e) { /**/ }
+    const r = await fetch('/api/workers/'+me.propertyId); const d = await r.json();
+    const body = document.getElementById('workers-list-body'); body.innerHTML = '';
+    if (!d.ok||!d.workers.length) { body.innerHTML = '<p style="color:#9CA3AF;font-size:.88rem;text-align:center;font-weight:600">No workers yet.</p>'; return; }
+    d.workers.forEach(w => { const u = w.userId||{}; body.innerHTML += `<div class="worker-item"><div class="wi-avatar">${(u.name||'?')[0].toUpperCase()}</div><div class="wi-info"><div class="wi-name">${u.name||'—'}</div><div class="wi-role">${w.jobRole||'Staff'} · ฿${w.salary||0}/mo</div></div><div class="wi-status"></div></div>`; });
+  } catch(e) {}
 }
 
 function loadWorkerDashboard() {
