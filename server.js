@@ -324,6 +324,85 @@ app.get('/api/workers/:propertyId', async (req, res) => {
   } catch (e) { res.json({ ok: true, workers: [] }); }
 });
 
+// Remove worker from property
+app.post('/api/worker/remove', async (req, res) => {
+  const { profileId, propertyId } = req.body;
+  if (!profileId) return res.status(400).json({ ok: false, error: 'profileId required' });
+  try {
+    const wp = await WorkerProfile.findById(profileId);
+    if (!wp) return res.status(404).json({ ok: false, error: 'Not found' });
+    wp.status = 'inactive';
+    await wp.save();
+    // Remove from group chat
+    const groupChat = await Chat.findOne({ propertyId: wp.propertyId, type: 'group' });
+    if (groupChat) {
+      groupChat.members = groupChat.members.filter(m => m.toString() !== wp.userId.toString());
+      await groupChat.save();
+    }
+    console.log(`[WORKER] Removed worker profile ${profileId}`);
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+// ══════════════════════════════════════
+//  ATTENDANCE ROUTES
+// ══════════════════════════════════════
+
+app.post('/api/attendance/log', async (req, res) => {
+  const { propertyId, workerId, date, status, checkInTime, reason } = req.body;
+  if (!propertyId || !workerId || !date) return res.status(400).json({ ok: false, error: 'Missing fields' });
+  try {
+    // Upsert — one record per worker per day
+    const record = await Attendance.findOneAndUpdate(
+      { propertyId, workerId, date },
+      { status: status || 'present', checkInTime: checkInTime || new Date(), reason: reason || '' },
+      { upsert: true, new: true }
+    );
+    res.json({ ok: true, attendance: record });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+app.get('/api/attendance/:propertyId', async (req, res) => {
+  const { month } = req.query; // YYYY-MM
+  try {
+    const query = { propertyId: req.params.propertyId };
+    if (month) { query.date = { $regex: '^' + month }; }
+    const records = await Attendance.find(query).populate('workerId', 'name').sort({ date: -1 });
+    res.json({ ok: true, attendance: records });
+  } catch (e) { res.json({ ok: true, attendance: [] }); }
+});
+
+// ══════════════════════════════════════
+//  EXPENSE ROUTES
+// ══════════════════════════════════════
+
+app.post('/api/expenses/create', async (req, res) => {
+  const { propertyId, workerId, amount, category, store, receiptImage } = req.body;
+  if (!propertyId || !amount) return res.status(400).json({ ok: false, error: 'Missing fields' });
+  try {
+    const expense = await Expense.create({ propertyId, workerId, amount, category, store, receiptImage });
+    res.json({ ok: true, expense });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+app.get('/api/expenses/:propertyId', async (req, res) => {
+  try {
+    const expenses = await Expense.find({ propertyId: req.params.propertyId }).populate('workerId', 'name').sort({ date: -1 });
+    const total = expenses.reduce((sum, e) => sum + e.amount, 0);
+    res.json({ ok: true, expenses, total });
+  } catch (e) { res.json({ ok: true, expenses: [], total: 0 }); }
+});
+
+app.post('/api/expenses/update', async (req, res) => {
+  const { expenseId, status } = req.body;
+  if (!expenseId || !status) return res.status(400).json({ ok: false, error: 'Missing fields' });
+  try {
+    const expense = await Expense.findByIdAndUpdate(expenseId, { status }, { new: true });
+    if (!expense) return res.status(404).json({ ok: false, error: 'Not found' });
+    res.json({ ok: true, expense });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
 // ══════════════════════════════════════
 //  TASK ROUTES
 // ══════════════════════════════════════
