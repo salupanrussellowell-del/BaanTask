@@ -2131,20 +2131,21 @@ async function loadConversation() {
     }
     list.innerHTML = '';
     d.messages.forEach(msg => {
-      const isMe = msg.senderId === me.id;
+      const isMe = msg.senderId === me.id || msg.senderId === me._id;
       const side = isMe ? 'me' : 'them';
-      // Show translated text to viewer, original underneath
-      const displayText = msg.translation || msg.text;
-      const originalText = msg.translation ? msg.text : null;
+      // Always show original text, plus translation below if available
+      const hasTranslation = msg.translation && msg.translation !== msg.text;
       const flag = langFlag(msg.senderLang);
       const time = new Date(msg.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
       let html = '<div class="msg-row ' + side + '">';
       html += '<div class="msg-sender">' + esc(msg.senderName || 'Unknown') + '</div>';
       html += '<div class="msg-bubble">';
-      html += esc(displayText);
-      if (originalText) {
-        html += '<div class="msg-original">' + flag + ' ' + esc(originalText) + '</div>';
+      html += esc(msg.text);
+      if (hasTranslation) {
+        html += '<div style="border-top:1px solid ' + (isMe ? 'rgba(255,255,255,.2)' : '#E5E7EB') + ';margin-top:6px;padding-top:6px;font-size:.8rem;line-height:1.4">';
+        html += '🌐 ' + esc(msg.translation);
+        html += '</div>';
       }
       html += '<div class="msg-lang">' + flag + ' ' + (msg.senderLang || '') + '</div>';
       html += '</div>';

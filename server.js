@@ -163,24 +163,42 @@ function genCode() { return crypto.randomBytes(3).toString('hex').toUpperCase();
 function genOTP() { return String(Math.floor(100000 + Math.random() * 900000)); }
 
 // ── Translate ──
+// Normalize language names — Claude might detect "Tagalog" but we store "Filipino"
+const LANG_ALIASES = { Tagalog:'Filipino', 'Filipino/Tagalog':'Filipino', Burmese:'Myanmar', Mandarin:'Chinese', 'Mandarin Chinese':'Chinese', 'Simplified Chinese':'Chinese', 'Traditional Chinese':'Chinese' };
+function normLang(lang) { return LANG_ALIASES[lang] || lang; }
+
 async function detectAndTranslate(text, targetLangs) {
-  // Auto-detect language and translate to all target languages in one call
   if (!process.env.ANTHROPIC_API_KEY || !targetLangs.length) return { detectedLang: 'English', translations: {} };
-  const langList = targetLangs.join(', ');
   try {
     const r = await client.messages.create({
-      model: 'claude-haiku-4-5-20251001', max_tokens: 1500,
-      messages: [{ role: 'user', content: `You are a translation API. Given a message, detect its language then translate it.
+      model: 'claude-haiku-4-5-20251001', max_tokens: 2000,
+      messages: [{ role: 'user', content: `You are a translation API. Detect the language of the message, then translate it to each target language.
 
-Message: "${text}"
+Message: ${JSON.stringify(text)}
 
-Respond in EXACTLY this JSON format (no markdown, no explanation):
-{"detectedLang":"<detected language name in English>","translations":{${targetLangs.map(l => `"${l}":"<translation to ${l}>"`).join(',')}}}
+Target languages: ${targetLangs.join(', ')}
 
-If the message is already in one of the target languages, still include that translation as the original text.` }]
+Respond with ONLY valid JSON, no markdown fences, no explanation:
+{
+  "detectedLang": "<language name in English, e.g. Filipino, Thai, English, Russian>",
+  "translations": {
+    ${targetLangs.map(l => `"${l}": "<accurate translation into ${l}>"`).join(',\n    ')}
+  }
+}
+
+Rules:
+- If the message is already in a target language, copy the original text as that translation
+- Use natural, conversational translations (not formal/literary)
+- "Filipino" means Tagalog/Filipino language
+- "Myanmar" means Burmese language
+- Detect the actual language — do NOT assume English` }]
     });
-    const raw = r.content[0].text.trim();
+    let raw = r.content[0].text.trim();
+    // Strip markdown fences if present
+    if (raw.startsWith('```')) { raw = raw.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim(); }
     const parsed = JSON.parse(raw);
+    parsed.detectedLang = normLang(parsed.detectedLang || 'English');
+    console.log(`[TRANSLATE] Detected: ${parsed.detectedLang}, targets: ${targetLangs.join(', ')}`);
     return parsed;
   } catch (e) {
     console.error('[TRANSLATE ERROR]', e.message);
@@ -518,13 +536,25 @@ app.get('/api/messages/:chatId', async (req, res) => {
       const t = m.translations instanceof Map ? Object.fromEntries(m.translations) : (m.translations || {});
       const senderName = m.senderId && m.senderId.name ? m.senderId.name : 'Unknown';
       const senderId = m.senderId && m.senderId._id ? m.senderId._id.toString() : (m.senderId ? m.senderId.toString() : '');
+      const sLang = normLang(m.senderLang || 'English');
+      const rLang = normLang(lang);
+      // Find translation — try exact match, then case-insensitive
+      let translation = null;
+      if (sLang !== rLang) {
+        translation = t[lang] || t[rLang] || null;
+        // Fallback: search keys case-insensitively
+        if (!translation) {
+          const key = Object.keys(t).find(k => k.toLowerCase() === rLang.toLowerCase());
+          if (key) translation = t[key];
+        }
+      }
       return {
         id: m._id.toString(),
         senderId,
         senderName,
-        senderLang: m.senderLang,
+        senderLang: sLang,
         text: m.text,
-        translation: m.senderLang === lang ? null : (t[lang] || null),
+        translation,
         time: m.createdAt
       };
     });
@@ -554,9 +584,11 @@ app.post('/api/messages/send', async (req, res) => {
 
     if (targetLangs.length > 0) {
       const result = await detectAndTranslate(text, targetLangs);
-      detectedLang = result.detectedLang || 'English';
+      detectedLang = normLang(result.detectedLang || 'English');
       translations = result.translations || {};
     }
+    // Ensure sender's own language has the original text
+    if (!translations[detectedLang]) translations[detectedLang] = text;
 
     const msg = await Message.create({
       chatId, senderId, senderLang: detectedLang,
