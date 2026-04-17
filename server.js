@@ -491,15 +491,17 @@ app.post('/api/tasks/update', async (req, res) => {
 //  CHAT / MESSAGE ROUTES
 // ══════════════════════════════════════
 
-// List all chats for a user (group + DMs), with member names
+// List all chats for a user (group + DMs), with member names + real last message
 app.get('/api/chats/:propertyId/:userId', async (req, res) => {
   try {
     const chats = await Chat.find({ propertyId: req.params.propertyId, members: req.params.userId })
       .sort({ lastMessageAt: -1 }).lean();
-    // Populate member names for each chat
     for (const c of chats) {
       const users = await User.find({ _id: { $in: c.members } }, 'name lang').lean();
       c.memberDetails = users.map(u => ({ id: u._id.toString(), name: u.name, lang: u.lang }));
+      // Fetch actual last message from DB (not cached field)
+      const lastMsg = await Message.findOne({ chatId: c._id }).sort({ createdAt: -1 }).lean();
+      c.lastMessage = lastMsg ? lastMsg.text : '';
     }
     res.json({ ok: true, chats });
   } catch (e) { res.json({ ok: true, chats: [] }); }
@@ -684,8 +686,12 @@ app.get('/status', async (req, res) => {
 });
 
 app.get('/admin/clear-messages', async (req, res) => {
-  try { const r = await Message.deleteMany({}); res.json({ ok: true, deleted: r.deletedCount }); }
-  catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+  try {
+    const r = await Message.deleteMany({});
+    // Also clear lastMessage on all chats so previews don't show stale text
+    await Chat.updateMany({}, { lastMessage: '', lastMessageAt: new Date(0) });
+    res.json({ ok: true, deleted: r.deletedCount });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
 // ══════════════════════════════════════
