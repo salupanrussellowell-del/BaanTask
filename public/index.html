@@ -2010,154 +2010,119 @@ let allChats = [];
 const LANG_FLAGS = {English:'🇬🇧',Thai:'🇹🇭',Russian:'🇷🇺',Filipino:'🇵🇭',Myanmar:'🇲🇲',Chinese:'🇨🇳',German:'🇩🇪',French:'🇫🇷',Arabic:'🇸🇦',Indonesian:'🇮🇩',Spanish:'🇪🇸',Japanese:'🇯🇵',Korean:'🇰🇷',Hindi:'🇮🇳',Portuguese:'🇧🇷',Vietnamese:'🇻🇳',Italian:'🇮🇹',Turkish:'🇹🇷',Dutch:'🇳🇱',Polish:'🇵🇱',Swedish:'🇸🇪',Czech:'🇨🇿',Hebrew:'🇮🇱',Malay:'🇲🇾',Khmer:'🇰🇭',Lao:'🇱🇦',Nepali:'🇳🇵',Bengali:'🇧🇩',Urdu:'🇵🇰',Persian:'🇮🇷'};
 function langFlag(lang) { return LANG_FLAGS[lang] || '🌐'; }
 
-// ── Load chat list (owner or worker) ──
+// ══════════════════════════════════════
+//  CHAT — rewritten from scratch
+// ══════════════════════════════════════
+let currentChatOtherUserId = null;
+let currentChatMembers = [];
+
+function getChatMyId() { return String(me.id || me._id || ''); }
+function makeSortedRoom(id1, id2) { return [String(id1), String(id2)].sort().join('_'); }
+
+// ── Chat list ──
 async function loadChatList() {
   if (!me || !me.propertyId) return;
   const isOwner = me.role === 'owner';
-  const bodyId = isOwner ? 'chat-list-body' : 'chat-list-w-body';
-  const body = document.getElementById(bodyId);
+  const body = document.getElementById(isOwner ? 'chat-list-body' : 'chat-list-w-body');
   if (!body) return;
-
-  body.innerHTML = '<p style="text-align:center;color:#9CA3AF;font-size:.82rem;padding:20px;font-weight:600">Loading chats...</p>';
+  body.innerHTML = '';
 
   try {
-    // Get all chats
-    const r = await fetch('/api/chats/' + me.propertyId + '/' + me.id);
-    const d = await r.json();
-    allChats = d.ok ? d.chats : [];
+    const [chatRes, workerRes] = await Promise.all([
+      fetch('/api/chats/' + me.propertyId + '/' + me.id).then(r => r.json()),
+      fetch('/api/workers/' + me.propertyId).then(r => r.json())
+    ]);
+    const allChats = chatRes.ok ? chatRes.chats : [];
+    const workers = workerRes.ok ? workerRes.workers : [];
 
-    // Get workers for DM creation
-    const wr = await fetch('/api/workers/' + me.propertyId);
-    const wd = await wr.json();
-    const workers = wd.ok ? wd.workers : [];
-
-    body.innerHTML = '';
-    const accentGrad = isOwner ? 'linear-gradient(135deg,#00897B,#00695C)' : 'linear-gradient(135deg,#E65100,#BF360C)';
-
-    // Group chat first
-    const groupChat = allChats.find(c => c.type === 'group');
-    if (groupChat) {
-      const memberCount = groupChat.memberDetails ? groupChat.memberDetails.length : 0;
-      const lastMsg = groupChat.lastMessage || t('tap_open');
-      body.innerHTML += '<div class="chat-item" onclick="openChat(\'' + groupChat._id + '\',\'group\',\'' + esc(groupChat.name || t('staff_group')) + '\')"><div class="wav" style="background:' + accentGrad + ';width:46px;height:46px;font-size:1rem">👥</div><div class="ci-info"><div class="ci-name">' + esc(groupChat.name || t('staff_group')) + '</div><div class="ci-msg">' + esc(lastMsg) + '</div></div><div style="text-align:right"><div class="ci-time">' + (memberCount ? memberCount + ' 👤' : '') + '</div><div style="font-size:.56rem;color:#00897B;font-weight:800;margin-top:2px">🌐 Auto-translate</div></div></div>';
+    // Group chat
+    const group = allChats.find(c => c.type === 'group');
+    if (group) {
+      const preview = group.lastMessage ? esc(group.lastMessage) : '<span style="color:#9CA3AF">No messages yet</span>';
+      body.innerHTML += '<div class="chat-item" onclick="openChat(\'' + group._id + '\',\'group\',\'' + esc(group.name || 'Staff Group') + '\',null,\'' + (group.memberDetails||[]).map(m=>m.id).join(',') + '\')"><div class="wav" style="background:linear-gradient(135deg,#1B5E20,#2E7D32);width:46px;height:46px;font-size:1rem">👥</div><div class="ci-info"><div class="ci-name">' + esc(group.name || 'Staff Group') + '</div><div class="ci-msg">' + preview + '</div></div></div>';
     }
 
-    // Section header for DMs
-    if (workers.length || !isOwner) {
-      body.innerHTML += '<div style="padding:10px 14px 4px;font-size:.66rem;font-weight:900;color:#9CA3AF;text-transform:uppercase;letter-spacing:.06em">Direct Messages</div>';
-    }
-
+    // DM contacts
+    const contacts = [];
     if (isOwner) {
-      // Owner sees each worker as a DM contact
       workers.forEach((w, i) => {
         const u = w.userId || {};
-        const name = u.name || '—';
-        const lang = u.lang || 'English';
-        const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
-        // Find existing DM
-        const dm = allChats.find(c => c.type === 'direct' && c.members.some(m => m.toString() === (u._id || '').toString()));
-        const lastMsg = dm ? (dm.lastMessage || '') : '';
-        const dmId = dm ? dm._id : null;
-        body.innerHTML += '<div class="chat-item" onclick="openDM(\'' + (u._id || '') + '\',\'' + esc(name) + '\')"><div class="wav" style="background:' + avatarGrad(i) + ';width:46px;height:46px;font-size:.82rem">' + initials + '</div><div class="ci-info"><div class="ci-name">' + esc(name) + '</div><div class="ci-msg">' + (lastMsg ? esc(lastMsg) : '<span style="color:#00897B">' + langFlag(lang) + ' ' + lang + '</span>') + '</div></div><div class="ci-time">' + (w.jobRole || 'Staff') + '</div></div>';
+        if (u._id) contacts.push({ id: String(u._id), name: u.name || '—', lang: u.lang || 'English', role: w.jobRole || 'Staff', idx: i });
       });
-      if (!workers.length) {
-        body.innerHTML += '<p style="text-align:center;color:#9CA3AF;font-size:.82rem;padding:16px;font-weight:600">' + t('no_workers') + '</p>';
-      }
-    } else {
-      // Worker sees the owner + other workers
-      if (groupChat && groupChat.memberDetails) {
-        groupChat.memberDetails.forEach((member, i) => {
-          if (member.id === me.id) return; // skip self
-          const name = member.name || '—';
-          const lang = member.lang || 'English';
-          const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
-          const dm = allChats.find(c => c.type === 'direct' && c.members.some(m => m.toString() === member.id));
-          const lastMsg = dm ? (dm.lastMessage || '') : '';
-          body.innerHTML += '<div class="chat-item" onclick="openDM(\'' + member.id + '\',\'' + esc(name) + '\')"><div class="wav" style="background:' + avatarGrad(i) + ';width:46px;height:46px;font-size:.82rem">' + initials + '</div><div class="ci-info"><div class="ci-name">' + esc(name) + '</div><div class="ci-msg">' + (lastMsg ? esc(lastMsg) : '<span style="color:#E65100">' + langFlag(lang) + ' ' + lang + '</span>') + '</div></div><div class="ci-time">' + langFlag(lang) + '</div></div>';
-        });
-      }
+    } else if (group && group.memberDetails) {
+      group.memberDetails.forEach((m, i) => {
+        if (m.id !== getChatMyId()) contacts.push({ id: m.id, name: m.name || '—', lang: m.lang || 'English', role: '', idx: i });
+      });
     }
-  } catch(e) {
-    body.innerHTML = '<p style="text-align:center;color:#9CA3AF;font-size:.82rem;padding:20px;font-weight:600">Could not load chats</p>';
-  }
+
+    if (contacts.length) {
+      body.innerHTML += '<div style="padding:10px 14px 4px;font-size:.66rem;font-weight:900;color:#9CA3AF;text-transform:uppercase;letter-spacing:.06em">Direct Messages</div>';
+      contacts.forEach(c => {
+        const dm = allChats.find(ch => ch.type === 'direct' && ch.members.some(m => String(m) === c.id));
+        const preview = dm && dm.lastMessage ? esc(dm.lastMessage) : '<span style="color:#9CA3AF">' + langFlag(c.lang) + ' ' + c.lang + '</span>';
+        const initials = c.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+        body.innerHTML += '<div class="chat-item" onclick="openDM(\'' + c.id + '\',\'' + esc(c.name) + '\')"><div class="wav" style="background:' + avatarGrad(c.idx) + ';width:46px;height:46px;font-size:.82rem">' + initials + '</div><div class="ci-info"><div class="ci-name">' + esc(c.name) + '</div><div class="ci-msg">' + preview + '</div></div></div>';
+      });
+    }
+  } catch(e) { body.innerHTML = '<p style="text-align:center;color:#9CA3AF;padding:20px">Could not load chats</p>'; }
 }
 
-// ── Open a DM (find or create) ──
+// ── Open DM ──
 async function openDM(otherUserId, otherName) {
   if (!me || !me.propertyId) return;
   try {
-    const r = await fetch('/api/chats/direct', {
-      method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ propertyId: me.propertyId, userId1: me.id, userId2: otherUserId })
-    });
+    const r = await fetch('/api/chats/direct', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ propertyId: me.propertyId, userId1: me.id, userId2: otherUserId }) });
     const d = await r.json();
     if (d.ok && d.chat) {
-      openChat(d.chat._id, 'direct', otherName, otherUserId);
+      const members = d.chat.members.map(m => String(m._id || m));
+      openChat(d.chat._id, 'direct', otherName, otherUserId, members.join(','));
     }
   } catch(e) {}
 }
 
-// ── Open any chat (DM or group) ──
-let currentChatOtherUserId = null;
-function openChat(chatId, type, name, otherUserId) {
+// ── Open chat ──
+function openChat(chatId, type, name, otherUserId, memberStr) {
   currentChatId = chatId;
   currentChatName = name;
   currentChatOtherUserId = otherUserId || null;
-  // Real-time: join room + clear unread
-  if (typeof unreadChats !== 'undefined') { unreadChats.delete(chatId); updateChatBadge(); }
-  if (socket && socket.connected) socket.emit('joinChat', { chatId, otherUserId: otherUserId || null });
-  // Set conversation header
+  currentChatMembers = memberStr ? memberStr.split(',') : [];
+
+  // Clear unread for this chat
+  unreadChats.delete(String(chatId));
+  updateChatBadge();
+
+  // Join socket rooms for every member pair
+  if (socket && socket.connected) {
+    const myId = getChatMyId();
+    currentChatMembers.forEach(mid => {
+      if (mid && mid !== myId) {
+        const roomId = makeSortedRoom(myId, mid);
+        socket.emit('join', { roomId });
+        console.log('[WS] join room ' + roomId);
+      }
+    });
+  }
+
+  // Set header
   const avatar = document.getElementById('conv-avatar');
-  const nameEl = document.getElementById('conv-name');
-  const subtitle = document.getElementById('conv-subtitle');
-  nameEl.textContent = name;
+  document.getElementById('conv-name').textContent = name;
+  document.getElementById('conv-subtitle').textContent = '🌐 Auto-translated';
   if (type === 'group') {
     avatar.textContent = '👥';
-    avatar.style.background = me.role === 'owner' ? 'linear-gradient(135deg,#00897B,#00695C)' : 'linear-gradient(135deg,#E65100,#BF360C)';
-    subtitle.textContent = '🌐 Messages auto-translate for everyone';
+    avatar.style.background = 'linear-gradient(135deg,#1B5E20,#2E7D32)';
   } else {
-    const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
-    avatar.textContent = initials;
+    avatar.textContent = name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
     avatar.style.background = 'linear-gradient(135deg,#1976D2,#1565C0)';
-    subtitle.textContent = '🌐 Auto-translated conversation';
   }
   goScreen('s-conversation');
 }
 
-// ── Render one message bubble ──
-function renderMsgBubble(msg, myId) {
-  const isMe = String(msg.senderId) === myId;
-  const side = isMe ? 'msg-right' : 'msg-left';
-  const bbl = isMe ? 'msg-bbl-right' : 'msg-bbl-left';
-  const hasTrans = msg.translation && msg.translation.trim() !== msg.text.trim();
-  const time = new Date(msg.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-  let h = '<div class="msg-row ' + side + '">';
-  // Name label only on LEFT (other person's) messages
-  if (!isMe) h += '<div class="msg-name">' + esc(msg.senderName || '') + '</div>';
-  h += '<div class="msg-bbl ' + bbl + '">';
-  h += esc(msg.text);
-  if (hasTrans) h += '<div class="msg-trans">🌐 ' + esc(msg.translation) + '</div>';
-  h += '</div>';
-  h += '<div class="msg-meta">' + time + '</div>';
-  h += '</div>';
-  return h;
-}
-
-function scrollChatDown() {
-  const list = document.getElementById('conv-msg-list');
-  if (list) list.scrollTop = list.scrollHeight;
-  const sc = list ? list.parentElement : null;
-  if (sc) sc.scrollTop = sc.scrollHeight;
-}
-
-// ── Load messages for current chat ──
+// ── Load messages ──
 async function loadConversation() {
   if (!currentChatId || !me) return;
+  const myId = getChatMyId();
   const lang = me.lang || 'English';
-  const myId = String(me.id || me._id || '');
   const list = document.getElementById('conv-msg-list');
-  console.log('[CHAT] loadConversation chatId=' + currentChatId + ' myId=' + myId + ' lang=' + lang);
   try {
     const r = await fetch('/api/messages/' + currentChatId + '?lang=' + encodeURIComponent(lang));
     const d = await r.json();
@@ -2166,9 +2131,21 @@ async function loadConversation() {
       return;
     }
     list.innerHTML = '';
-    d.messages.forEach(msg => { list.innerHTML += renderMsgBubble(msg, myId); });
-    scrollChatDown();
-  } catch(e) { console.error('[CHAT] load error', e); }
+    d.messages.forEach(msg => {
+      const mine = String(msg.senderId) === myId;
+      const hasTr = msg.translation && msg.translation.trim() !== msg.text.trim();
+      const t = new Date(msg.time).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+      let h = '<div class="msg-row ' + (mine ? 'msg-right' : 'msg-left') + '">';
+      if (!mine) h += '<div class="msg-name">' + esc(msg.senderName) + '</div>';
+      h += '<div class="msg-bbl ' + (mine ? 'msg-bbl-right' : 'msg-bbl-left') + '">';
+      h += esc(msg.text);
+      if (hasTr) h += '<div class="msg-trans">🌐 ' + esc(msg.translation) + '</div>';
+      h += '</div><div class="msg-meta">' + t + '</div></div>';
+      list.innerHTML += h;
+    });
+    list.scrollTop = list.scrollHeight;
+    if (list.parentElement) list.parentElement.scrollTop = list.parentElement.scrollHeight;
+  } catch(e) {}
 }
 
 // ── Send message ──
@@ -2177,28 +2154,21 @@ async function sendMessage() {
   const text = input.value.trim();
   if (!text || !currentChatId || !me) return;
   input.value = '';
-  const myId = String(me.id || me._id || '');
   const list = document.getElementById('conv-msg-list');
-  const emptyMsg = list.querySelector('p');
-  if (emptyMsg) emptyMsg.remove();
+  const empty = list.querySelector('p'); if (empty) empty.remove();
+  const t = new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  list.innerHTML += '<div class="msg-row msg-right"><div class="msg-bbl msg-bbl-right">' + esc(text) + '<div class="msg-trans" style="opacity:.5">🌐 translating...</div></div><div class="msg-meta">' + t + '</div></div>';
+  list.scrollTop = list.scrollHeight;
+  if (list.parentElement) list.parentElement.scrollTop = list.parentElement.scrollHeight;
 
-  // Optimistic bubble (right side, my message)
-  const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  list.innerHTML += '<div class="msg-row msg-right"><div class="msg-bbl msg-bbl-right">' + esc(text) + '<div class="msg-trans" style="opacity:.5">🌐 translating...</div></div><div class="msg-meta">' + time + '</div></div>';
-  scrollChatDown();
-
-  console.log('[CHAT] sending to chatId=' + currentChatId + ' senderId=' + myId);
   try {
-    await fetch('/api/messages/send', {
-      method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ chatId: currentChatId, senderId: me.id, text })
-    });
-    // Socket newMessage will reload; fallback if no socket
+    const r = await fetch('/api/messages/send', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ chatId: currentChatId, senderId: me.id, text }) });
+    const d = await r.json();
+    console.log('[CHAT] sent, id=' + (d.id||'?') + ' detected=' + (d.detectedLang||'?'));
     if (!socket || !socket.connected) await loadConversation();
-  } catch(e) { console.error('[CHAT] send error', e); }
+  } catch(e) {}
 }
 
-// Enter key to send
 document.getElementById('conv-input').addEventListener('keydown', function(e) {
   if (e.key === 'Enter') { e.preventDefault(); sendMessage(); }
 });
@@ -2243,7 +2213,7 @@ function loadNotifNav() {
 }
 
 // ══════════════════════════════════════
-//  SOCKET.IO — Real-time messaging
+//  SOCKET.IO — rewritten from scratch
 // ══════════════════════════════════════
 let socket = null;
 let unreadChats = new Set();
@@ -2251,43 +2221,66 @@ let unreadChats = new Set();
 function playNotifSound() {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain); gain.connect(ctx.destination);
-    osc.frequency.value = 800; gain.gain.value = 0.15;
-    osc.start(); osc.stop(ctx.currentTime + 0.12);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
+    const o = ctx.createOscillator(); const g = ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    o.frequency.value = 800; g.gain.value = 0.12;
+    o.start(); o.stop(ctx.currentTime + 0.1);
   } catch(e) {}
 }
 
 function connectSocket() {
   if (socket) return;
   if (!me || !me.id) return;
-  const myId = String(me.id || me._id || '');
-  console.log('[WS] Connecting as userId=' + myId);
   socket = io();
+  console.log('[WS] connecting...');
 
   socket.on('connect', () => {
-    console.log('[WS] Connected, socketId=' + socket.id);
-    socket.emit('auth', { userId: myId });
+    console.log('[WS] connected id=' + socket.id);
+    // Join all known DM rooms immediately
+    joinAllRooms();
   });
 
-  socket.on('newMessage', (msg) => {
-    const isMySend = String(msg.senderId) === myId;
+  // THE key event: receive a message from any room
+  socket.on('message', (msg) => {
+    const myId = getChatMyId();
+    const isMine = String(msg.senderId) === myId;
     const active = document.querySelector('.screen.active');
     const viewing = active && active.id === 's-conversation' && String(currentChatId) === String(msg.chatId);
-    console.log('[WS] newMessage from=' + msg.senderName + ' chatId=' + msg.chatId + ' isMySend=' + isMySend + ' viewing=' + viewing);
+    console.log('[WS] message from=' + msg.senderName + ' mine=' + isMine + ' viewing=' + viewing + ' chatId=' + msg.chatId);
 
     if (viewing) {
+      // Reload conversation to get proper translations from server
       loadConversation();
-    } else if (!isMySend) {
-      unreadChats.add(msg.chatId);
+    } else if (!isMine) {
+      unreadChats.add(String(msg.chatId));
       updateChatBadge();
       playNotifSound();
     }
   });
 
-  socket.on('disconnect', () => { console.log('[WS] Disconnected'); });
+  socket.on('disconnect', () => { console.log('[WS] disconnected'); });
+}
+
+// Join sorted-pair rooms for all chats this user belongs to
+async function joinAllRooms() {
+  if (!socket || !socket.connected || !me || !me.propertyId) return;
+  try {
+    const r = await fetch('/api/chats/' + me.propertyId + '/' + me.id);
+    const d = await r.json();
+    if (!d.ok) return;
+    const myId = getChatMyId();
+    d.chats.forEach(chat => {
+      if (chat.memberDetails) {
+        chat.memberDetails.forEach(m => {
+          if (m.id !== myId) {
+            const roomId = makeSortedRoom(myId, m.id);
+            socket.emit('join', { roomId });
+            console.log('[WS] auto-join room ' + roomId);
+          }
+        });
+      }
+    });
+  } catch(e) {}
 }
 
 function updateChatBadge() {
@@ -2310,10 +2303,8 @@ function updateChatBadge() {
   });
 }
 
-// Connect on page load if already logged in
-if (me && me.id) {
-  setTimeout(connectSocket, 500);
-}
+// Connect on page load if logged in
+if (me && me.id) setTimeout(connectSocket, 500);
 </script>
 </body>
 </html>

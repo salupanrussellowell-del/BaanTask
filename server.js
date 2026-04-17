@@ -527,12 +527,6 @@ app.post('/api/chats/direct', async (req, res) => {
       });
       console.log(`[CHAT] Created DM: ${chat.name}`);
     }
-    // Auto-join both users into the DM room
-    const room = dmRoom(userId1, userId2);
-    joinUserToRoom(userId1, room);
-    joinUserToRoom(userId2, room);
-    joinUserToRoom(userId1, 'chat:' + chat._id.toString());
-    joinUserToRoom(userId2, 'chat:' + chat._id.toString());
     res.json({ ok: true, chat });
   } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
@@ -636,24 +630,19 @@ app.post('/api/messages/send', async (req, res) => {
       time: msg.createdAt
     };
 
-    // Emit to chatId room
-    const chatRoom = 'chat:' + chatId;
-    io.to(chatRoom).emit('newMessage', payload);
-    console.log(`[WS EMIT] → ${chatRoom}`);
-
-    // For DMs, also emit to the deterministic DM room
-    if (chat.type === 'direct' && chat.members.length === 2) {
-      const [m1, m2] = chat.members.map(m => m.toString());
-      const room = dmRoom(m1, m2);
-      joinUserToRoom(m1, room);
-      joinUserToRoom(m2, room);
-      io.to(room).emit('newMessage', payload);
-      console.log(`[WS EMIT] → ${room} (members: ${m1}, ${m2})`);
+    // Emit to every room for this chat's member pairs
+    const memberIds = chat.members.map(m => m.toString());
+    const emittedRooms = new Set();
+    for (let i = 0; i < memberIds.length; i++) {
+      for (let j = i + 1; j < memberIds.length; j++) {
+        const roomId = makeRoomId(memberIds[i], memberIds[j]);
+        if (!emittedRooms.has(roomId)) {
+          io.to(roomId).emit('message', payload);
+          emittedRooms.add(roomId);
+          console.log(`[WS EMIT] message → room ${roomId}`);
+        }
+      }
     }
-
-    // Log connected sockets for debugging
-    const connectedIds = [...userSockets.keys()];
-    console.log(`[WS] Connected users: [${connectedIds.join(', ')}]`);
 
     console.log(`[MSG] ${senderName} [${detectedLang}] in ${chatId}: "${text.substring(0, 40)}"`);
     res.json({ ok: true, id: msg._id.toString(), detectedLang });
@@ -695,80 +684,24 @@ app.get('/admin/clear-messages', async (req, res) => {
 });
 
 // ══════════════════════════════════════
-//  SOCKET.IO — Real-time chat
+//  SOCKET.IO — Real-time chat (rewritten)
 // ══════════════════════════════════════
 
-// ── Socket user tracking ──
-const userSockets = new Map(); // "userId" → Set<socketId>
-
-function dmRoom(uid1, uid2) {
-  // Deterministic room name for a DM pair
-  const a = String(uid1), b = String(uid2);
-  return 'dm:' + (a < b ? a + '_' + b : b + '_' + a);
-}
-
-function joinUserToRoom(userId, room) {
-  const sids = userSockets.get(String(userId));
-  if (!sids) return;
-  for (const sid of sids) {
-    const s = io.sockets.sockets.get(sid);
-    if (s) s.join(room);
-  }
+function makeRoomId(id1, id2) {
+  return [String(id1), String(id2)].sort().join('_');
 }
 
 io.on('connection', (socket) => {
-  socket.on('auth', async ({ userId }) => {
-    if (!userId) return;
-    const uid = String(userId);
-    socket.userId = uid;
+  console.log('[WS] new connection ' + socket.id);
 
-    // Track socket
-    if (!userSockets.has(uid)) userSockets.set(uid, new Set());
-    userSockets.get(uid).add(socket.id);
-
-    // Join all DM rooms + group rooms
-    try {
-      let oid;
-      try { oid = new mongoose.Types.ObjectId(uid); } catch(e) { oid = uid; }
-      const chats = await Chat.find({ members: oid }, '_id type members').lean();
-      const rooms = [];
-      for (const c of chats) {
-        const chatRoom = 'chat:' + c._id.toString();
-        socket.join(chatRoom);
-        rooms.push(chatRoom);
-        if (c.type === 'direct' && c.members.length === 2) {
-          const other = c.members.find(m => m.toString() !== uid);
-          if (other) {
-            const dr = dmRoom(uid, other.toString());
-            socket.join(dr);
-            rooms.push(dr);
-          }
-        }
-      }
-      console.log(`[WS] ${uid} authed → ${rooms.length} rooms: ${rooms.join(', ')}`);
-    } catch (e) { console.error('[WS AUTH ERR]', e.message); }
-  });
-
-  socket.on('joinChat', (data) => {
-    // Accept both string and object
-    const chatId = typeof data === 'string' ? data : data.chatId;
-    const otherUserId = typeof data === 'object' ? data.otherUserId : null;
-    if (chatId) {
-      socket.join('chat:' + chatId);
-      console.log(`[WS] ${socket.userId} joinChat → chat:${chatId}`);
-    }
-    if (otherUserId && socket.userId) {
-      const room = dmRoom(socket.userId, otherUserId);
-      socket.join(room);
-      console.log(`[WS] ${socket.userId} joinChat → ${room}`);
-    }
+  socket.on('join', ({ roomId }) => {
+    if (!roomId) return;
+    socket.join(roomId);
+    console.log('[WS] ' + socket.id + ' joined room ' + roomId);
   });
 
   socket.on('disconnect', () => {
-    if (socket.userId && userSockets.has(socket.userId)) {
-      userSockets.get(socket.userId).delete(socket.id);
-      if (userSockets.get(socket.userId).size === 0) userSockets.delete(socket.userId);
-    }
+    console.log('[WS] disconnected ' + socket.id);
   });
 });
 
