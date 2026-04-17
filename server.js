@@ -36,8 +36,8 @@ if (process.env.RESEND_API_KEY) {
 // ══════════════════════════════════════
 
 const userSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  email: { type: String, default: '' },
+  name: { type: String, required: true, unique: false },
+  email: { type: String, default: '', unique: true, sparse: true },
   phone: { type: String, default: '' },
   pinHash: { type: String, default: '' },
   role: { type: String, enum: ['owner', 'worker'], required: true },
@@ -49,7 +49,6 @@ const userSchema = new mongoose.Schema({
   propertyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Property', default: null },
   createdAt: { type: Date, default: Date.now }
 });
-userSchema.index({ email: 1 });
 
 const propertySchema = new mongoose.Schema({
   name: { type: String, required: true },
@@ -159,6 +158,11 @@ async function connectDB() {
     await mongoose.connect(uri, { serverSelectionTimeoutMS: 30000, socketTimeoutMS: 45000 });
     dbConnected = true;
     console.log('[DB] Connected to MongoDB Atlas');
+    // Drop stale unique index on name if it exists
+    try {
+      await mongoose.connection.db.collection('users').dropIndex('name_1');
+      console.log('[DB] Dropped stale name_1 index');
+    } catch (e) { /* index doesn't exist, fine */ }
   } catch (e) { console.error('[DB] Connection failed:', e.message); }
 }
 
