@@ -2095,18 +2095,20 @@ async function openDM(otherUserId, otherName) {
     });
     const d = await r.json();
     if (d.ok && d.chat) {
-      openChat(d.chat._id, 'direct', otherName);
+      openChat(d.chat._id, 'direct', otherName, otherUserId);
     }
   } catch(e) {}
 }
 
 // ── Open any chat (DM or group) ──
-function openChat(chatId, type, name) {
+let currentChatOtherUserId = null;
+function openChat(chatId, type, name, otherUserId) {
   currentChatId = chatId;
   currentChatName = name;
+  currentChatOtherUserId = otherUserId || null;
   // Real-time: join room + clear unread
   if (typeof unreadChats !== 'undefined') { unreadChats.delete(chatId); updateChatBadge(); }
-  if (socket && socket.connected) socket.emit('joinChat', chatId);
+  if (socket && socket.connected) socket.emit('joinChat', { chatId, otherUserId: otherUserId || null });
   // Set conversation header
   const avatar = document.getElementById('conv-avatar');
   const nameEl = document.getElementById('conv-name');
@@ -2138,21 +2140,23 @@ async function loadConversation() {
       return;
     }
     list.innerHTML = '';
+    const myId = String(me.id || me._id || '');
     d.messages.forEach(msg => {
-      const myId = String(me.id || me._id || '');
       const isMe = String(msg.senderId) === myId;
       const side = isMe ? 'me' : 'them';
-      // Always show original text, plus translation below if available
-      const hasTranslation = msg.translation && msg.translation !== msg.text;
+      const hasTranslation = msg.translation && msg.translation.trim() !== msg.text.trim();
       const flag = langFlag(msg.senderLang);
       const time = new Date(msg.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
       let html = '<div class="msg-row ' + side + '">';
-      html += '<div class="msg-sender">' + esc(msg.senderName || 'Unknown') + '</div>';
+      // Only show sender name on OTHER person's messages
+      if (!isMe) {
+        html += '<div class="msg-sender">' + esc(msg.senderName || '') + '</div>';
+      }
       html += '<div class="msg-bubble">';
       html += esc(msg.text);
       if (hasTranslation) {
-        html += '<div style="border-top:1px solid ' + (isMe ? 'rgba(255,255,255,.2)' : '#E5E7EB') + ';margin-top:6px;padding-top:6px;font-size:.8rem;line-height:1.4">';
+        html += '<div style="border-top:1px solid ' + (isMe ? 'rgba(255,255,255,.2)' : '#E5E7EB') + ';margin-top:6px;padding-top:6px;font-size:.78rem;line-height:1.4;font-style:italic">';
         html += '🌐 ' + esc(msg.translation);
         html += '</div>';
       }
