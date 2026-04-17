@@ -634,18 +634,24 @@ app.post('/api/messages/send', async (req, res) => {
       time: msg.createdAt
     };
 
-    // Emit to chatId room (group chats)
-    io.to('chat:' + chatId).emit('newMessage', payload);
+    // Emit to chatId room
+    const chatRoom = 'chat:' + chatId;
+    io.to(chatRoom).emit('newMessage', payload);
+    console.log(`[WS EMIT] → ${chatRoom}`);
 
     // For DMs, also emit to the deterministic DM room
     if (chat.type === 'direct' && chat.members.length === 2) {
       const [m1, m2] = chat.members.map(m => m.toString());
       const room = dmRoom(m1, m2);
-      // Force both members into the room before emitting
       joinUserToRoom(m1, room);
       joinUserToRoom(m2, room);
       io.to(room).emit('newMessage', payload);
+      console.log(`[WS EMIT] → ${room} (members: ${m1}, ${m2})`);
     }
+
+    // Log connected sockets for debugging
+    const connectedIds = [...userSockets.keys()];
+    console.log(`[WS] Connected users: [${connectedIds.join(', ')}]`);
 
     console.log(`[MSG] ${senderName} [${detectedLang}] in ${chatId}: "${text.substring(0, 40)}"`);
     res.json({ ok: true, id: msg._id.toString(), detectedLang });
@@ -716,25 +722,39 @@ io.on('connection', (socket) => {
 
     // Join all DM rooms + group rooms
     try {
-      const chats = await Chat.find({ members: userId }, '_id type members').lean();
+      let oid;
+      try { oid = new mongoose.Types.ObjectId(uid); } catch(e) { oid = uid; }
+      const chats = await Chat.find({ members: oid }, '_id type members').lean();
+      const rooms = [];
       for (const c of chats) {
+        const chatRoom = 'chat:' + c._id.toString();
+        socket.join(chatRoom);
+        rooms.push(chatRoom);
         if (c.type === 'direct' && c.members.length === 2) {
           const other = c.members.find(m => m.toString() !== uid);
-          if (other) socket.join(dmRoom(uid, other.toString()));
+          if (other) {
+            const dr = dmRoom(uid, other.toString());
+            socket.join(dr);
+            rooms.push(dr);
+          }
         }
-        // Also join the chatId-based room for group chats
-        socket.join('chat:' + c._id.toString());
       }
-      console.log(`[WS] ${uid} authed, joined ${chats.length} rooms`);
+      console.log(`[WS] ${uid} authed → ${rooms.length} rooms: ${rooms.join(', ')}`);
     } catch (e) { console.error('[WS AUTH ERR]', e.message); }
   });
 
-  socket.on('joinChat', ({ chatId, otherUserId }) => {
-    if (chatId) socket.join('chat:' + chatId);
+  socket.on('joinChat', (data) => {
+    // Accept both string and object
+    const chatId = typeof data === 'string' ? data : data.chatId;
+    const otherUserId = typeof data === 'object' ? data.otherUserId : null;
+    if (chatId) {
+      socket.join('chat:' + chatId);
+      console.log(`[WS] ${socket.userId} joinChat → chat:${chatId}`);
+    }
     if (otherUserId && socket.userId) {
       const room = dmRoom(socket.userId, otherUserId);
       socket.join(room);
-      console.log(`[WS] ${socket.userId} joined ${room}`);
+      console.log(`[WS] ${socket.userId} joinChat → ${room}`);
     }
   });
 

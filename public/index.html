@@ -181,23 +181,20 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
 .chat-item .ci-msg{font-size:.72rem;color:#9CA3AF;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .chat-item .ci-time{font-size:.62rem;color:#9CA3AF;font-weight:700;flex-shrink:0}
 
-/* ── Chat bubbles ── */
-.msg-row{display:flex;flex-direction:column;margin-bottom:10px}
-.msg-row.me{align-items:flex-end}
-.msg-row.them{align-items:flex-start}
-.msg-sender{font-size:.64rem;font-weight:800;margin-bottom:2px;padding:0 4px}
-.msg-row.me .msg-sender{color:#00897B}
-.msg-row.them .msg-sender{color:#6B7280}
-.msg-bubble{max-width:82%;border-radius:16px;padding:10px 14px;font-size:.84rem;font-weight:600;line-height:1.5;position:relative}
-.msg-row.me .msg-bubble{background:#00897B;color:#fff;border-bottom-right-radius:4px}
-.msg-row.them .msg-bubble{background:#fff;color:#1F2937;border:1.5px solid #E5E7EB;border-bottom-left-radius:4px}
-.msg-original{font-size:.68rem;opacity:.6;margin-top:4px;font-style:italic;line-height:1.4}
-.msg-lang{display:inline-block;font-size:.56rem;font-weight:900;padding:1px 6px;border-radius:8px;margin-top:4px}
-.msg-row.me .msg-lang{background:rgba(255,255,255,.2);color:rgba(255,255,255,.85)}
-.msg-row.them .msg-lang{background:#F3F4F6;color:#9CA3AF}
-.msg-time{font-size:.58rem;color:#9CA3AF;margin-top:2px;font-weight:700;padding:0 4px}
+/* ── Chat bubbles (WhatsApp-style) ── */
+.msg-row{display:flex;flex-direction:column;margin-bottom:10px;padding:0 12px}
+.msg-right{align-items:flex-end}
+.msg-left{align-items:flex-start}
+.msg-name{font-size:.64rem;font-weight:800;color:#6B7280;margin-bottom:2px;padding:0 4px}
+.msg-bbl{max-width:82%;border-radius:16px;padding:10px 14px;font-size:.84rem;font-weight:600;line-height:1.5}
+.msg-bbl-right{background:#1B5E20;color:#fff;border-bottom-right-radius:4px}
+.msg-bbl-left{background:#F0F0F0;color:#1F2937;border-bottom-left-radius:4px}
+.msg-trans{margin-top:6px;padding-top:6px;font-size:.78rem;line-height:1.4;font-style:italic}
+.msg-bbl-right .msg-trans{border-top:1px solid rgba(255,255,255,.25)}
+.msg-bbl-left .msg-trans{border-top:1px solid #D5D5D5}
+.msg-meta{font-size:.58rem;color:#9CA3AF;margin-top:2px;font-weight:700;padding:0 4px}
 .chat-input-bar{display:flex;gap:8px;padding:10px 12px;background:#fff;border-top:1.5px solid #E5E7EB;flex-shrink:0;align-items:center}
-.chat-send-btn{width:42px;height:42px;border-radius:50%;background:#00897B;color:#fff;border:none;font-size:1.1rem;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent}
+.chat-send-btn{width:42px;height:42px;border-radius:50%;background:#1B5E20;color:#fff;border:none;font-size:1.1rem;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent}
 .chat-send-btn:active{opacity:.8}
 
 /* ── Notification items ── */
@@ -2127,50 +2124,51 @@ function openChat(chatId, type, name, otherUserId) {
   goScreen('s-conversation');
 }
 
+// ── Render one message bubble ──
+function renderMsgBubble(msg, myId) {
+  const isMe = String(msg.senderId) === myId;
+  const side = isMe ? 'msg-right' : 'msg-left';
+  const bbl = isMe ? 'msg-bbl-right' : 'msg-bbl-left';
+  const hasTrans = msg.translation && msg.translation.trim() !== msg.text.trim();
+  const time = new Date(msg.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+  let h = '<div class="msg-row ' + side + '">';
+  // Name label only on LEFT (other person's) messages
+  if (!isMe) h += '<div class="msg-name">' + esc(msg.senderName || '') + '</div>';
+  h += '<div class="msg-bbl ' + bbl + '">';
+  h += esc(msg.text);
+  if (hasTrans) h += '<div class="msg-trans">🌐 ' + esc(msg.translation) + '</div>';
+  h += '</div>';
+  h += '<div class="msg-meta">' + time + '</div>';
+  h += '</div>';
+  return h;
+}
+
+function scrollChatDown() {
+  const list = document.getElementById('conv-msg-list');
+  if (list) list.scrollTop = list.scrollHeight;
+  const sc = list ? list.parentElement : null;
+  if (sc) sc.scrollTop = sc.scrollHeight;
+}
+
 // ── Load messages for current chat ──
 async function loadConversation() {
   if (!currentChatId || !me) return;
   const lang = me.lang || 'English';
+  const myId = String(me.id || me._id || '');
   const list = document.getElementById('conv-msg-list');
+  console.log('[CHAT] loadConversation chatId=' + currentChatId + ' myId=' + myId + ' lang=' + lang);
   try {
     const r = await fetch('/api/messages/' + currentChatId + '?lang=' + encodeURIComponent(lang));
     const d = await r.json();
     if (!d.ok || !d.messages.length) {
-      list.innerHTML = '<p style="text-align:center;color:#9CA3AF;font-size:.78rem;font-weight:600;padding:30px">💬 Send a message to start chatting<br><span style="font-size:.68rem">Messages auto-translate to each person\'s language</span></p>';
+      list.innerHTML = '<p style="text-align:center;color:#9CA3AF;font-size:.78rem;font-weight:600;padding:30px">💬 Send a message to start chatting</p>';
       return;
     }
     list.innerHTML = '';
-    const myId = String(me.id || me._id || '');
-    d.messages.forEach(msg => {
-      const isMe = String(msg.senderId) === myId;
-      const side = isMe ? 'me' : 'them';
-      const hasTranslation = msg.translation && msg.translation.trim() !== msg.text.trim();
-      const flag = langFlag(msg.senderLang);
-      const time = new Date(msg.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-      let html = '<div class="msg-row ' + side + '">';
-      // Only show sender name on OTHER person's messages
-      if (!isMe) {
-        html += '<div class="msg-sender">' + esc(msg.senderName || '') + '</div>';
-      }
-      html += '<div class="msg-bubble">';
-      html += esc(msg.text);
-      if (hasTranslation) {
-        html += '<div style="border-top:1px solid ' + (isMe ? 'rgba(255,255,255,.2)' : '#E5E7EB') + ';margin-top:6px;padding-top:6px;font-size:.78rem;line-height:1.4;font-style:italic">';
-        html += '🌐 ' + esc(msg.translation);
-        html += '</div>';
-      }
-      html += '<div class="msg-lang">' + flag + ' ' + (msg.senderLang || '') + '</div>';
-      html += '</div>';
-      html += '<div class="msg-time">' + time + '</div>';
-      html += '</div>';
-      list.innerHTML += html;
-    });
-    // Auto-scroll to bottom
-    const sc = list.parentElement;
-    if (sc) sc.scrollTop = sc.scrollHeight;
-    list.scrollTop = list.scrollHeight;
-  } catch(e) {}
+    d.messages.forEach(msg => { list.innerHTML += renderMsgBubble(msg, myId); });
+    scrollChatDown();
+  } catch(e) { console.error('[CHAT] load error', e); }
 }
 
 // ── Send message ──
@@ -2179,25 +2177,25 @@ async function sendMessage() {
   const text = input.value.trim();
   if (!text || !currentChatId || !me) return;
   input.value = '';
-  // Show optimistic bubble immediately
+  const myId = String(me.id || me._id || '');
   const list = document.getElementById('conv-msg-list');
   const emptyMsg = list.querySelector('p');
   if (emptyMsg) emptyMsg.remove();
-  const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  list.innerHTML += '<div class="msg-row me"><div class="msg-sender">' + esc(me.name) + '</div><div class="msg-bubble">' + esc(text) + '<div class="msg-lang" style="opacity:.5">🌐 translating...</div></div><div class="msg-time">' + time + '</div></div>';
-  list.scrollTop = list.scrollHeight;
-  const sc = list.parentElement;
-  if (sc) sc.scrollTop = sc.scrollHeight;
 
+  // Optimistic bubble (right side, my message)
+  const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  list.innerHTML += '<div class="msg-row msg-right"><div class="msg-bbl msg-bbl-right">' + esc(text) + '<div class="msg-trans" style="opacity:.5">🌐 translating...</div></div><div class="msg-meta">' + time + '</div></div>';
+  scrollChatDown();
+
+  console.log('[CHAT] sending to chatId=' + currentChatId + ' senderId=' + myId);
   try {
     await fetch('/api/messages/send', {
       method: 'POST', headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ chatId: currentChatId, senderId: me.id, text })
     });
-    // Socket.io newMessage event will trigger loadConversation for real-time update
-    // If no socket, fall back to manual reload
+    // Socket newMessage will reload; fallback if no socket
     if (!socket || !socket.connected) await loadConversation();
-  } catch(e) {}
+  } catch(e) { console.error('[CHAT] send error', e); }
 }
 
 // Enter key to send
@@ -2250,55 +2248,50 @@ function loadNotifNav() {
 let socket = null;
 let unreadChats = new Set();
 
-// Notification sound — short beep via Web Audio API
 function playNotifSound() {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.connect(gain); gain.connect(ctx.destination);
-    osc.frequency.value = 800;
-    gain.gain.value = 0.15;
+    osc.frequency.value = 800; gain.gain.value = 0.15;
     osc.start(); osc.stop(ctx.currentTime + 0.12);
     gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
   } catch(e) {}
 }
 
 function connectSocket() {
-  if (socket) return; // already connected
+  if (socket) return;
   if (!me || !me.id) return;
+  const myId = String(me.id || me._id || '');
+  console.log('[WS] Connecting as userId=' + myId);
   socket = io();
+
   socket.on('connect', () => {
-    console.log('[WS] Connected');
-    socket.emit('auth', { userId: me.id, propertyId: me.propertyId });
+    console.log('[WS] Connected, socketId=' + socket.id);
+    socket.emit('auth', { userId: myId });
   });
 
   socket.on('newMessage', (msg) => {
-    const isMySend = String(msg.senderId) === String(me.id || me._id || '');
-    const activeScreen = document.querySelector('.screen.active');
-    const viewingThisChat = activeScreen && activeScreen.id === 's-conversation' && String(currentChatId) === String(msg.chatId);
+    const isMySend = String(msg.senderId) === myId;
+    const active = document.querySelector('.screen.active');
+    const viewing = active && active.id === 's-conversation' && String(currentChatId) === String(msg.chatId);
+    console.log('[WS] newMessage from=' + msg.senderName + ' chatId=' + msg.chatId + ' isMySend=' + isMySend + ' viewing=' + viewing);
 
-    if (viewingThisChat) {
-      // Refresh the conversation to show the new message with translation
+    if (viewing) {
       loadConversation();
-    } else {
-      // Not viewing this chat — show badge and play sound
-      if (!isMySend) {
-        unreadChats.add(msg.chatId);
-        updateChatBadge();
-        playNotifSound();
-      }
+    } else if (!isMySend) {
+      unreadChats.add(msg.chatId);
+      updateChatBadge();
+      playNotifSound();
     }
   });
 
-  socket.on('disconnect', () => {
-    console.log('[WS] Disconnected');
-  });
+  socket.on('disconnect', () => { console.log('[WS] Disconnected'); });
 }
 
 function updateChatBadge() {
   const count = unreadChats.size;
-  // Update all chat nav badges
   document.querySelectorAll('.bn .ni').forEach(ni => {
     const label = ni.querySelector('[data-i18n="nav_chat"]');
     if (!label) return;
