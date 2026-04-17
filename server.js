@@ -525,6 +525,8 @@ app.post('/api/chats/direct', async (req, res) => {
       });
       console.log(`[CHAT] Created DM: ${chat.name}`);
     }
+    // Auto-join both users into this chat room
+    await ensureRoomMembers(chat._id.toString(), [userId1, userId2]);
     res.json({ ok: true, chat });
   } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
@@ -606,6 +608,9 @@ app.post('/api/messages/send', async (req, res) => {
     const sender = await User.findById(senderId, 'name');
     const senderName = sender ? sender.name : 'Unknown';
 
+    // Ensure all chat members are in the socket room before emitting
+    await ensureRoomMembers(chatId, chat.members);
+
     // Emit to everyone in this chat room
     io.to('chat:' + chatId).emit('newMessage', {
       chatId,
@@ -657,27 +662,59 @@ app.get('/admin/clear-messages', async (req, res) => {
 //  SOCKET.IO — Real-time chat
 // ══════════════════════════════════════
 
+// Track connected users so we can push them into new rooms
+const connectedUsers = new Map(); // userId -> Set of socket ids
+
 io.on('connection', (socket) => {
-  // Client sends { userId, propertyId } after connecting
   socket.on('auth', async ({ userId, propertyId }) => {
     if (!userId) return;
     socket.userId = userId;
     socket.propertyId = propertyId;
+
+    // Track this socket
+    if (!connectedUsers.has(userId)) connectedUsers.set(userId, new Set());
+    connectedUsers.get(userId).add(socket.id);
+
     // Join all chat rooms this user belongs to
     try {
-      const chats = await Chat.find({ propertyId, members: userId }, '_id');
-      chats.forEach(c => socket.join('chat:' + c._id.toString()));
-      console.log(`[WS] ${userId} joined ${chats.length} chat rooms`);
-    } catch (e) {}
+      const chats = await Chat.find({ members: userId }, '_id');
+      chats.forEach(c => {
+        const room = 'chat:' + c._id.toString();
+        socket.join(room);
+      });
+      console.log(`[WS] ${userId} joined ${chats.length} rooms`);
+    } catch (e) { console.error('[WS AUTH ERROR]', e.message); }
   });
 
-  // When client opens a specific chat, join that room too (for DMs created after connect)
   socket.on('joinChat', (chatId) => {
-    if (chatId) socket.join('chat:' + chatId);
+    if (chatId) {
+      socket.join('chat:' + chatId);
+      console.log(`[WS] ${socket.userId} joined chat:${chatId}`);
+    }
   });
 
-  socket.on('disconnect', () => {});
+  socket.on('disconnect', () => {
+    if (socket.userId && connectedUsers.has(socket.userId)) {
+      connectedUsers.get(socket.userId).delete(socket.id);
+      if (connectedUsers.get(socket.userId).size === 0) connectedUsers.delete(socket.userId);
+    }
+  });
 });
+
+// Helper: ensure all members of a chat are in the socket room
+async function ensureRoomMembers(chatId, members) {
+  const room = 'chat:' + chatId;
+  for (const memberId of members) {
+    const mid = memberId.toString();
+    const sockets = connectedUsers.get(mid);
+    if (sockets) {
+      for (const sid of sockets) {
+        const s = io.sockets.sockets.get(sid);
+        if (s) s.join(room);
+      }
+    }
+  }
+}
 
 // ── Start ──
 connectDB().then(() => {

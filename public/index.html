@@ -2139,7 +2139,8 @@ async function loadConversation() {
     }
     list.innerHTML = '';
     d.messages.forEach(msg => {
-      const isMe = msg.senderId === me.id || msg.senderId === me._id;
+      const myId = String(me.id || me._id || '');
+      const isMe = String(msg.senderId) === myId;
       const side = isMe ? 'me' : 'them';
       // Always show original text, plus translation below if available
       const hasTranslation = msg.translation && msg.translation !== msg.text;
@@ -2269,9 +2270,9 @@ function connectSocket() {
   });
 
   socket.on('newMessage', (msg) => {
-    const isMySend = msg.senderId === me.id || msg.senderId === me._id;
+    const isMySend = String(msg.senderId) === String(me.id || me._id || '');
     const activeScreen = document.querySelector('.screen.active');
-    const viewingThisChat = activeScreen && activeScreen.id === 's-conversation' && currentChatId === msg.chatId;
+    const viewingThisChat = activeScreen && activeScreen.id === 's-conversation' && String(currentChatId) === String(msg.chatId);
 
     if (viewingThisChat) {
       // Refresh the conversation to show the new message with translation
