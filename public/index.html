@@ -1049,6 +1049,7 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
 </div>
 
 </div><!-- end #app -->
+<script src="/socket.io/socket.io.js"></script>
 <script src="i18n.js"></script>
 <script>
 // ══════════════════════════════════════
@@ -1319,6 +1320,7 @@ async function verifyOTP() {
     }
     me.email = pendingReg.email; me.lang = selectedLang;
     localStorage.setItem('bt_user', JSON.stringify(me));
+    if (typeof connectSocket === 'function') connectSocket();
     if (me.role === 'owner') {
       if (me.propertyId) { await loadPropertyData(me.propertyId); goScreen('s-owner-home'); }
       else { goScreen('s-property'); }
@@ -1356,7 +1358,10 @@ async function signIn() {
     const d = await r.json();
     if (!d.ok) { showError('si-error', d.error); document.getElementById('si-btn').disabled = false; return; }
     me = d.user; me.email = email;
+    selectedLang = me.lang || selectedLang || 'English';
     localStorage.setItem('bt_user', JSON.stringify(me));
+    if (typeof connectSocket === 'function') connectSocket();
+    if (typeof applyLang === 'function') applyLang();
     if (me.propertyId) { await loadPropertyData(me.propertyId); goScreen(me.role==='owner'?'s-owner-home':'s-worker-home'); }
     else { goScreen(me.role==='owner'?'s-property':'s-worker-lang'); }
   } catch(e) { showError('si-error','Network error'); document.getElementById('si-btn').disabled = false; }
@@ -2099,6 +2104,9 @@ async function openDM(otherUserId, otherName) {
 function openChat(chatId, type, name) {
   currentChatId = chatId;
   currentChatName = name;
+  // Real-time: join room + clear unread
+  if (typeof unreadChats !== 'undefined') { unreadChats.delete(chatId); updateChatBadge(); }
+  if (socket && socket.connected) socket.emit('joinChat', chatId);
   // Set conversation header
   const avatar = document.getElementById('conv-avatar');
   const nameEl = document.getElementById('conv-name');
@@ -2181,8 +2189,9 @@ async function sendMessage() {
       method: 'POST', headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ chatId: currentChatId, senderId: me.id, text })
     });
-    // Reload to show translations
-    await loadConversation();
+    // Socket.io newMessage event will trigger loadConversation for real-time update
+    // If no socket, fall back to manual reload
+    if (!socket || !socket.connected) await loadConversation();
   } catch(e) {}
 }
 
@@ -2228,6 +2237,84 @@ function loadNotifNav() {
   } else {
     nav.innerHTML = '<div class="ni" onclick="goScreen(\'s-owner-home\')"><span class="ic">🏠</span><span data-i18n="nav_home">Home</span></div><div class="ni" onclick="goScreen(\'s-payroll\')"><span class="ic">💼</span><span data-i18n="nav_payroll">Payroll</span></div><div class="ni" onclick="goScreen(\'s-tasks\')"><span class="ic">✅</span><span data-i18n="nav_tasks">Tasks</span></div><div class="ni" onclick="goScreen(\'s-chat-list\')"><span class="ic">💬</span><span data-i18n="nav_chat">Chat</span></div><div class="ni" onclick="goScreen(\'s-me\')"><span class="ic">👤</span><span data-i18n="nav_me">Me</span></div>';
   }
+}
+
+// ══════════════════════════════════════
+//  SOCKET.IO — Real-time messaging
+// ══════════════════════════════════════
+let socket = null;
+let unreadChats = new Set();
+
+// Notification sound — short beep via Web Audio API
+function playNotifSound() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.frequency.value = 800;
+    gain.gain.value = 0.15;
+    osc.start(); osc.stop(ctx.currentTime + 0.12);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
+  } catch(e) {}
+}
+
+function connectSocket() {
+  if (socket) return; // already connected
+  if (!me || !me.id) return;
+  socket = io();
+  socket.on('connect', () => {
+    console.log('[WS] Connected');
+    socket.emit('auth', { userId: me.id, propertyId: me.propertyId });
+  });
+
+  socket.on('newMessage', (msg) => {
+    const isMySend = msg.senderId === me.id || msg.senderId === me._id;
+    const activeScreen = document.querySelector('.screen.active');
+    const viewingThisChat = activeScreen && activeScreen.id === 's-conversation' && currentChatId === msg.chatId;
+
+    if (viewingThisChat) {
+      // Refresh the conversation to show the new message with translation
+      loadConversation();
+    } else {
+      // Not viewing this chat — show badge and play sound
+      if (!isMySend) {
+        unreadChats.add(msg.chatId);
+        updateChatBadge();
+        playNotifSound();
+      }
+    }
+  });
+
+  socket.on('disconnect', () => {
+    console.log('[WS] Disconnected');
+  });
+}
+
+function updateChatBadge() {
+  const count = unreadChats.size;
+  // Update all chat nav badges
+  document.querySelectorAll('.bn .ni').forEach(ni => {
+    const label = ni.querySelector('[data-i18n="nav_chat"]');
+    if (!label) return;
+    let badge = ni.querySelector('.nbadge');
+    if (count > 0) {
+      if (!badge) {
+        badge = document.createElement('span');
+        badge.className = 'nbadge';
+        badge.style.cssText = 'position:absolute;top:-2px;right:16px;background:#E53935;color:#fff;font-size:.55rem;font-weight:900;width:14px;height:14px;border-radius:50%;display:flex;align-items:center;justify-content:center';
+        ni.appendChild(badge);
+      }
+      badge.textContent = count;
+    } else if (badge) {
+      badge.remove();
+    }
+  });
+}
+
+// Connect on page load if already logged in
+if (me && me.id) {
+  setTimeout(connectSocket, 500);
 }
 </script>
 </body>

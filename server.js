@@ -1,5 +1,7 @@
 require('dotenv').config();
 const express = require('express');
+const http = require('http');
+const { Server } = require('socket.io');
 const Anthropic = require('@anthropic-ai/sdk');
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
@@ -8,6 +10,8 @@ const { Resend } = require('resend');
 const path = require('path');
 
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server, { cors: { origin: '*' } });
 const client = new Anthropic();
 
 app.use(express.json());
@@ -597,7 +601,24 @@ app.post('/api/messages/send', async (req, res) => {
 
     // Update chat's lastMessage
     await Chat.findByIdAndUpdate(chatId, { lastMessage: text, lastMessageAt: new Date() });
-    console.log(`[MSG] ${senderId} [${detectedLang}] in ${chatId}: "${text.substring(0, 40)}"`);
+
+    // Get sender name for the real-time event
+    const sender = await User.findById(senderId, 'name');
+    const senderName = sender ? sender.name : 'Unknown';
+
+    // Emit to everyone in this chat room
+    io.to('chat:' + chatId).emit('newMessage', {
+      chatId,
+      id: msg._id.toString(),
+      senderId,
+      senderName,
+      senderLang: detectedLang,
+      text,
+      translations,
+      time: msg.createdAt
+    });
+
+    console.log(`[MSG] ${senderName} [${detectedLang}] in ${chatId}: "${text.substring(0, 40)}"`);
     res.json({ ok: true, id: msg._id.toString(), detectedLang });
   } catch (e) {
     console.error('[MSG SEND ERROR]', e.message);
@@ -632,8 +653,34 @@ app.get('/admin/clear-messages', async (req, res) => {
   catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
+// ══════════════════════════════════════
+//  SOCKET.IO — Real-time chat
+// ══════════════════════════════════════
+
+io.on('connection', (socket) => {
+  // Client sends { userId, propertyId } after connecting
+  socket.on('auth', async ({ userId, propertyId }) => {
+    if (!userId) return;
+    socket.userId = userId;
+    socket.propertyId = propertyId;
+    // Join all chat rooms this user belongs to
+    try {
+      const chats = await Chat.find({ propertyId, members: userId }, '_id');
+      chats.forEach(c => socket.join('chat:' + c._id.toString()));
+      console.log(`[WS] ${userId} joined ${chats.length} chat rooms`);
+    } catch (e) {}
+  });
+
+  // When client opens a specific chat, join that room too (for DMs created after connect)
+  socket.on('joinChat', (chatId) => {
+    if (chatId) socket.join('chat:' + chatId);
+  });
+
+  socket.on('disconnect', () => {});
+});
+
 // ── Start ──
 connectDB().then(() => {
   const PORT = process.env.PORT || 3000;
-  app.listen(PORT, () => console.log(`[STARTUP] BaanTask running on port ${PORT}`));
+  server.listen(PORT, () => console.log(`[STARTUP] BaanTask running on port ${PORT}`));
 });
