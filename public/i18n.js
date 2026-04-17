@@ -119,6 +119,9 @@ const I18N = {
   // ── Chat ──
   staff_group: { en:'Staff Group Chat', th:'แชทกลุ่มพนักงาน', ru:'Групповой чат', ph:'Staff Group Chat', mm:'Staff Group Chat', zh:'员工群聊', de:'Team-Gruppenchat', fr:'Chat de groupe', ar:'محادثة المجموعة', id:'Chat Grup Staf' },
   tap_open: { en:'Tap to open group chat', th:'แตะเพื่อเปิดแชทกลุ่ม', ru:'Нажмите для чата', ph:'I-tap para buksan', mm:'Group chat ဖွင့်ရန်နှိပ်ပါ', zh:'点击打开群聊', de:'Tippen zum Öffnen', fr:'Appuyez pour ouvrir', ar:'اضغط لفتح المحادثة', id:'Ketuk untuk membuka' },
+  direct_messages: { en:'Direct Messages', th:'ข้อความส่วนตัว', ru:'Личные сообщения', ph:'Direct Messages', mm:'တိုက်ရိုက်မက်ဆေ့ချ်', zh:'私信', de:'Direktnachrichten', fr:'Messages directs', ar:'الرسائل المباشرة', id:'Pesan Langsung' },
+  type_message: { en:'Type a message...', th:'พิมพ์ข้อความ...', ru:'Введите сообщение...', ph:'Mag-type ng mensahe...', mm:'မက်ဆေ့ချ်ရိုက်ပါ...', zh:'输入消息...', de:'Nachricht eingeben...', fr:'Tapez un message...', ar:'اكتب رسالة...', id:'Ketik pesan...' },
+  auto_translated: { en:'Auto-translated', th:'แปลอัตโนมัติ', ru:'Автоперевод', ph:'Auto-translated', mm:'အလိုအလျောက်ဘာသာပြန်', zh:'自动翻译', de:'Automatisch übersetzt', fr:'Traduit automatiquement', ar:'ترجمة تلقائية', id:'Diterjemahkan otomatis' },
   // ── Me ──
   invite_code_menu: { en:'Invite Code', th:'รหัสเชิญ', ru:'Код приглашения', ph:'Invite Code', mm:'ဖိတ်ကြားကုဒ်', zh:'邀请码', de:'Einladungscode', fr:"Code d'invitation", ar:'رمز الدعوة', id:'Kode Undangan' },
   notifications: { en:'Notifications', th:'การแจ้งเตือน', ru:'Уведомления', ph:'Notifications', mm:'အကြောင်းကြားချက်များ', zh:'通知', de:'Benachrichtigungen', fr:'Notifications', ar:'الإشعارات', id:'Notifikasi' },

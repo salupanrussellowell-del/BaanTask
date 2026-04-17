@@ -163,6 +163,32 @@ function genCode() { return crypto.randomBytes(3).toString('hex').toUpperCase();
 function genOTP() { return String(Math.floor(100000 + Math.random() * 900000)); }
 
 // ── Translate ──
+async function detectAndTranslate(text, targetLangs) {
+  // Auto-detect language and translate to all target languages in one call
+  if (!process.env.ANTHROPIC_API_KEY || !targetLangs.length) return { detectedLang: 'English', translations: {} };
+  const langList = targetLangs.join(', ');
+  try {
+    const r = await client.messages.create({
+      model: 'claude-haiku-4-5-20251001', max_tokens: 1500,
+      messages: [{ role: 'user', content: `You are a translation API. Given a message, detect its language then translate it.
+
+Message: "${text}"
+
+Respond in EXACTLY this JSON format (no markdown, no explanation):
+{"detectedLang":"<detected language name in English>","translations":{${targetLangs.map(l => `"${l}":"<translation to ${l}>"`).join(',')}}}
+
+If the message is already in one of the target languages, still include that translation as the original text.` }]
+    });
+    const raw = r.content[0].text.trim();
+    const parsed = JSON.parse(raw);
+    return parsed;
+  } catch (e) {
+    console.error('[TRANSLATE ERROR]', e.message);
+    return { detectedLang: 'English', translations: {} };
+  }
+}
+
+// Legacy helper — still used for on-demand single translations
 async function translateOne(text, fromLang, toLang) {
   if (!process.env.ANTHROPIC_API_KEY || fromLang === toLang) return null;
   try {
@@ -447,48 +473,65 @@ app.post('/api/tasks/update', async (req, res) => {
 });
 
 // ══════════════════════════════════════
-//  CHAT / MESSAGE ROUTES (kept for Phase 5)
+//  CHAT / MESSAGE ROUTES
 // ══════════════════════════════════════
 
+// List all chats for a user (group + DMs), with member names
 app.get('/api/chats/:propertyId/:userId', async (req, res) => {
   try {
-    const chats = await Chat.find({ propertyId: req.params.propertyId, members: req.params.userId }).sort({ lastMessageAt: -1 });
+    const chats = await Chat.find({ propertyId: req.params.propertyId, members: req.params.userId })
+      .sort({ lastMessageAt: -1 }).lean();
+    // Populate member names for each chat
+    for (const c of chats) {
+      const users = await User.find({ _id: { $in: c.members } }, 'name lang').lean();
+      c.memberDetails = users.map(u => ({ id: u._id.toString(), name: u.name, lang: u.lang }));
+    }
     res.json({ ok: true, chats });
   } catch (e) { res.json({ ok: true, chats: [] }); }
 });
 
-// Get messages for a chat with auto-translation
+// Find or create a direct chat between two users
+app.post('/api/chats/direct', async (req, res) => {
+  const { propertyId, userId1, userId2 } = req.body;
+  if (!propertyId || !userId1 || !userId2) return res.status(400).json({ ok: false, error: 'Missing fields' });
+  try {
+    // Check if DM already exists between these two users
+    let chat = await Chat.findOne({
+      propertyId, type: 'direct',
+      members: { $all: [userId1, userId2], $size: 2 }
+    });
+    if (!chat) {
+      const u2 = await User.findById(userId2, 'name');
+      const u1 = await User.findById(userId1, 'name');
+      chat = await Chat.create({
+        propertyId, type: 'direct',
+        members: [userId1, userId2],
+        name: `${u1 ? u1.name : ''} & ${u2 ? u2.name : ''}`
+      });
+      console.log(`[CHAT] Created DM: ${chat.name}`);
+    }
+    res.json({ ok: true, chat });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+// Get messages for a chat — translations already stored at send time
 app.get('/api/messages/:chatId', async (req, res) => {
   const lang = req.query.lang || 'English';
   try {
-    const msgs = await Message.find({ chatId: req.params.chatId }).sort({ createdAt: 1 }).lean();
-
-    // Translate messages that need it
-    for (const m of msgs) {
-      if (m.senderLang === lang) continue;
-      const t = m.translations instanceof Map ? Object.fromEntries(m.translations) : (m.translations || {});
-      if (t[lang]) continue;
-
-      const translated = await translateOne(m.text, m.senderLang, lang);
-      if (translated) {
-        await Message.updateOne({ _id: m._id }, { $set: { [`translations.${lang}`]: translated } });
-        if (m.translations instanceof Map) m.translations.set(lang, translated);
-        else { m.translations = m.translations || {}; m.translations[lang] = translated; }
-      }
-    }
+    const msgs = await Message.find({ chatId: req.params.chatId })
+      .sort({ createdAt: 1 }).populate('senderId', 'name lang').lean();
 
     const result = msgs.map(m => {
       const t = m.translations instanceof Map ? Object.fromEntries(m.translations) : (m.translations || {});
-      const r = m.reactions instanceof Map ? Object.fromEntries(m.reactions) : (m.reactions || {});
+      const senderName = m.senderId && m.senderId.name ? m.senderId.name : 'Unknown';
+      const senderId = m.senderId && m.senderId._id ? m.senderId._id.toString() : (m.senderId ? m.senderId.toString() : '');
       return {
         id: m._id.toString(),
-        senderId: m.senderId.toString(),
+        senderId,
+        senderName,
         senderLang: m.senderLang,
         text: m.text,
         translation: m.senderLang === lang ? null : (t[lang] || null),
-        reactions: r,
-        replyTo: m.replyTo ? m.replyTo.toString() : null,
-        pinned: m.pinned,
         time: m.createdAt
       };
     });
@@ -499,40 +542,42 @@ app.get('/api/messages/:chatId', async (req, res) => {
   }
 });
 
-// Send a message to a chat
+// Send a message — auto-detect language, translate to all members' languages
 app.post('/api/messages/send', async (req, res) => {
-  const { chatId, senderId, senderLang, text, replyTo } = req.body;
+  const { chatId, senderId, text } = req.body;
   if (!chatId || !senderId || !text) return res.status(400).json({ ok: false, error: 'Missing fields' });
 
   try {
+    // Find the chat and all members' languages
+    const chat = await Chat.findById(chatId);
+    if (!chat) return res.status(404).json({ ok: false, error: 'Chat not found' });
+
+    const members = await User.find({ _id: { $in: chat.members } }, 'name lang');
+    const targetLangs = [...new Set(members.map(m => m.lang || 'English'))];
+
+    // Auto-detect language and translate to all target languages
+    let detectedLang = 'English';
+    let translations = {};
+
+    if (targetLangs.length > 0) {
+      const result = await detectAndTranslate(text, targetLangs);
+      detectedLang = result.detectedLang || 'English';
+      translations = result.translations || {};
+    }
+
     const msg = await Message.create({
-      chatId, senderId, senderLang: senderLang || 'English',
-      text, replyTo: replyTo || null
+      chatId, senderId, senderLang: detectedLang,
+      text, translations
     });
+
     // Update chat's lastMessage
     await Chat.findByIdAndUpdate(chatId, { lastMessage: text, lastMessageAt: new Date() });
-    console.log(`[MSG] ${senderId} in ${chatId}: "${text.substring(0, 40)}"`);
-    res.json({ ok: true, id: msg._id.toString() });
+    console.log(`[MSG] ${senderId} [${detectedLang}] in ${chatId}: "${text.substring(0, 40)}"`);
+    res.json({ ok: true, id: msg._id.toString(), detectedLang });
   } catch (e) {
     console.error('[MSG SEND ERROR]', e.message);
     res.status(500).json({ ok: false, error: e.message });
   }
-});
-
-// React to a message
-app.post('/api/messages/react', async (req, res) => {
-  const { messageId, emoji, userId } = req.body;
-  if (!messageId || !emoji || !userId) return res.status(400).json({ ok: false, error: 'Missing fields' });
-  try {
-    const msg = await Message.findById(messageId);
-    if (!msg) return res.status(404).json({ ok: false, error: 'Not found' });
-    const users = msg.reactions.get(emoji) || [];
-    const idx = users.indexOf(userId);
-    if (idx >= 0) { users.splice(idx, 1); if (!users.length) msg.reactions.delete(emoji); else msg.reactions.set(emoji, users); }
-    else { users.push(userId); msg.reactions.set(emoji, users); }
-    await msg.save();
-    res.json({ ok: true });
-  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
 // Delete a message (sender only)

@@ -181,6 +181,25 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
 .chat-item .ci-msg{font-size:.72rem;color:#9CA3AF;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .chat-item .ci-time{font-size:.62rem;color:#9CA3AF;font-weight:700;flex-shrink:0}
 
+/* ── Chat bubbles ── */
+.msg-row{display:flex;flex-direction:column;margin-bottom:10px}
+.msg-row.me{align-items:flex-end}
+.msg-row.them{align-items:flex-start}
+.msg-sender{font-size:.64rem;font-weight:800;margin-bottom:2px;padding:0 4px}
+.msg-row.me .msg-sender{color:#00897B}
+.msg-row.them .msg-sender{color:#6B7280}
+.msg-bubble{max-width:82%;border-radius:16px;padding:10px 14px;font-size:.84rem;font-weight:600;line-height:1.5;position:relative}
+.msg-row.me .msg-bubble{background:#00897B;color:#fff;border-bottom-right-radius:4px}
+.msg-row.them .msg-bubble{background:#fff;color:#1F2937;border:1.5px solid #E5E7EB;border-bottom-left-radius:4px}
+.msg-original{font-size:.68rem;opacity:.6;margin-top:4px;font-style:italic;line-height:1.4}
+.msg-lang{display:inline-block;font-size:.56rem;font-weight:900;padding:1px 6px;border-radius:8px;margin-top:4px}
+.msg-row.me .msg-lang{background:rgba(255,255,255,.2);color:rgba(255,255,255,.85)}
+.msg-row.them .msg-lang{background:#F3F4F6;color:#9CA3AF}
+.msg-time{font-size:.58rem;color:#9CA3AF;margin-top:2px;font-weight:700;padding:0 4px}
+.chat-input-bar{display:flex;gap:8px;padding:10px 12px;background:#fff;border-top:1.5px solid #E5E7EB;flex-shrink:0;align-items:center}
+.chat-send-btn{width:42px;height:42px;border-radius:50%;background:#00897B;color:#fff;border:none;font-size:1.1rem;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent}
+.chat-send-btn:active{opacity:.8}
+
 /* ── Notification items ── */
 .notif-item{display:flex;gap:10px;padding:12px 14px;border-bottom:1px solid #F3F4F6;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .notif-item:active{background:#F9FAFB}
@@ -694,17 +713,11 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
   </div>
 </div>
 
-<!-- ═══ CHAT LIST ═══ -->
+<!-- ═══ CHAT LIST (Owner) ═══ -->
 <div id="s-chat-list" class="screen">
   <div class="sb" style="background:#00695C">9:41<span>📶 🔋</span></div>
-  <div class="tn owner-tn"><h2>💬 Chat</h2></div>
-  <div class="sc" id="chat-list-body">
-    <div class="chat-item" onclick="goScreen('s-group-chat')">
-      <div class="wav" style="background:linear-gradient(135deg,#00897B,#00695C);width:46px;height:46px;font-size:.82rem">👥</div>
-      <div class="ci-info"><div class="ci-name">Staff Group Chat</div><div class="ci-msg">Tap to open group chat</div></div>
-      <div class="ci-time">Now</div>
-    </div>
-  </div>
+  <div class="tn owner-tn"><h2>💬 <span data-i18n="nav_chat">Chat</span></h2></div>
+  <div class="sc" id="chat-list-body"></div>
   <div class="bn">
     <div class="ni" onclick="goScreen('s-owner-home')"><span class="ic">🏠</span><span data-i18n="nav_home">Home</span></div>
     <div class="ni" onclick="goScreen('s-payroll')"><span class="ic">💼</span><span data-i18n="nav_payroll">Payroll</span></div>
@@ -714,18 +727,26 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
   </div>
 </div>
 
-<!-- ═══ GROUP CHAT ═══ -->
-<div id="s-group-chat" class="screen">
-  <div class="sb" style="background:#00695C">9:41<span>📶 🔋</span></div>
-  <div class="tn owner-tn"><span class="bk" onclick="goBack()" style="color:#1F2937">‹</span><h2 data-i18n="staff_group">Staff Group Chat</h2></div>
-  <div class="sc" style="background:#F3F4F6;display:flex;flex-direction:column" id="chat-messages">
-    <div style="flex:1;padding:12px;overflow-y:auto" id="chat-msg-list">
-      <p style="text-align:center;color:#9CA3AF;font-size:.78rem;font-weight:600;padding:20px">💬 Send a message to start chatting</p>
+<!-- ═══ CONVERSATION (shared by DM + Group) ═══ -->
+<div id="s-conversation" class="screen">
+  <div class="sb" style="background:#1B5E20">9:41<span>📶 🔋</span></div>
+  <div style="background:linear-gradient(135deg,#1B5E20,#2E7D32);padding:10px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0">
+    <span class="bk" onclick="goBack()" style="color:#fff;font-size:1.3rem">‹</span>
+    <div id="conv-avatar" class="wav" style="width:36px;height:36px;font-size:.72rem;border-width:2px">👥</div>
+    <div style="flex:1;min-width:0">
+      <div id="conv-name" style="font-size:.9rem;font-weight:900;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Chat</div>
+      <div id="conv-subtitle" style="font-size:.64rem;color:rgba(255,255,255,.7);font-weight:600">Auto-translated</div>
+    </div>
+    <div id="conv-lang-badge" style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);border-radius:12px;padding:3px 10px;font-size:.62rem;font-weight:800;color:#fff">🌐 AI</div>
+  </div>
+  <div class="sc" style="background:#F3F4F6" id="conv-messages">
+    <div style="flex:1;padding:12px;overflow-y:auto" id="conv-msg-list">
+      <p style="text-align:center;color:#9CA3AF;font-size:.78rem;font-weight:600;padding:30px">💬 Send a message to start chatting<br><span style="font-size:.68rem">Messages auto-translate to each person's language</span></p>
     </div>
   </div>
-  <div style="display:flex;gap:8px;padding:10px 12px;background:#fff;border-top:1.5px solid #E5E7EB;flex-shrink:0;align-items:center">
-    <input id="chat-input" type="text" class="finput" style="flex:1;padding:10px 14px;font-size:.88rem" placeholder="Type a message...">
-    <button onclick="sendGroupMessage()" style="width:42px;height:42px;border-radius:50%;background:#00897B;color:#fff;border:none;font-size:1.1rem;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center">➤</button>
+  <div class="chat-input-bar">
+    <input id="conv-input" type="text" class="finput" style="flex:1;padding:10px 14px;font-size:.88rem" placeholder="Type a message...">
+    <button onclick="sendMessage()" class="chat-send-btn">➤</button>
   </div>
 </div>
 
@@ -938,13 +959,7 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
 <div id="s-chat-list-w" class="screen">
   <div class="sb" style="background:#BF360C">9:41<span>📶 🔋</span></div>
   <div class="tn"><h2>💬 <span data-i18n="nav_chat">Chat</span></h2></div>
-  <div class="sc" id="chat-list-w-body">
-    <div class="chat-item" onclick="goScreen('s-group-chat')">
-      <div class="wav" style="background:linear-gradient(135deg,#E65100,#BF360C);width:46px;height:46px;font-size:.82rem">👥</div>
-      <div class="ci-info"><div class="ci-name" data-i18n="staff_group">Staff Group Chat</div><div class="ci-msg" data-i18n="tap_open">Tap to open group chat</div></div>
-      <div class="ci-time">Now</div>
-    </div>
-  </div>
+  <div class="sc" id="chat-list-w-body"></div>
   <div class="bn">
     <div class="ni" onclick="goScreen('s-worker-home')"><span class="ic">🏠</span><span data-i18n="nav_home">Home</span></div>
     <div class="ni" onclick="goScreen('s-worker-tasks')"><span class="ic">📋</span><span data-i18n="nav_tasks">Tasks</span></div>
@@ -1057,7 +1072,9 @@ function goScreen(id, skipHistory) {
   if (id === 's-worker-tasks') loadWorkerTasks();
   if (id === 's-worker-schedule') loadWorkerSchedule();
   if (id === 's-worker-me') loadWorkerMe();
-  if (id === 's-group-chat') loadGroupChat();
+  if (id === 's-chat-list') loadChatList();
+  if (id === 's-chat-list-w') loadChatList();
+  if (id === 's-conversation') loadConversation();
   if (id === 's-notif') loadNotifNav();
   if (id === 's-otp') { document.getElementById('otp-input').value = ''; document.getElementById('otp-btn').disabled = true; showError('otp-error',''); }
   if (typeof applyLang === 'function') applyLang();
@@ -1903,77 +1920,196 @@ function shareInvite(method) {
 }
 
 // ══════════════════════════════════════
-//  GROUP CHAT
+//  CHAT SYSTEM — DM + Group
 // ══════════════════════════════════════
 let currentChatId = null;
+let currentChatName = '';
+let allChats = [];
 
-async function loadGroupChat() {
+// Language flag map
+const LANG_FLAGS = {English:'🇬🇧',Thai:'🇹🇭',Russian:'🇷🇺',Filipino:'🇵🇭',Myanmar:'🇲🇲',Chinese:'🇨🇳',German:'🇩🇪',French:'🇫🇷',Arabic:'🇸🇦',Indonesian:'🇮🇩',Spanish:'🇪🇸',Japanese:'🇯🇵',Korean:'🇰🇷',Hindi:'🇮🇳',Portuguese:'🇧🇷',Vietnamese:'🇻🇳',Italian:'🇮🇹',Turkish:'🇹🇷',Dutch:'🇳🇱',Polish:'🇵🇱',Swedish:'🇸🇪',Czech:'🇨🇿',Hebrew:'🇮🇱',Malay:'🇲🇾',Khmer:'🇰🇭',Lao:'🇱🇦',Nepali:'🇳🇵',Bengali:'🇧🇩',Urdu:'🇵🇰',Persian:'🇮🇷'};
+function langFlag(lang) { return LANG_FLAGS[lang] || '🌐'; }
+
+// ── Load chat list (owner or worker) ──
+async function loadChatList() {
   if (!me || !me.propertyId) return;
-  // Find group chat for this property
+  const isOwner = me.role === 'owner';
+  const bodyId = isOwner ? 'chat-list-body' : 'chat-list-w-body';
+  const body = document.getElementById(bodyId);
+  if (!body) return;
+
+  body.innerHTML = '<p style="text-align:center;color:#9CA3AF;font-size:.82rem;padding:20px;font-weight:600">Loading chats...</p>';
+
   try {
+    // Get all chats
     const r = await fetch('/api/chats/' + me.propertyId + '/' + me.id);
     const d = await r.json();
-    if (d.ok && d.chats.length) {
-      const group = d.chats.find(c => c.type === 'group') || d.chats[0];
-      currentChatId = group._id;
-      await loadChatMessages();
+    allChats = d.ok ? d.chats : [];
+
+    // Get workers for DM creation
+    const wr = await fetch('/api/workers/' + me.propertyId);
+    const wd = await wr.json();
+    const workers = wd.ok ? wd.workers : [];
+
+    body.innerHTML = '';
+    const accentGrad = isOwner ? 'linear-gradient(135deg,#00897B,#00695C)' : 'linear-gradient(135deg,#E65100,#BF360C)';
+
+    // Group chat first
+    const groupChat = allChats.find(c => c.type === 'group');
+    if (groupChat) {
+      const memberCount = groupChat.memberDetails ? groupChat.memberDetails.length : 0;
+      const lastMsg = groupChat.lastMessage || t('tap_open');
+      body.innerHTML += '<div class="chat-item" onclick="openChat(\'' + groupChat._id + '\',\'group\',\'' + esc(groupChat.name || t('staff_group')) + '\')"><div class="wav" style="background:' + accentGrad + ';width:46px;height:46px;font-size:1rem">👥</div><div class="ci-info"><div class="ci-name">' + esc(groupChat.name || t('staff_group')) + '</div><div class="ci-msg">' + esc(lastMsg) + '</div></div><div style="text-align:right"><div class="ci-time">' + (memberCount ? memberCount + ' 👤' : '') + '</div><div style="font-size:.56rem;color:#00897B;font-weight:800;margin-top:2px">🌐 Auto-translate</div></div></div>';
+    }
+
+    // Section header for DMs
+    if (workers.length || !isOwner) {
+      body.innerHTML += '<div style="padding:10px 14px 4px;font-size:.66rem;font-weight:900;color:#9CA3AF;text-transform:uppercase;letter-spacing:.06em">Direct Messages</div>';
+    }
+
+    if (isOwner) {
+      // Owner sees each worker as a DM contact
+      workers.forEach((w, i) => {
+        const u = w.userId || {};
+        const name = u.name || '—';
+        const lang = u.lang || 'English';
+        const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+        // Find existing DM
+        const dm = allChats.find(c => c.type === 'direct' && c.members.some(m => m.toString() === (u._id || '').toString()));
+        const lastMsg = dm ? (dm.lastMessage || '') : '';
+        const dmId = dm ? dm._id : null;
+        body.innerHTML += '<div class="chat-item" onclick="openDM(\'' + (u._id || '') + '\',\'' + esc(name) + '\')"><div class="wav" style="background:' + avatarGrad(i) + ';width:46px;height:46px;font-size:.82rem">' + initials + '</div><div class="ci-info"><div class="ci-name">' + esc(name) + '</div><div class="ci-msg">' + (lastMsg ? esc(lastMsg) : '<span style="color:#00897B">' + langFlag(lang) + ' ' + lang + '</span>') + '</div></div><div class="ci-time">' + (w.jobRole || 'Staff') + '</div></div>';
+      });
+      if (!workers.length) {
+        body.innerHTML += '<p style="text-align:center;color:#9CA3AF;font-size:.82rem;padding:16px;font-weight:600">' + t('no_workers') + '</p>';
+      }
+    } else {
+      // Worker sees the owner + other workers
+      if (groupChat && groupChat.memberDetails) {
+        groupChat.memberDetails.forEach((member, i) => {
+          if (member.id === me.id) return; // skip self
+          const name = member.name || '—';
+          const lang = member.lang || 'English';
+          const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+          const dm = allChats.find(c => c.type === 'direct' && c.members.some(m => m.toString() === member.id));
+          const lastMsg = dm ? (dm.lastMessage || '') : '';
+          body.innerHTML += '<div class="chat-item" onclick="openDM(\'' + member.id + '\',\'' + esc(name) + '\')"><div class="wav" style="background:' + avatarGrad(i) + ';width:46px;height:46px;font-size:.82rem">' + initials + '</div><div class="ci-info"><div class="ci-name">' + esc(name) + '</div><div class="ci-msg">' + (lastMsg ? esc(lastMsg) : '<span style="color:#E65100">' + langFlag(lang) + ' ' + lang + '</span>') + '</div></div><div class="ci-time">' + langFlag(lang) + '</div></div>';
+        });
+      }
+    }
+  } catch(e) {
+    body.innerHTML = '<p style="text-align:center;color:#9CA3AF;font-size:.82rem;padding:20px;font-weight:600">Could not load chats</p>';
+  }
+}
+
+// ── Open a DM (find or create) ──
+async function openDM(otherUserId, otherName) {
+  if (!me || !me.propertyId) return;
+  try {
+    const r = await fetch('/api/chats/direct', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ propertyId: me.propertyId, userId1: me.id, userId2: otherUserId })
+    });
+    const d = await r.json();
+    if (d.ok && d.chat) {
+      openChat(d.chat._id, 'direct', otherName);
     }
   } catch(e) {}
 }
 
-async function loadChatMessages() {
-  if (!currentChatId) return;
-  const lang = me ? (me.lang || 'English') : 'English';
+// ── Open any chat (DM or group) ──
+function openChat(chatId, type, name) {
+  currentChatId = chatId;
+  currentChatName = name;
+  // Set conversation header
+  const avatar = document.getElementById('conv-avatar');
+  const nameEl = document.getElementById('conv-name');
+  const subtitle = document.getElementById('conv-subtitle');
+  nameEl.textContent = name;
+  if (type === 'group') {
+    avatar.textContent = '👥';
+    avatar.style.background = me.role === 'owner' ? 'linear-gradient(135deg,#00897B,#00695C)' : 'linear-gradient(135deg,#E65100,#BF360C)';
+    subtitle.textContent = '🌐 Messages auto-translate for everyone';
+  } else {
+    const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+    avatar.textContent = initials;
+    avatar.style.background = 'linear-gradient(135deg,#1976D2,#1565C0)';
+    subtitle.textContent = '🌐 Auto-translated conversation';
+  }
+  goScreen('s-conversation');
+}
+
+// ── Load messages for current chat ──
+async function loadConversation() {
+  if (!currentChatId || !me) return;
+  const lang = me.lang || 'English';
+  const list = document.getElementById('conv-msg-list');
   try {
     const r = await fetch('/api/messages/' + currentChatId + '?lang=' + encodeURIComponent(lang));
     const d = await r.json();
-    const list = document.getElementById('chat-msg-list');
     if (!d.ok || !d.messages.length) {
-      list.innerHTML = '<p style="text-align:center;color:#9CA3AF;font-size:.78rem;font-weight:600;padding:20px">💬 Send a message to start chatting</p>';
+      list.innerHTML = '<p style="text-align:center;color:#9CA3AF;font-size:.78rem;font-weight:600;padding:30px">💬 Send a message to start chatting<br><span style="font-size:.68rem">Messages auto-translate to each person\'s language</span></p>';
       return;
     }
     list.innerHTML = '';
     d.messages.forEach(msg => {
       const isMe = msg.senderId === me.id;
-      const align = isMe ? 'flex-end' : 'flex-start';
-      const bg = isMe ? '#00897B' : '#fff';
-      const color = isMe ? '#fff' : '#1F2937';
-      const border = isMe ? '' : 'border:1.5px solid #E5E7EB;';
-      const text = msg.translation || msg.text;
-      const original = msg.translation ? msg.text : null;
-      let html = '<div style="display:flex;flex-direction:column;align-items:' + align + ';margin-bottom:8px">';
-      html += '<div style="max-width:80%;background:' + bg + ';color:' + color + ';' + border + 'border-radius:14px;padding:10px 14px;font-size:.84rem;font-weight:600;line-height:1.5">';
-      html += esc(text);
-      if (original) {
-        html += '<div style="font-size:.68rem;opacity:.65;margin-top:4px;font-style:italic">' + esc(original) + '</div>';
+      const side = isMe ? 'me' : 'them';
+      // Show translated text to viewer, original underneath
+      const displayText = msg.translation || msg.text;
+      const originalText = msg.translation ? msg.text : null;
+      const flag = langFlag(msg.senderLang);
+      const time = new Date(msg.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+      let html = '<div class="msg-row ' + side + '">';
+      html += '<div class="msg-sender">' + esc(msg.senderName || 'Unknown') + '</div>';
+      html += '<div class="msg-bubble">';
+      html += esc(displayText);
+      if (originalText) {
+        html += '<div class="msg-original">' + flag + ' ' + esc(originalText) + '</div>';
       }
+      html += '<div class="msg-lang">' + flag + ' ' + (msg.senderLang || '') + '</div>';
       html += '</div>';
-      html += '<div style="font-size:.58rem;color:#9CA3AF;margin-top:2px;font-weight:700">' + new Date(msg.time).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) + '</div>';
+      html += '<div class="msg-time">' + time + '</div>';
       html += '</div>';
       list.innerHTML += html;
     });
-    // Scroll to bottom
+    // Auto-scroll to bottom
+    const sc = list.parentElement;
+    if (sc) sc.scrollTop = sc.scrollHeight;
     list.scrollTop = list.scrollHeight;
   } catch(e) {}
 }
 
-async function sendGroupMessage() {
-  const input = document.getElementById('chat-input');
+// ── Send message ──
+async function sendMessage() {
+  const input = document.getElementById('conv-input');
   const text = input.value.trim();
   if (!text || !currentChatId || !me) return;
   input.value = '';
+  // Show optimistic bubble immediately
+  const list = document.getElementById('conv-msg-list');
+  const emptyMsg = list.querySelector('p');
+  if (emptyMsg) emptyMsg.remove();
+  const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  list.innerHTML += '<div class="msg-row me"><div class="msg-sender">' + esc(me.name) + '</div><div class="msg-bubble">' + esc(text) + '<div class="msg-lang" style="opacity:.5">🌐 translating...</div></div><div class="msg-time">' + time + '</div></div>';
+  list.scrollTop = list.scrollHeight;
+  const sc = list.parentElement;
+  if (sc) sc.scrollTop = sc.scrollHeight;
+
   try {
     await fetch('/api/messages/send', {
       method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ chatId: currentChatId, senderId: me.id, senderLang: me.lang || 'English', text })
+      body: JSON.stringify({ chatId: currentChatId, senderId: me.id, text })
     });
-    await loadChatMessages();
+    // Reload to show translations
+    await loadConversation();
   } catch(e) {}
 }
 
-// Send on Enter key
-document.getElementById('chat-input').addEventListener('keydown', function(e) {
-  if (e.key === 'Enter') { e.preventDefault(); sendGroupMessage(); }
+// Enter key to send
+document.getElementById('conv-input').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') { e.preventDefault(); sendMessage(); }
 });
 
 // ══════════════════════════════════════
