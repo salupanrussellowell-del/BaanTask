@@ -158,7 +158,7 @@ const I18N = {
 };
 
 // Language code mapping
-const LANG_MAP = { English:'en', Thai:'th', Russian:'ru', Filipino:'ph', Myanmar:'mm', Chinese:'zh', German:'de', French:'fr', Arabic:'ar', Indonesian:'id' };
+const LANG_MAP = { English:'en', Thai:'th', Russian:'ru', Filipino:'ph', Myanmar:'mm', Chinese:'zh', German:'de', French:'fr', Arabic:'ar', Indonesian:'id', Japanese:'ja', Korean:'ko', Hindi:'hi', Spanish:'es' };
 
 function t(key) {
   const lc = LANG_MAP[selectedLang] || 'en';

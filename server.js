@@ -265,7 +265,7 @@ app.post('/api/login', async (req, res) => {
 
 // Update owner profile (gender, dob, phone)
 app.post('/api/user/update', async (req, res) => {
-  const { userId, name, phone, gender, dob } = req.body;
+  const { userId, name, phone, gender, dob, lang } = req.body;
   if (!userId) return res.status(400).json({ ok: false, error: 'userId required' });
   try {
     const user = await User.findById(userId);
@@ -274,8 +274,9 @@ app.post('/api/user/update', async (req, res) => {
     if (phone) user.phone = phone;
     if (gender) user.gender = gender;
     if (dob) user.dob = dob;
+    if (lang) user.lang = lang;
     await user.save();
-    res.json({ ok: true, user: { id: user._id, name: user.name, phone: user.phone, gender: user.gender, dob: user.dob } });
+    res.json({ ok: true, user: { id: user._id, name: user.name, phone: user.phone, gender: user.gender, dob: user.dob, lang: user.lang } });
   } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 

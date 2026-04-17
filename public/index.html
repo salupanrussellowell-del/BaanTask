@@ -461,6 +461,24 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
   </div>
 </div>
 
+<!-- ═══ WORKER LANGUAGE SELECT ═══ -->
+<div id="s-worker-lang" class="screen" style="background:#fff">
+  <div class="sb">9:41<span>📶 🔋</span></div>
+  <div style="background:linear-gradient(160deg,#E65100,#BF360C);padding:20px 22px 16px;text-align:center;color:#fff;flex-shrink:0">
+    <div style="font-size:2rem;margin-bottom:4px">🌐</div>
+    <h2 style="font-size:1.1rem;font-weight:900;margin-bottom:2px;color:#fff">Choose Your Language</h2>
+    <p style="font-size:.74rem;opacity:.85" id="wl-sub">All messages and menus will appear in your language</p>
+  </div>
+  <div class="sc" style="background:#fff">
+    <div style="padding:12px 14px 6px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px" id="wl-grid"></div>
+    </div>
+  </div>
+  <div style="padding:12px 14px 16px;background:#fff;border-top:1.5px solid #F3F4F6;flex-shrink:0">
+    <button class="btn btn-o" id="wl-continue-btn" disabled onclick="workerLangNext()">Continue →</button>
+  </div>
+</div>
+
 <!-- ═══ WORKER JOIN ═══ -->
 <div id="s-worker-join" class="screen" style="background:#fff">
   <div class="sb">9:41<span>📶 🔋</span></div>
@@ -1185,6 +1203,66 @@ async function ownerRegister() {
 }
 
 // ══════════════════════════════════════
+//  WORKER LANGUAGE SELECT
+// ══════════════════════════════════════
+const WORKER_LANGS = [
+  {code:'Thai',flag:'🇹🇭',name:'ไทย'},
+  {code:'Filipino',flag:'🇵🇭',name:'Filipino'},
+  {code:'Myanmar',flag:'🇲🇲',name:'မြန်မာ'},
+  {code:'Indonesian',flag:'🇮🇩',name:'Indonesia'},
+  {code:'Chinese',flag:'🇨🇳',name:'中文'},
+  {code:'Japanese',flag:'🇯🇵',name:'日本語'},
+  {code:'Korean',flag:'🇰🇷',name:'한국어'},
+  {code:'Hindi',flag:'🇮🇳',name:'हिन्दी'},
+  {code:'Arabic',flag:'🇸🇦',name:'العربية'},
+  {code:'Spanish',flag:'🇪🇸',name:'Español'},
+  {code:'French',flag:'🇫🇷',name:'Français'},
+  {code:'German',flag:'🇩🇪',name:'Deutsch'},
+  {code:'English',flag:'🇬🇧',name:'English'},
+  {code:'Russian',flag:'🇷🇺',name:'Русский'}
+];
+
+(function buildWorkerLangGrid() {
+  const grid = document.getElementById('wl-grid');
+  const buttons = [];
+  WORKER_LANGS.forEach((l, i) => {
+    const btn = document.createElement('div');
+    btn.dataset.langCode = l.code;
+    btn.dataset.langIdx = i;
+    btn.style.cssText = 'background:#F9FAFB;color:#6B7280;padding:11px 10px;border-radius:13px;text-align:center;cursor:pointer;border:2.5px solid #E5E7EB;-webkit-tap-highlight-color:transparent';
+    btn.innerHTML = '<div style="font-size:1.4rem;pointer-events:none">' + l.flag + '</div><div class="wl-label" style="font-size:.82rem;font-weight:800;margin-top:5px;pointer-events:none">' + l.name + '</div>';
+    btn.onclick = () => {
+      buttons.forEach(b => {
+        b.style.background = '#F9FAFB'; b.style.color = '#6B7280'; b.style.borderColor = '#E5E7EB';
+        const label = b.querySelector('.wl-label');
+        if (label) label.textContent = WORKER_LANGS[b.dataset.langIdx].name;
+      });
+      btn.style.background = '#E65100'; btn.style.color = '#fff'; btn.style.borderColor = '#E65100';
+      btn.querySelector('.wl-label').textContent = l.name + ' ✓';
+      selectedLang = l.code;
+      document.getElementById('wl-continue-btn').disabled = false;
+      if (typeof applyLang === 'function') applyLang();
+    };
+    buttons.push(btn);
+    grid.appendChild(btn);
+  });
+})();
+
+function workerLangNext() {
+  if (!selectedLang) return;
+  // Save language to user profile
+  if (me && me.id) {
+    fetch('/api/user/update', { method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ userId: me.id, lang: selectedLang })
+    }).catch(() => {});
+    me.lang = selectedLang;
+    localStorage.setItem('bt_user', JSON.stringify(me));
+  }
+  if (typeof applyLang === 'function') applyLang();
+  goScreen('s-worker-join');
+}
+
+// ══════════════════════════════════════
 //  WORKER REGISTRATION
 // ══════════════════════════════════════
 function checkWorkerReg() {
@@ -1244,7 +1322,7 @@ async function verifyOTP() {
     if (me.role === 'owner') {
       if (me.propertyId) { await loadPropertyData(me.propertyId); goScreen('s-owner-home'); }
       else { goScreen('s-property'); }
-    } else { goScreen('s-worker-join'); }
+    } else { goScreen('s-worker-lang'); }
   } catch(e) { showError('otp-error','Network error'); }
   finally { document.getElementById('otp-btn').disabled = false; document.getElementById('otp-btn').textContent = 'Verify & Continue'; }
 }
@@ -1280,7 +1358,7 @@ async function signIn() {
     me = d.user; me.email = email;
     localStorage.setItem('bt_user', JSON.stringify(me));
     if (me.propertyId) { await loadPropertyData(me.propertyId); goScreen(me.role==='owner'?'s-owner-home':'s-worker-home'); }
-    else { goScreen(me.role==='owner'?'s-property':'s-worker-join'); }
+    else { goScreen(me.role==='owner'?'s-property':'s-worker-lang'); }
   } catch(e) { showError('si-error','Network error'); document.getElementById('si-btn').disabled = false; }
 }
 
