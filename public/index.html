@@ -1178,7 +1178,7 @@ async function ownerRegister() {
     const r = await fetch('/api/send-otp', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({contact:email,name}) });
     const d = await r.json();
     if (!d.ok) { showError('or-error', d.error); return; }
-    document.getElementById('otp-subtitle').textContent = d.method === 'console' ? 'Check Render logs for the code' : `Code sent to ${email}`;
+    document.getElementById('otp-subtitle').textContent = d.method === 'dev' ? 'Dev mode — enter 123456' : `Code sent to ${email}`;
     goScreen('s-otp');
   } catch(e) { showError('or-error','Network error'); }
   finally { document.getElementById('or-btn').disabled = false; document.getElementById('or-btn').textContent = 'Send Verification Code'; }
@@ -1207,7 +1207,7 @@ async function workerRegister() {
     const r = await fetch('/api/send-otp', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({contact:email,name}) });
     const d = await r.json();
     if (!d.ok) { showError('wr-error', d.error); return; }
-    document.getElementById('otp-subtitle').textContent = d.method === 'console' ? 'Check Render logs for the code' : `Code sent to ${email}`;
+    document.getElementById('otp-subtitle').textContent = d.method === 'dev' ? 'Dev mode — enter 123456' : `Code sent to ${email}`;
     goScreen('s-otp');
   } catch(e) { showError('wr-error','Network error'); }
   finally { document.getElementById('wr-btn').disabled = false; }
