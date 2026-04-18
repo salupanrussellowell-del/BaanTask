@@ -10,7 +10,7 @@ const { Resend } = require('resend');
 const jwt = require('jsonwebtoken');
 const path = require('path');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'baantask-secret-' + require('crypto').randomBytes(16).toString('hex');
+const JWT_SECRET = process.env.JWT_SECRET || 'baantask-default-jwt-secret-2026';
 
 const app = express();
 const server = http.createServer(app);
@@ -163,22 +163,22 @@ async function connectDB() {
     console.log('[DB] Connected to MongoDB Atlas');
     // Drop stale unique index on name if it exists
     try { await mongoose.connection.db.collection('users').dropIndex('name_1'); console.log('[DB] Dropped stale name_1 index'); } catch (e) { /**/ }
-    // Auto-repair: ensure every property has a group chat with all members
-    try { await repairAllGroupChats(); } catch (e) { console.error('[REPAIR ERR]', e.message); }
-    // Reset placeholder PINs ('0000') so users get prompted to set a real PIN
-    try {
-      const users = await User.find({ pinHash: { $ne: '' } });
-      let reset = 0;
-      for (const u of users) {
-        if (u.pinHash && await bcrypt.compare('0000', u.pinHash)) {
-          u.pinHash = '';
-          await u.save();
-          reset++;
-          console.log(`[PIN REPAIR] Reset placeholder PIN for ${u.name}`);
+    // Run repairs in background (don't block server start)
+    setTimeout(async () => {
+      try { await repairAllGroupChats(); } catch (e) { console.error('[REPAIR ERR]', e.message); }
+      try {
+        const users = await User.find({ pinHash: { $ne: '' } });
+        let reset = 0;
+        for (const u of users) {
+          if (u.pinHash && await bcrypt.compare('0000', u.pinHash)) {
+            u.pinHash = '';
+            await u.save();
+            reset++;
+          }
         }
-      }
-      if (reset) console.log(`[PIN REPAIR] Reset ${reset} placeholder PINs`);
-    } catch(e) {}
+        if (reset) console.log(`[PIN REPAIR] Reset ${reset} placeholder PINs`);
+      } catch(e) {}
+    }, 2000);
   } catch (e) { console.error('[DB] Connection failed:', e.message); }
 }
 
