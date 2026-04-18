@@ -2407,13 +2407,26 @@ async function loadChatList() {
         body.innerHTML += '<div class="chat-item" onclick="openDM(\'' + u._id + '\',\'' + esc(name) + '\')"><div class="wav" style="background:' + avatarGrad(i) + ';width:46px;height:46px;font-size:.82rem">' + initials + '</div><div class="ci-info"><div class="ci-name">' + esc(name) + ' <span style="font-size:.65rem;color:#9CA3AF">' + (w.jobRole || 'Staff') + '</span></div><div class="ci-msg">' + preview + '</div></div></div>';
       });
     } else {
-      // Worker sees ONLY the owner (not other workers)
+      // Worker sees ONLY the owner — find owner from property or memberDetails
+      let ownerName = 'Owner';
+      let ownerLang = 'English';
       if (ownerId) {
-        const owner = (group && group.memberDetails) ? group.memberDetails.find(m => m.id === ownerId) : null;
-        const ownerName = owner ? owner.name : (prop ? 'Owner' : '—');
-        const ownerLang = owner ? owner.lang : 'English';
+        // Try group chat memberDetails first
+        if (group && group.memberDetails) {
+          const ownerMember = group.memberDetails.find(m => m.id === ownerId);
+          if (ownerMember) { ownerName = ownerMember.name; ownerLang = ownerMember.lang || 'English'; }
+        }
+        // Fallback: check DM chats memberDetails
+        if (ownerName === 'Owner') {
+          for (const ch of allChats) {
+            if (ch.type === 'direct' && ch.memberDetails) {
+              const om = ch.memberDetails.find(m => m.id === ownerId);
+              if (om) { ownerName = om.name; ownerLang = om.lang || 'English'; break; }
+            }
+          }
+        }
         const initials = ownerName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
-        const dm = allChats.find(ch => ch.type === 'direct' && ch.members.some(m => String(m) === ownerId));
+        const dm = allChats.find(ch => ch.type === 'direct');
         const preview = dm && dm.lastMessage ? esc(dm.lastMessage) : '<span style="color:#9CA3AF">' + langFlag(ownerLang) + ' Owner</span>';
         body.innerHTML += '<div class="chat-item" onclick="openDM(\'' + ownerId + '\',\'' + esc(ownerName) + '\')"><div class="wav" style="background:linear-gradient(135deg,#00897B,#00695C);width:46px;height:46px;font-size:.82rem">' + initials + '</div><div class="ci-info"><div class="ci-name">' + esc(ownerName) + ' <span style="font-size:.65rem;color:#00897B">Owner</span></div><div class="ci-msg">' + preview + '</div></div></div>';
       }

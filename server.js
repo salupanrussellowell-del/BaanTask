@@ -659,17 +659,30 @@ app.post('/api/tasks/update', async (req, res) => {
 // ══════════════════════════════════════
 
 // List all chats for a user (group + DMs), with member names + real last message
+// For workers: filters out worker-to-worker DMs, only shows owner DMs + group
 app.get('/api/chats/:propertyId/:userId', async (req, res) => {
   try {
-    // Cast userId to ObjectId for reliable members array matching
     let uid;
     try { uid = new mongoose.Types.ObjectId(req.params.userId); } catch(e) { uid = req.params.userId; }
-    const chats = await Chat.find({ propertyId: req.params.propertyId, members: uid })
+    let chats = await Chat.find({ propertyId: req.params.propertyId, members: uid })
       .sort({ lastMessageAt: -1 }).lean();
+
+    // Check if this user is a worker — if so, filter DMs to owner-only
+    const thisUser = await User.findById(req.params.userId, 'role');
+    if (thisUser && thisUser.role === 'worker') {
+      const prop = await Property.findById(req.params.propertyId, 'ownerId');
+      const ownerId = prop ? prop.ownerId.toString() : '';
+      chats = chats.filter(c => {
+        if (c.type === 'group') return true; // always show group chat
+        // For DMs, only keep if the other member is the owner
+        const otherMember = c.members.find(m => m.toString() !== req.params.userId);
+        return otherMember && otherMember.toString() === ownerId;
+      });
+    }
+
     for (const c of chats) {
-      const users = await User.find({ _id: { $in: c.members } }, 'name lang').lean();
-      c.memberDetails = users.map(u => ({ id: u._id.toString(), name: u.name, lang: u.lang }));
-      // Fetch actual last message from DB (not cached field)
+      const users = await User.find({ _id: { $in: c.members } }, 'name lang role').lean();
+      c.memberDetails = users.map(u => ({ id: u._id.toString(), name: u.name, lang: u.lang, role: u.role }));
       const lastMsg = await Message.findOne({ chatId: c._id }).sort({ createdAt: -1 }).lean();
       c.lastMessage = lastMsg ? lastMsg.text : '';
     }
