@@ -256,6 +256,59 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
   </div>
 </div>
 
+<!-- ═══ QUICK PIN LOGIN (returning user) ═══ -->
+<div class="screen" id="s-pin-login" style="background:#fff">
+  <div class="sb" style="background:#1B5E20">9:41<span>📶 🔋</span></div>
+  <div style="background:linear-gradient(160deg,#1B5E20,#2E7D32);padding:28px 22px 20px;text-align:center;color:#fff;flex-shrink:0">
+    <div style="width:64px;height:64px;background:rgba(255,255,255,.15);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.6rem;margin:0 auto 10px;border:2px dashed rgba(255,255,255,.3)" id="pin-avatar">👤</div>
+    <h2 style="font-size:1.1rem;font-weight:900;color:#fff" id="pin-welcome">Welcome back!</h2>
+    <p style="font-size:.78rem;opacity:.8;margin-top:4px" id="pin-email">—</p>
+  </div>
+  <div class="sc" style="background:#fff">
+    <div style="padding:32px 16px;display:flex;flex-direction:column;align-items:center;text-align:center">
+      <p style="font-size:.88rem;font-weight:700;color:#1F2937;margin-bottom:20px">Enter your 4-digit PIN</p>
+      <div class="form-group"><input id="pl-pin" type="password" inputmode="numeric" class="pin-input" placeholder="••••" maxlength="4"></div>
+      <div id="pl-error" class="error-msg"></div>
+      <button class="btn" style="background:#1B5E20;color:#fff;max-width:360px" id="pl-btn" disabled onclick="quickPinLogin()">Sign In</button>
+      <button class="btn-link" onclick="goScreen('s-start')" style="margin-top:16px">Use a different email</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ START — Email entry (unified) ═══ -->
+<div class="screen" id="s-start" style="background:#fff">
+  <div class="sb" style="background:#1B5E20">9:41<span>📶 🔋</span></div>
+  <div style="background:linear-gradient(160deg,#1B5E20,#2E7D32);padding:24px 22px 18px;text-align:center;color:#fff;flex-shrink:0">
+    <div style="font-size:2.2rem;margin-bottom:6px">🏠</div>
+    <h1 style="font-size:1.4rem;font-weight:900;color:#fff;margin-bottom:4px">BaanTask</h1>
+    <p style="font-size:.76rem;opacity:.8">Enter your email to get started</p>
+  </div>
+  <div class="sc" style="background:#fff">
+    <div style="padding:24px 16px;display:flex;flex-direction:column;align-items:center">
+      <div class="form-group"><label data-i18n="email">Email</label><input id="st-email" type="email" placeholder="your@email.com"></div>
+      <div id="st-error" class="error-msg"></div>
+      <button class="btn" style="background:#1B5E20;color:#fff;max-width:360px" id="st-btn" disabled onclick="startEmailCheck()">Continue →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SETUP NAME (new users after OTP) ═══ -->
+<div class="screen" id="s-setup-name" style="background:#fff">
+  <div class="sb" style="background:#1B5E20">9:41<span>📶 🔋</span></div>
+  <div style="background:linear-gradient(160deg,#1B5E20,#2E7D32);padding:20px 22px 16px;color:#fff;flex-shrink:0">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px"><span class="bk" onclick="goBack()" style="color:#fff">‹</span><span style="font-size:.9rem;font-weight:800">Create Your Account</span></div>
+  </div>
+  <div class="sc" style="background:#fff">
+    <div style="padding:20px 16px;display:flex;flex-direction:column;align-items:center">
+      <div class="form-group"><label data-i18n="full_name">Full Name</label><input id="sn-name" type="text" placeholder="Your full name" maxlength="40"></div>
+      <div class="form-group"><label data-i18n="pin_label">4-Digit PIN</label><input id="sn-pin" type="password" inputmode="numeric" class="pin-input" placeholder="••••" maxlength="4"></div>
+      <p style="font-size:.7rem;color:#9CA3AF;font-weight:600;margin-bottom:16px">You'll use this PIN to log in next time</p>
+      <div id="sn-error" class="error-msg"></div>
+      <button class="btn" style="background:#1B5E20;color:#fff;max-width:360px" id="sn-btn" disabled onclick="submitSetupName()">Continue →</button>
+    </div>
+  </div>
+</div>
+
 <!-- ═══════════════════════════════════════ -->
 <!--  LANGUAGE SELECT (exact mockup)        -->
 <!-- ═══════════════════════════════════════ -->
@@ -292,7 +345,7 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
   </div>
   <div class="sc" style="background:#fff">
     <div style="padding:20px 16px;display:flex;flex-direction:column;gap:14px">
-      <div onclick="selectedRole='owner';goScreen('s-owner-reg')" style="background:#E0F2F1;border:2.5px solid #00897B;border-radius:18px;padding:18px;cursor:pointer;display:flex;align-items:center;gap:14px">
+      <div onclick="selectRole('owner')" style="background:#E0F2F1;border:2.5px solid #00897B;border-radius:18px;padding:18px;cursor:pointer;display:flex;align-items:center;gap:14px">
         <span style="font-size:2.2rem">🏠</span>
         <div style="flex:1">
           <div style="font-size:.98rem;font-weight:900;color:#00695C" data-i18n="im_owner">I'm an Owner</div>
@@ -306,7 +359,7 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
         </div>
         <span style="font-size:1.3rem;color:#00897B">→</span>
       </div>
-      <div onclick="selectedRole='worker';goScreen('s-worker-reg')" style="background:#F9FAFB;border:2.5px solid #E5E7EB;border-radius:18px;padding:18px;cursor:pointer;display:flex;align-items:center;gap:14px">
+      <div onclick="selectRole('worker')" style="background:#F9FAFB;border:2.5px solid #E5E7EB;border-radius:18px;padding:18px;cursor:pointer;display:flex;align-items:center;gap:14px">
         <span style="font-size:2.2rem">🧹</span>
         <div style="flex:1">
           <div style="font-size:.98rem;font-weight:900;color:#1F2937" data-i18n="im_worker">I'm a Worker</div>
@@ -473,6 +526,28 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
   </div>
   <div style="padding:12px 14px 16px;background:#fff;border-top:1.5px solid #F3F4F6;flex-shrink:0">
     <button class="btn btn-o" id="wl-continue-btn" disabled onclick="workerLangNext()">Continue →</button>
+  </div>
+</div>
+
+<!-- ═══ WORKER TYPE SELECT ═══ -->
+<div id="s-worker-type" class="screen" style="background:#fff">
+  <div class="sb" style="background:#BF360C">9:41<span>📶 🔋</span></div>
+  <div style="background:linear-gradient(160deg,#E65100,#BF360C);padding:20px 22px 16px;text-align:center;color:#fff;flex-shrink:0">
+    <h2 style="font-size:1.1rem;font-weight:900;color:#fff">What's your job?</h2>
+    <p style="font-size:.74rem;opacity:.85">Select your role in the household</p>
+  </div>
+  <div class="sc" style="background:#fff">
+    <div style="padding:12px 14px;display:grid;grid-template-columns:1fr 1fr;gap:10px" id="wt-grid">
+      <div class="prop-item" onclick="pickWorkerType('Driver',this)"><div class="pi-icon">🚗</div><div class="pi-name">Driver</div></div>
+      <div class="prop-item" onclick="pickWorkerType('Cleaner',this)"><div class="pi-icon">🧹</div><div class="pi-name">Cleaner</div></div>
+      <div class="prop-item" onclick="pickWorkerType('Cook',this)"><div class="pi-icon">👨‍🍳</div><div class="pi-name">Cook</div></div>
+      <div class="prop-item" onclick="pickWorkerType('Nanny',this)"><div class="pi-icon">👶</div><div class="pi-name">Nanny</div></div>
+      <div class="prop-item" onclick="pickWorkerType('Gardener',this)"><div class="pi-icon">🌿</div><div class="pi-name">Gardener</div></div>
+      <div class="prop-item" onclick="pickWorkerType('Security',this)"><div class="pi-icon">🛡️</div><div class="pi-name">Security</div></div>
+    </div>
+  </div>
+  <div style="padding:12px 14px 16px;background:#fff;border-top:1.5px solid #F3F4F6;flex-shrink:0">
+    <button class="btn btn-o" id="wt-btn" disabled onclick="workerTypeNext()">Continue →</button>
   </div>
 </div>
 
@@ -1117,16 +1192,150 @@ const splashInterval = setInterval(() => {
       const saved = localStorage.getItem('bt_user');
       if (saved) {
         me = JSON.parse(saved);
-        selectedLang = me.lang;
-        goScreen('s-signin');
-        document.getElementById('si-email').value = me.email || '';
-        setTimeout(() => document.getElementById('si-pin').focus(), 100);
+        selectedLang = me.lang || 'English';
+        if (typeof applyLang === 'function') applyLang();
+        // Show quick PIN login
+        const initials = (me.name || '?').split(' ').map(n=>n[0]).join('').toUpperCase().substring(0,2);
+        document.getElementById('pin-avatar').textContent = initials;
+        document.getElementById('pin-welcome').textContent = 'Welcome back, ' + (me.name || '') + '!';
+        document.getElementById('pin-email').textContent = me.email || '';
+        goScreen('s-pin-login');
+        setTimeout(() => document.getElementById('pl-pin').focus(), 100);
       } else {
-        goScreen('s-lang');
+        goScreen('s-start');
       }
     }, 400);
   }
 }, 120);
+
+// ══════════════════════════════════════
+//  QUICK PIN LOGIN (returning user)
+// ══════════════════════════════════════
+document.getElementById('pl-pin').addEventListener('input', function() {
+  this.value = this.value.replace(/\D/g,'').substring(0,4);
+  document.getElementById('pl-btn').disabled = this.value.length !== 4;
+});
+
+async function quickPinLogin() {
+  const pin = document.getElementById('pl-pin').value;
+  if (!me || !me.email || pin.length !== 4) return;
+  showError('pl-error','');
+  document.getElementById('pl-btn').disabled = true;
+  try {
+    const r = await fetch('/api/login', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ email: me.email, pin, lang: me.lang || 'English' }) });
+    const d = await r.json();
+    if (!d.ok) { showError('pl-error', d.error); document.getElementById('pl-btn').disabled = false; return; }
+    me = d.user; me.email = me.email || d.user.email;
+    selectedLang = me.lang || 'English';
+    localStorage.setItem('bt_user', JSON.stringify(me));
+    if (typeof connectSocket === 'function') connectSocket();
+    if (typeof applyLang === 'function') applyLang();
+    if (me.propertyId) {
+      await loadPropertyData(me.propertyId);
+      goScreen(me.role === 'owner' ? 's-owner-home' : 's-worker-home');
+    } else {
+      goScreen(me.role === 'owner' ? 's-property' : 's-worker-join');
+    }
+  } catch(e) { showError('pl-error', 'Network error'); document.getElementById('pl-btn').disabled = false; }
+}
+
+// ══════════════════════════════════════
+//  EMAIL ENTRY (new unified start)
+// ══════════════════════════════════════
+document.getElementById('st-email').addEventListener('input', function() {
+  document.getElementById('st-btn').disabled = !this.value.trim().includes('@');
+});
+
+let startFlowType = null; // 'returning' | 'new'
+let startFlowEmail = '';
+
+async function startEmailCheck() {
+  const email = document.getElementById('st-email').value.trim();
+  if (!email) return;
+  startFlowEmail = email;
+  showError('st-error','');
+  document.getElementById('st-btn').disabled = true;
+  document.getElementById('st-btn').textContent = 'Checking...';
+
+  try {
+    // Check if account exists
+    const cr = await fetch('/api/check-email', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ email }) });
+    const cd = await cr.json();
+
+    if (cd.exists) {
+      startFlowType = 'returning';
+      pendingReg = { email, name: cd.user.name, role: cd.user.role, lang: cd.user.lang };
+    } else {
+      startFlowType = 'new';
+      pendingReg = { email, role: null };
+    }
+
+    // Send OTP
+    const r = await fetch('/api/send-otp', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ contact: email, name: pendingReg.name || '' }) });
+    const d = await r.json();
+    if (!d.ok) { showError('st-error', d.error || 'Failed to send code'); return; }
+    document.getElementById('otp-subtitle').textContent = d.method === 'console' ? 'Check server logs for the code' : 'Code sent to ' + email;
+    goScreen('s-otp');
+  } catch(e) { showError('st-error', 'Network error'); }
+  finally { document.getElementById('st-btn').disabled = false; document.getElementById('st-btn').textContent = 'Continue →'; }
+}
+
+// ══════════════════════════════════════
+//  SETUP NAME (new users after OTP)
+// ══════════════════════════════════════
+document.getElementById('sn-name').addEventListener('input', function() {
+  const n = this.value.trim();
+  const p = document.getElementById('sn-pin').value;
+  document.getElementById('sn-btn').disabled = !(n && p.length === 4);
+});
+document.getElementById('sn-pin').addEventListener('input', function() {
+  this.value = this.value.replace(/\D/g,'').substring(0,4);
+  const n = document.getElementById('sn-name').value.trim();
+  document.getElementById('sn-btn').disabled = !(n && this.value.length === 4);
+});
+
+async function submitSetupName() {
+  const name = document.getElementById('sn-name').value.trim();
+  const pin = document.getElementById('sn-pin').value;
+  if (!name || pin.length !== 4 || !me) return;
+  showError('sn-error','');
+  document.getElementById('sn-btn').disabled = true;
+  try {
+    // Update name + set PIN
+    const pinHash = pin; // server will hash it
+    await fetch('/api/user/update', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ userId: me.id, name }) });
+    // Set PIN via a re-verify (re-register with same email to set PIN)
+    const r = await fetch('/api/verify-otp', { method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ contact: me.email, otp: '000000', name, pin, lang: selectedLang || 'English', role: pendingReg.role || me.role, skipOtp: true })
+    });
+    me.name = name;
+    localStorage.setItem('bt_user', JSON.stringify(me));
+
+    if (pendingReg.role === 'owner' || me.role === 'owner') {
+      goScreen('s-property');
+    } else {
+      goScreen('s-worker-lang');
+    }
+  } catch(e) { showError('sn-error', 'Network error'); }
+  finally { document.getElementById('sn-btn').disabled = false; }
+}
+
+// ══════════════════════════════════════
+//  WORKER TYPE SELECT
+// ══════════════════════════════════════
+let selectedWorkerType = '';
+function pickWorkerType(type, el) {
+  document.querySelectorAll('#wt-grid .prop-item').forEach(i => i.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedWorkerType = type;
+  document.getElementById('wt-btn').disabled = false;
+}
+
+function workerTypeNext() {
+  if (!selectedWorkerType || !me) return;
+  pendingReg.jobRole = selectedWorkerType;
+  goScreen('s-worker-join');
+}
 
 // ══════════════════════════════════════
 //  LANGUAGE SELECT (mockup style)
@@ -1164,6 +1373,20 @@ const splashInterval = setInterval(() => {
   document.getElementById('lang-continue-btn').disabled = false;
 })();
 function langNext() { if (selectedLang) goScreen('s-role'); }
+
+function selectRole(role) {
+  selectedRole = role;
+  pendingReg.role = role;
+  // Update role on the server if we already have a user
+  if (me && me.id) {
+    fetch('/api/verify-otp', { method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ contact: me.email, otp: '000000', name: me.name || me.email.split('@')[0], pin: '0000', lang: selectedLang || 'English', role, skipOtp: true })
+    }).catch(() => {});
+    me.role = role;
+    localStorage.setItem('bt_user', JSON.stringify(me));
+  }
+  goScreen('s-setup-name');
+}
 
 // ══════════════════════════════════════
 //  OWNER REGISTRATION
@@ -1257,7 +1480,7 @@ function workerLangNext() {
     localStorage.setItem('bt_user', JSON.stringify(me));
   }
   if (typeof applyLang === 'function') applyLang();
-  goScreen('s-worker-join');
+  goScreen('s-worker-type');
 }
 
 // ══════════════════════════════════════
@@ -1303,25 +1526,57 @@ async function verifyOTP() {
   document.getElementById('otp-btn').disabled = true;
   document.getElementById('otp-btn').textContent = 'Verifying...';
   try {
-    const r = await fetch('/api/verify-otp', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({ contact:pendingReg.email, otp:code, name:pendingReg.name, pin:pendingReg.pin, lang:selectedLang, role:pendingReg.role })
-    });
-    const d = await r.json();
-    if (!d.ok) { showError('otp-error', d.error); document.getElementById('otp-btn').disabled = false; document.getElementById('otp-btn').textContent = 'Verify & Continue'; return; }
-    me = d.user;
-    if (pendingReg.phone || pendingReg.gender || pendingReg.dob) {
-      await fetch('/api/user/update', { method:'POST', headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({userId:me.id, phone:pendingReg.phone, gender:pendingReg.gender, dob:pendingReg.dob})
+    if (startFlowType === 'returning') {
+      // ── RETURNING USER: verify OTP then log them in via PIN ──
+      const r = await fetch('/api/verify-otp', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({ contact: pendingReg.email, otp: code, name: pendingReg.name, pin: '0000', lang: pendingReg.lang || selectedLang || 'English', role: pendingReg.role })
       });
+      const d = await r.json();
+      if (!d.ok) { showError('otp-error', d.error); document.getElementById('otp-btn').disabled = false; document.getElementById('otp-btn').textContent = 'Verify & Continue'; return; }
+      me = d.user;
+      me.email = pendingReg.email;
+      selectedLang = me.lang || 'English';
+      localStorage.setItem('bt_user', JSON.stringify(me));
+      if (typeof connectSocket === 'function') connectSocket();
+      if (typeof applyLang === 'function') applyLang();
+      // Go straight to dashboard
+      if (me.propertyId) {
+        await loadPropertyData(me.propertyId);
+        goScreen(me.role === 'owner' ? 's-owner-home' : 's-worker-home');
+      } else {
+        goScreen(me.role === 'owner' ? 's-property' : 's-worker-join');
+      }
+    } else if (startFlowType === 'new') {
+      // ── NEW USER: verify OTP, create minimal account, then go to name setup ──
+      const r = await fetch('/api/verify-otp', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({ contact: pendingReg.email, otp: code, name: pendingReg.email.split('@')[0], pin: '0000', lang: selectedLang || 'English', role: 'worker' })
+      });
+      const d = await r.json();
+      if (!d.ok) { showError('otp-error', d.error); document.getElementById('otp-btn').disabled = false; document.getElementById('otp-btn').textContent = 'Verify & Continue'; return; }
+      me = d.user;
+      me.email = pendingReg.email;
+      localStorage.setItem('bt_user', JSON.stringify(me));
+      // Go to role selection, then name setup
+      goScreen('s-role');
+    } else {
+      // ── LEGACY FLOW (from old owner/worker reg screens) ──
+      const r = await fetch('/api/verify-otp', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({ contact:pendingReg.email, otp:code, name:pendingReg.name||'User', pin:pendingReg.pin||'0000', lang:selectedLang||'English', role:pendingReg.role||'owner' })
+      });
+      const d = await r.json();
+      if (!d.ok) { showError('otp-error', d.error); document.getElementById('otp-btn').disabled = false; document.getElementById('otp-btn').textContent = 'Verify & Continue'; return; }
+      me = d.user;
+      me.email = pendingReg.email; me.lang = selectedLang;
+      localStorage.setItem('bt_user', JSON.stringify(me));
+      if (typeof connectSocket === 'function') connectSocket();
+      if (me.role === 'owner') {
+        if (me.propertyId) { await loadPropertyData(me.propertyId); goScreen('s-owner-home'); }
+        else { goScreen('s-property'); }
+      } else { goScreen('s-worker-lang'); }
     }
-    me.email = pendingReg.email; me.lang = selectedLang;
-    localStorage.setItem('bt_user', JSON.stringify(me));
-    if (typeof connectSocket === 'function') connectSocket();
-    if (me.role === 'owner') {
-      if (me.propertyId) { await loadPropertyData(me.propertyId); goScreen('s-owner-home'); }
-      else { goScreen('s-property'); }
-    } else { goScreen('s-worker-lang'); }
   } catch(e) { showError('otp-error','Network error'); }
   finally { document.getElementById('otp-btn').disabled = false; document.getElementById('otp-btn').textContent = 'Verify & Continue'; }
 }
@@ -1404,7 +1659,8 @@ async function workerJoin() {
   showError('wj-error','');
   document.getElementById('wj-btn').disabled = true;
   try {
-    const r = await fetch('/api/worker/join', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({userId:me.id,inviteCode:code,jobRole:role}) });
+    const jobRole = role || selectedWorkerType || '';
+    const r = await fetch('/api/worker/join', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({userId:me.id,inviteCode:code,jobRole}) });
     const d = await r.json();
     if (!d.ok) { showError('wj-error', d.error); document.getElementById('wj-btn').disabled = false; return; }
     me.propertyId = d.propertyId;

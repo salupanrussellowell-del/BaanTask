@@ -230,6 +230,17 @@ async function translateOne(text, fromLang, toLang) {
 //  AUTH ROUTES
 // ══════════════════════════════════════
 
+// Check if email already registered
+app.post('/api/check-email', async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ ok: false });
+  try {
+    const user = await User.findOne({ email: email.trim().toLowerCase() }, 'name role lang propertyId');
+    if (user) return res.json({ ok: true, exists: true, user: { name: user.name, role: user.role, lang: user.lang, hasProperty: !!user.propertyId } });
+    res.json({ ok: true, exists: false });
+  } catch (e) { res.json({ ok: true, exists: false }); }
+});
+
 // Send OTP
 app.post('/api/send-otp', async (req, res) => {
   const { contact, name } = req.body;
@@ -255,13 +266,16 @@ app.post('/api/send-otp', async (req, res) => {
 
 // Verify OTP + register/login
 app.post('/api/verify-otp', async (req, res) => {
-  const { contact, otp, name, pin, lang, role } = req.body;
-  if (!contact || !otp || !name || !pin || !lang) return res.status(400).json({ ok: false, error: 'All fields required' });
+  const { contact, otp, name, pin, lang, role, skipOtp } = req.body;
+  if (!contact || !name || !pin || !lang) return res.status(400).json({ ok: false, error: 'All fields required' });
   const nc = contact.trim().toLowerCase();
   try {
-    const record = await OTP.findOne({ contact: nc, otp: String(otp).trim(), expiresAt: { $gt: new Date() } }).sort({ createdAt: -1 });
-    if (!record) return res.json({ ok: false, error: 'Invalid or expired code' });
-    await OTP.deleteMany({ contact: nc });
+    // skipOtp allows updating role/PIN for already-verified users
+    if (!skipOtp) {
+      const record = await OTP.findOne({ contact: nc, otp: String(otp).trim(), expiresAt: { $gt: new Date() } }).sort({ createdAt: -1 });
+      if (!record) return res.json({ ok: false, error: 'Invalid or expired code' });
+      await OTP.deleteMany({ contact: nc });
+    }
 
     const pinHash = await bcrypt.hash(pin, 10);
     let user = await User.findOne({ email: nc });
