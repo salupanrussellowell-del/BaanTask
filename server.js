@@ -689,39 +689,46 @@ app.post('/api/chats/direct', async (req, res) => {
   } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
-// Get messages for a chat — translations already stored at send time
+// Get messages — translate on-the-fly to viewer's language, cache result
 app.get('/api/messages/:chatId', async (req, res) => {
-  const lang = req.query.lang || 'English';
+  const viewerLang = normLang(req.query.lang || 'English');
   try {
     const msgs = await Message.find({ chatId: req.params.chatId })
       .sort({ createdAt: 1 }).populate('senderId', 'name lang').lean();
 
-    const result = msgs.map(m => {
+    const result = [];
+    for (const m of msgs) {
       const t = m.translations instanceof Map ? Object.fromEntries(m.translations) : (m.translations || {});
       const senderName = m.senderId && m.senderId.name ? m.senderId.name : 'Unknown';
       const senderId = m.senderId && m.senderId._id ? m.senderId._id.toString() : (m.senderId ? m.senderId.toString() : '');
       const sLang = normLang(m.senderLang || 'English');
-      const rLang = normLang(lang);
-      // Find translation — try exact match, then case-insensitive
+
+      // Only translate if viewer's language differs from sender's
       let translation = null;
-      if (sLang !== rLang) {
-        translation = t[lang] || t[rLang] || null;
-        // Fallback: search keys case-insensitively
+      if (sLang !== viewerLang) {
+        // Check cache first
+        translation = t[viewerLang] || null;
         if (!translation) {
-          const key = Object.keys(t).find(k => k.toLowerCase() === rLang.toLowerCase());
+          // Case-insensitive fallback
+          const key = Object.keys(t).find(k => normLang(k) === viewerLang);
           if (key) translation = t[key];
         }
+        // Not cached → translate on-the-fly and save to DB
+        if (!translation) {
+          const tr = await translateOne(m.text, sLang, viewerLang);
+          if (tr) {
+            translation = tr;
+            // Cache it in the message document for next time
+            await Message.updateOne({ _id: m._id }, { $set: { [`translations.${viewerLang}`]: tr } });
+          }
+        }
       }
-      return {
-        id: m._id.toString(),
-        senderId,
-        senderName,
-        senderLang: sLang,
-        text: m.text,
-        translation,
-        time: m.createdAt
-      };
-    });
+
+      result.push({
+        id: m._id.toString(), senderId, senderName, senderLang: sLang,
+        text: m.text, translation, time: m.createdAt
+      });
+    }
     res.json({ ok: true, messages: result });
   } catch (e) {
     console.error('[MESSAGES ERROR]', e.message);
@@ -729,45 +736,31 @@ app.get('/api/messages/:chatId', async (req, res) => {
   }
 });
 
-// Send a message — auto-detect language, translate to all members' languages
+// Send a message — detect language, save. Translation happens per-viewer on read.
 app.post('/api/messages/send', async (req, res) => {
   const { chatId, senderId, text } = req.body;
   if (!chatId || !senderId || !text) return res.status(400).json({ ok: false, error: 'Missing fields' });
 
   try {
-    // Find the chat and all members' languages
     const chat = await Chat.findById(chatId);
     if (!chat) return res.status(404).json({ ok: false, error: 'Chat not found' });
 
-    const members = await User.find({ _id: { $in: chat.members } }, 'name lang');
-    const targetLangs = [...new Set(members.map(m => m.lang || 'English'))];
-
-    // Auto-detect language and translate to all target languages
+    // Auto-detect the sender's language
     let detectedLang = 'English';
-    let translations = {};
-
-    if (targetLangs.length > 0) {
-      const result = await detectAndTranslate(text, targetLangs);
-      detectedLang = normLang(result.detectedLang || 'English');
-      translations = result.translations || {};
-      console.log(`[MSG TRANSLATE] detected=${detectedLang}, targets=[${targetLangs}], got=[${Object.keys(translations)}]`);
-
-      // Fallback: if detectAndTranslate returned empty, try one-by-one
-      for (const tl of targetLangs) {
-        if (!translations[tl] || translations[tl] === text) {
-          if (normLang(tl) !== detectedLang) {
-            const t = await translateOne(text, detectedLang, tl);
-            if (t) translations[tl] = t;
-          }
-        }
-      }
+    if (process.env.ANTHROPIC_API_KEY) {
+      try {
+        const dr = await client.messages.create({
+          model: 'claude-haiku-4-5-20251001', max_tokens: 50,
+          messages: [{ role: 'user', content: `What language is this message written in? Reply with ONLY the language name in English (e.g. "English", "Filipino", "Thai", "Russian"). Message: "${text}"` }]
+        });
+        detectedLang = normLang(dr.content[0].text.trim().replace(/[".]/g, ''));
+      } catch(e) {}
     }
-    // Ensure sender's own language has the original text
-    if (!translations[detectedLang]) translations[detectedLang] = text;
+    console.log(`[MSG] Detected language: ${detectedLang}`);
 
     const msg = await Message.create({
       chatId, senderId, senderLang: detectedLang,
-      text, translations
+      text, translations: {}
     });
 
     // Update chat's lastMessage
@@ -784,7 +777,6 @@ app.post('/api/messages/send', async (req, res) => {
       senderName,
       senderLang: detectedLang,
       text,
-      translations,
       time: msg.createdAt
     };
 
