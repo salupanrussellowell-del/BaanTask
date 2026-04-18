@@ -388,25 +388,78 @@ app.post('/api/worker/join', async (req, res) => {
 
     // Check if already joined
     const existing = await WorkerProfile.findOne({ userId, propertyId: prop._id });
-    if (existing) return res.json({ ok: true, message: 'Already a member', propertyId: prop._id });
-
-    await WorkerProfile.create({ userId, propertyId: prop._id, jobRole: jobRole || '', salary: salary || 0 });
-    await User.findByIdAndUpdate(userId, { propertyId: prop._id, role: 'worker' });
-    // Add to group chat
-    const groupChat = await Chat.findOne({ propertyId: prop._id, type: 'group' });
-    if (groupChat && !groupChat.members.some(m => m.toString() === userId.toString())) {
-      groupChat.members.push(userId);
-      await groupChat.save();
+    if (existing) {
+      // Reactivate if inactive
+      if (existing.status === 'inactive') { existing.status = 'active'; await existing.save(); }
+      if (jobRole && !existing.jobRole) { existing.jobRole = jobRole; await existing.save(); }
+    } else {
+      await WorkerProfile.create({ userId, propertyId: prop._id, jobRole: jobRole || '', salary: salary || 0 });
     }
-    console.log(`[WORKER] Joined property "${prop.name}"`);
+    await User.findByIdAndUpdate(userId, { propertyId: prop._id, role: 'worker' });
+
+    // Ensure group chat exists and both owner + worker are in it
+    let groupChat = await Chat.findOne({ propertyId: prop._id, type: 'group' });
+    if (!groupChat) {
+      // Create group chat if missing
+      groupChat = await Chat.create({ propertyId: prop._id, type: 'group', members: [prop.ownerId, userId], name: `${prop.name} Staff` });
+      console.log(`[REPAIR] Created missing group chat for "${prop.name}"`);
+    } else {
+      let changed = false;
+      // Ensure owner is in group chat
+      if (!groupChat.members.some(m => m.toString() === prop.ownerId.toString())) {
+        groupChat.members.push(prop.ownerId);
+        changed = true;
+      }
+      // Ensure worker is in group chat
+      if (!groupChat.members.some(m => m.toString() === userId.toString())) {
+        groupChat.members.push(userId);
+        changed = true;
+      }
+      if (changed) await groupChat.save();
+    }
+
+    const user = await User.findById(userId, 'name');
+    console.log(`[WORKER] ${user ? user.name : userId} joined property "${prop.name}" as ${jobRole || 'staff'}`);
     res.json({ ok: true, propertyId: prop._id, propertyName: prop.name });
   } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
-// List workers for a property
+// List workers for a property — also repairs broken links
 app.get('/api/workers/:propertyId', async (req, res) => {
   try {
-    const profiles = await WorkerProfile.find({ propertyId: req.params.propertyId, status: 'active' }).populate('userId', 'name email phone lang');
+    // Find workers via WorkerProfile
+    let profiles = await WorkerProfile.find({ propertyId: req.params.propertyId, status: 'active' }).populate('userId', 'name email phone lang');
+
+    // Also find users with this propertyId who might not have a WorkerProfile
+    const users = await User.find({ propertyId: req.params.propertyId, role: 'worker' }, 'name email phone lang');
+    for (const u of users) {
+      const hasProfile = profiles.some(p => p.userId && p.userId._id && p.userId._id.toString() === u._id.toString());
+      if (!hasProfile) {
+        // Auto-create missing WorkerProfile
+        const wp = await WorkerProfile.create({ userId: u._id, propertyId: req.params.propertyId, jobRole: '', status: 'active' });
+        const populated = await WorkerProfile.findById(wp._id).populate('userId', 'name email phone lang');
+        profiles.push(populated);
+        console.log(`[REPAIR] Created missing WorkerProfile for ${u.name}`);
+      }
+    }
+
+    // Ensure all workers are in the group chat
+    const groupChat = await Chat.findOne({ propertyId: req.params.propertyId, type: 'group' });
+    if (groupChat) {
+      let chatChanged = false;
+      for (const p of profiles) {
+        if (p.userId && p.userId._id) {
+          const uid = p.userId._id.toString();
+          if (!groupChat.members.some(m => m.toString() === uid)) {
+            groupChat.members.push(p.userId._id);
+            chatChanged = true;
+            console.log(`[REPAIR] Added ${p.userId.name} to group chat`);
+          }
+        }
+      }
+      if (chatChanged) await groupChat.save();
+    }
+
     res.json({ ok: true, workers: profiles });
   } catch (e) { res.json({ ok: true, workers: [] }); }
 });
@@ -718,6 +771,51 @@ app.post('/api/messages/delete', async (req, res) => {
 // ══════════════════════════════════════
 //  HEALTH / ADMIN
 // ══════════════════════════════════════
+
+// Repair all worker-property links and group chat membership
+app.get('/admin/repair-links', async (req, res) => {
+  try {
+    const fixes = [];
+    // Find all workers with a propertyId
+    const workers = await User.find({ role: 'worker', propertyId: { $ne: null } });
+    for (const w of workers) {
+      // Ensure WorkerProfile exists
+      let wp = await WorkerProfile.findOne({ userId: w._id, propertyId: w.propertyId });
+      if (!wp) {
+        wp = await WorkerProfile.create({ userId: w._id, propertyId: w.propertyId, jobRole: '', status: 'active' });
+        fixes.push(`Created WorkerProfile for ${w.name}`);
+      } else if (wp.status === 'inactive') {
+        wp.status = 'active'; await wp.save();
+        fixes.push(`Reactivated WorkerProfile for ${w.name}`);
+      }
+      // Ensure worker is in group chat
+      let gc = await Chat.findOne({ propertyId: w.propertyId, type: 'group' });
+      if (!gc) {
+        const prop = await Property.findById(w.propertyId);
+        if (prop) {
+          gc = await Chat.create({ propertyId: w.propertyId, type: 'group', members: [prop.ownerId, w._id], name: `${prop.name} Staff` });
+          fixes.push(`Created group chat for "${prop.name}"`);
+        }
+      } else if (!gc.members.some(m => m.toString() === w._id.toString())) {
+        gc.members.push(w._id);
+        await gc.save();
+        fixes.push(`Added ${w.name} to group chat`);
+      }
+    }
+    // Ensure all property owners are in their group chat
+    const props = await Property.find({});
+    for (const p of props) {
+      const gc = await Chat.findOne({ propertyId: p._id, type: 'group' });
+      if (gc && !gc.members.some(m => m.toString() === p.ownerId.toString())) {
+        gc.members.push(p.ownerId);
+        await gc.save();
+        fixes.push(`Added owner to group chat for "${p.name}"`);
+      }
+    }
+    console.log(`[REPAIR] ${fixes.length} fixes applied`);
+    res.json({ ok: true, fixes });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
 
 app.get('/status', async (req, res) => {
   const dbOk = mongoose.connection.readyState === 1;
