@@ -264,6 +264,25 @@ app.post('/api/send-otp', async (req, res) => {
   res.json({ ok: true, method: 'console' });
 });
 
+// Verify OTP only (for returning users — no PIN change)
+app.post('/api/verify-otp-only', async (req, res) => {
+  const { contact, otp } = req.body;
+  if (!contact || !otp) return res.status(400).json({ ok: false, error: 'Email and code required' });
+  const nc = contact.trim().toLowerCase();
+  try {
+    const record = await OTP.findOne({ contact: nc, otp: String(otp).trim(), expiresAt: { $gt: new Date() } }).sort({ createdAt: -1 });
+    if (!record) return res.json({ ok: false, error: 'Invalid or expired code' });
+    await OTP.deleteMany({ contact: nc });
+    const user = await User.findOne({ email: nc });
+    if (!user) return res.json({ ok: false, error: 'Account not found' });
+    user.emailVerified = true;
+    await user.save();
+    const hasPin = !!(user.pinHash && user.pinHash.length > 10); // bcrypt hashes are 60 chars
+    console.log(`[AUTH] OTP-only verify: ${user.name} (${user.role}) hasPin=${hasPin}`);
+    res.json({ ok: true, hasPin, user: { id: user._id, name: user.name, role: user.role, lang: user.lang, email: user.email, propertyId: user.propertyId } });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
 // Verify OTP + register/login
 app.post('/api/verify-otp', async (req, res) => {
   const { contact, otp, name, pin, lang, role, skipOtp } = req.body;

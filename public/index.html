@@ -270,7 +270,8 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
       <div class="form-group"><input id="pl-pin" type="password" inputmode="numeric" class="pin-input" placeholder="••••" maxlength="4"></div>
       <div id="pl-error" class="error-msg"></div>
       <button class="btn" style="background:#1B5E20;color:#fff;max-width:360px" id="pl-btn" disabled onclick="quickPinLogin()">Sign In</button>
-      <button class="btn-link" onclick="goScreen('s-start')" style="margin-top:16px">Use a different email</button>
+      <button class="btn-link" onclick="forgotPin()" style="margin-top:12px">Forgot PIN? Log in with email</button>
+      <button class="btn-link" onclick="goScreen('s-start')" style="margin-top:4px">Use a different account</button>
     </div>
   </div>
 </div>
@@ -288,6 +289,25 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
       <div class="form-group"><label data-i18n="email">Email</label><input id="st-email" type="email" placeholder="your@email.com"></div>
       <div id="st-error" class="error-msg"></div>
       <button class="btn" style="background:#1B5E20;color:#fff;max-width:360px" id="st-btn" disabled onclick="startEmailCheck()">Continue →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PIN SETUP (after first OTP login) ═══ -->
+<div class="screen" id="s-pin-setup" style="background:#fff">
+  <div class="sb" style="background:#1B5E20">9:41<span>📶 🔋</span></div>
+  <div style="background:linear-gradient(160deg,#1B5E20,#2E7D32);padding:24px 22px 18px;text-align:center;color:#fff;flex-shrink:0">
+    <div style="font-size:2rem;margin-bottom:6px">🔐</div>
+    <h2 style="font-size:1.1rem;font-weight:900;color:#fff">Set Up a PIN</h2>
+    <p style="font-size:.76rem;opacity:.8">For faster login next time</p>
+  </div>
+  <div class="sc" style="background:#fff">
+    <div style="padding:24px 16px;display:flex;flex-direction:column;align-items:center;text-align:center">
+      <div class="form-group"><label>Enter 4-digit PIN</label><input id="ps-pin1" type="password" inputmode="numeric" class="pin-input" placeholder="••••" maxlength="4"></div>
+      <div class="form-group"><label>Confirm PIN</label><input id="ps-pin2" type="password" inputmode="numeric" class="pin-input" placeholder="••••" maxlength="4"></div>
+      <div id="ps-error" class="error-msg"></div>
+      <button class="btn" style="background:#1B5E20;color:#fff;max-width:360px" id="ps-btn" disabled onclick="savePinSetup()">Save PIN →</button>
+      <button class="btn-link" onclick="skipPinSetup()" style="margin-top:12px">Skip for now</button>
     </div>
   </div>
 </div>
@@ -1239,6 +1259,62 @@ async function quickPinLogin() {
   } catch(e) { showError('pl-error', 'Network error'); document.getElementById('pl-btn').disabled = false; }
 }
 
+// ── Forgot PIN ──
+function forgotPin() {
+  // Pre-fill email and trigger OTP flow for the existing account
+  if (me && me.email) {
+    document.getElementById('st-email').value = me.email;
+    document.getElementById('st-btn').disabled = false;
+  }
+  goScreen('s-start');
+}
+
+// ══════════════════════════════════════
+//  PIN SETUP (after first OTP login)
+// ══════════════════════════════════════
+['ps-pin1','ps-pin2'].forEach(id => {
+  document.getElementById(id).addEventListener('input', function() {
+    this.value = this.value.replace(/\D/g,'').substring(0,4);
+    const p1 = document.getElementById('ps-pin1').value;
+    const p2 = document.getElementById('ps-pin2').value;
+    document.getElementById('ps-btn').disabled = !(p1.length === 4 && p2.length === 4);
+  });
+});
+
+async function savePinSetup() {
+  const p1 = document.getElementById('ps-pin1').value;
+  const p2 = document.getElementById('ps-pin2').value;
+  if (p1 !== p2) { showError('ps-error', 'PINs do not match'); return; }
+  if (p1.length !== 4) return;
+  showError('ps-error','');
+  document.getElementById('ps-btn').disabled = true;
+  try {
+    // Save PIN via verify-otp with skipOtp
+    await fetch('/api/verify-otp', { method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ contact: me.email, otp: '000000', name: me.name, pin: p1, lang: me.lang || 'English', role: me.role, skipOtp: true })
+    });
+    localStorage.setItem('bt_user', JSON.stringify(me));
+    // Go to dashboard
+    if (me.propertyId) {
+      await loadPropertyData(me.propertyId);
+      goScreen(me.role === 'owner' ? 's-owner-home' : 's-worker-home');
+    } else {
+      goScreen(me.role === 'owner' ? 's-property' : 's-worker-join');
+    }
+  } catch(e) { showError('ps-error', 'Network error'); document.getElementById('ps-btn').disabled = false; }
+}
+
+function skipPinSetup() {
+  // Go to dashboard without setting PIN — they'll use OTP next time
+  if (me && me.propertyId) {
+    loadPropertyData(me.propertyId).then(() => {
+      goScreen(me.role === 'owner' ? 's-owner-home' : 's-worker-home');
+    });
+  } else {
+    goScreen(me.role === 'owner' ? 's-property' : 's-worker-join');
+  }
+}
+
 // ══════════════════════════════════════
 //  EMAIL ENTRY (new unified start)
 // ══════════════════════════════════════
@@ -1527,25 +1603,32 @@ async function verifyOTP() {
   document.getElementById('otp-btn').textContent = 'Verifying...';
   try {
     if (startFlowType === 'returning') {
-      // ── RETURNING USER: verify OTP then log them in via PIN ──
-      const r = await fetch('/api/verify-otp', {
+      // ── RETURNING USER: just verify the OTP, do NOT change their PIN ──
+      // Use the special otpOnly endpoint to verify without resetting PIN
+      const vr = await fetch('/api/verify-otp-only', {
         method:'POST', headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({ contact: pendingReg.email, otp: code, name: pendingReg.name, pin: '0000', lang: pendingReg.lang || selectedLang || 'English', role: pendingReg.role })
+        body:JSON.stringify({ contact: pendingReg.email, otp: code })
       });
-      const d = await r.json();
-      if (!d.ok) { showError('otp-error', d.error); document.getElementById('otp-btn').disabled = false; document.getElementById('otp-btn').textContent = 'Verify & Continue'; return; }
-      me = d.user;
+      const vd = await vr.json();
+      if (!vd.ok) { showError('otp-error', vd.error); document.getElementById('otp-btn').disabled = false; document.getElementById('otp-btn').textContent = 'Verify & Continue'; return; }
+      me = vd.user;
       me.email = pendingReg.email;
       selectedLang = me.lang || 'English';
       localStorage.setItem('bt_user', JSON.stringify(me));
       if (typeof connectSocket === 'function') connectSocket();
       if (typeof applyLang === 'function') applyLang();
-      // Go straight to dashboard
-      if (me.propertyId) {
-        await loadPropertyData(me.propertyId);
-        goScreen(me.role === 'owner' ? 's-owner-home' : 's-worker-home');
+      // Check if user has a PIN set (pinHash !== empty and not '0000' hash)
+      if (vd.hasPin) {
+        // Go straight to dashboard
+        if (me.propertyId) {
+          await loadPropertyData(me.propertyId);
+          goScreen(me.role === 'owner' ? 's-owner-home' : 's-worker-home');
+        } else {
+          goScreen(me.role === 'owner' ? 's-property' : 's-worker-join');
+        }
       } else {
-        goScreen(me.role === 'owner' ? 's-property' : 's-worker-join');
+        // No PIN set yet — show PIN setup screen
+        goScreen('s-pin-setup');
       }
     } else if (startFlowType === 'new') {
       // ── NEW USER: verify OTP, create minimal account, then go to name setup ──
