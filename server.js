@@ -166,17 +166,10 @@ async function connectDB() {
     // Run repairs in background (don't block server start)
     setTimeout(async () => {
       try { await repairAllGroupChats(); } catch (e) { console.error('[REPAIR ERR]', e.message); }
+      // Reset ALL PINs — users will set fresh PINs on next login
       try {
-        const users = await User.find({ pinHash: { $ne: '' } });
-        let reset = 0;
-        for (const u of users) {
-          if (u.pinHash && await bcrypt.compare('0000', u.pinHash)) {
-            u.pinHash = '';
-            await u.save();
-            reset++;
-          }
-        }
-        if (reset) console.log(`[PIN REPAIR] Reset ${reset} placeholder PINs`);
+        const result = await User.updateMany({ pinHash: { $ne: '' } }, { pinHash: '' });
+        if (result.modifiedCount) console.log(`[PIN RESET] Cleared ${result.modifiedCount} PINs — users will set new PINs`);
       } catch(e) {}
     }, 2000);
   } catch (e) { console.error('[DB] Connection failed:', e.message); }

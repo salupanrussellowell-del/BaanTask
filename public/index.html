@@ -1220,42 +1220,50 @@ const splashInterval = setInterval(() => {
 
       // Try JWT auto-login first
       if (token) {
-        try {
-          const r = await fetch('/api/me', { headers: { 'Authorization': 'Bearer ' + token } });
-          const d = await r.json();
-          if (d.ok && d.user) {
-            me = d.user;
-            localStorage.setItem('bt_token', d.user.token);
-            saveMe();
-            selectedLang = me.lang || 'English';
-            if (typeof applyLang === 'function') applyLang();
-            if (typeof connectSocket === 'function') connectSocket();
-            if (me.propertyId) {
-              await loadPropertyData(me.propertyId);
-              goScreen(me.role === 'owner' ? 's-owner-home' : 's-worker-home');
-            } else {
-              goScreen(me.role === 'owner' ? 's-property' : 's-worker-join');
+        let retries = 0;
+        while (retries < 3) {
+          try {
+            const r = await fetch('/api/me', { headers: { 'Authorization': 'Bearer ' + token } });
+            const d = await r.json();
+            if (d.ok && d.user) {
+              me = d.user;
+              if (d.user.token) localStorage.setItem('bt_token', d.user.token);
+              saveMe();
+              selectedLang = me.lang || 'English';
+              if (typeof applyLang === 'function') applyLang();
+              if (typeof connectSocket === 'function') connectSocket();
+              if (me.propertyId) {
+                await loadPropertyData(me.propertyId);
+                goScreen(me.role === 'owner' ? 's-owner-home' : 's-worker-home');
+              } else {
+                goScreen(me.role === 'owner' ? 's-property' : 's-worker-join');
+              }
+              return;
             }
-            return;
+            break; // got a response but not ok — token expired
+          } catch(e) {
+            retries++;
+            if (retries < 3) {
+              document.getElementById('splash-label').textContent = 'Connecting... (' + retries + '/3)';
+              await new Promise(r => setTimeout(r, 2000));
+            }
           }
-        } catch(e) {}
-        // Token invalid/expired — clear it
+        }
         localStorage.removeItem('bt_token');
       }
 
-      // No valid token — show PIN login if user data saved, else start screen
+      // No valid token — go to email start screen (not PIN login)
+      // This avoids the "wrong PIN" loop for users whose PIN was reset
       if (saved) {
         me = JSON.parse(saved);
         selectedLang = me.lang || 'English';
         if (typeof applyLang === 'function') applyLang();
-        const initials = (me.name || '?').split(' ').map(n=>n[0]).join('').toUpperCase().substring(0,2);
-        document.getElementById('pin-avatar').textContent = initials;
-        document.getElementById('pin-welcome').textContent = 'Welcome back, ' + (me.name || '') + '!';
-        document.getElementById('pin-email').textContent = me.email || '';
-        goScreen('s-pin-login');
-        setTimeout(() => document.getElementById('pl-pin').focus(), 100);
-      } else {
-        goScreen('s-start');
+      }
+      goScreen('s-start');
+      // Pre-fill email if we have it
+      if (me && me.email) {
+        document.getElementById('st-email').value = me.email;
+        document.getElementById('st-btn').disabled = false;
       }
     }, 400);
   }
@@ -1387,7 +1395,10 @@ async function startEmailCheck() {
     if (!d.ok) { showError('st-error', d.error || 'Failed to send code'); return; }
     document.getElementById('otp-subtitle').textContent = d.method === 'console' ? 'Check server logs for the code' : 'Code sent to ' + email;
     goScreen('s-otp');
-  } catch(e) { showError('st-error', 'Network error'); }
+  } catch(e) {
+    showError('st-error', 'Server is starting up — please try again in a few seconds');
+    console.error('[START] Network error:', e);
+  }
   finally { document.getElementById('st-btn').disabled = false; document.getElementById('st-btn').textContent = 'Continue →'; }
 }
 
@@ -1651,18 +1662,16 @@ async function verifyOTP() {
       saveMe();
       if (typeof connectSocket === 'function') connectSocket();
       if (typeof applyLang === 'function') applyLang();
-      // Check if user has a PIN set (pinHash !== empty and not '0000' hash)
-      if (vd.hasPin) {
-        // Go straight to dashboard
-        if (me.propertyId) {
-          await loadPropertyData(me.propertyId);
-          goScreen(me.role === 'owner' ? 's-owner-home' : 's-worker-home');
-        } else {
-          goScreen(me.role === 'owner' ? 's-property' : 's-worker-join');
-        }
+      // Always log them in first — go to dashboard
+      if (me.propertyId) {
+        await loadPropertyData(me.propertyId);
+        goScreen(me.role === 'owner' ? 's-owner-home' : 's-worker-home');
       } else {
-        // No PIN set yet — show PIN setup screen
-        goScreen('s-pin-setup');
+        goScreen(me.role === 'owner' ? 's-property' : 's-worker-join');
+      }
+      // If no PIN set, prompt to set one (non-blocking, after dashboard loads)
+      if (!vd.hasPin) {
+        setTimeout(() => goScreen('s-pin-setup'), 500);
       }
     } else if (startFlowType === 'new') {
       // ── NEW USER: verify OTP, create minimal account, then go to name setup ──
