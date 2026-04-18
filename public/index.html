@@ -1653,69 +1653,68 @@ async function verifyOTP() {
   showError('otp-error','');
   document.getElementById('otp-btn').disabled = true;
   document.getElementById('otp-btn').textContent = 'Verifying...';
+
+  // Step 1: Verify the OTP with the server
+  let verifyResult = null;
+  try {
+    let url, body;
+    if (startFlowType === 'returning') {
+      url = '/api/verify-otp-only';
+      body = { contact: pendingReg.email, otp: code };
+    } else if (startFlowType === 'new') {
+      url = '/api/verify-otp';
+      body = { contact: pendingReg.email, otp: code, name: pendingReg.email.split('@')[0], pin: '0000', lang: selectedLang || 'English', role: 'worker' };
+    } else {
+      url = '/api/verify-otp';
+      body = { contact: pendingReg.email, otp: code, name: pendingReg.name || 'User', pin: pendingReg.pin || '0000', lang: selectedLang || 'English', role: pendingReg.role || 'owner' };
+    }
+    const r = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+    verifyResult = await r.json();
+  } catch(e) {
+    console.error('[OTP] Fetch failed:', e);
+    showError('otp-error', 'Could not connect to server. Please try again.');
+    document.getElementById('otp-btn').disabled = false;
+    document.getElementById('otp-btn').textContent = 'Verify & Continue';
+    return;
+  }
+
+  // Step 2: Check result
+  if (!verifyResult.ok) {
+    showError('otp-error', verifyResult.error || 'Verification failed');
+    document.getElementById('otp-btn').disabled = false;
+    document.getElementById('otp-btn').textContent = 'Verify & Continue';
+    return;
+  }
+
+  // Step 3: Save user + token (this MUST succeed)
+  me = verifyResult.user;
+  me.email = pendingReg.email;
+  selectedLang = me.lang || selectedLang || 'English';
+  saveMe();
+  if (typeof connectSocket === 'function') connectSocket();
+  if (typeof applyLang === 'function') applyLang();
+  document.getElementById('otp-btn').disabled = false;
+  document.getElementById('otp-btn').textContent = 'Verify & Continue';
+
+  // Step 4: Navigate to the right screen (errors here don't block login)
   try {
     if (startFlowType === 'returning') {
-      // ── RETURNING USER: just verify the OTP, do NOT change their PIN ──
-      // Use the special otpOnly endpoint to verify without resetting PIN
-      const vr = await fetch('/api/verify-otp-only', {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({ contact: pendingReg.email, otp: code })
-      });
-      const vd = await vr.json();
-      if (!vd.ok) { showError('otp-error', vd.error); document.getElementById('otp-btn').disabled = false; document.getElementById('otp-btn').textContent = 'Verify & Continue'; return; }
-      me = vd.user;
-      me.email = pendingReg.email;
-      selectedLang = me.lang || 'English';
-      saveMe();
-      if (typeof connectSocket === 'function') connectSocket();
-      if (typeof applyLang === 'function') applyLang();
-      // Always log them in first — go to dashboard
       if (me.propertyId) {
-        await loadPropertyData(me.propertyId);
+        try { await loadPropertyData(me.propertyId); } catch(e) {}
         goScreen(me.role === 'owner' ? 's-owner-home' : 's-worker-home');
       } else {
         goScreen(me.role === 'owner' ? 's-property' : 's-worker-join');
       }
-      // If no PIN set, prompt to set one (non-blocking, after dashboard loads)
-      if (!vd.hasPin) {
-        setTimeout(() => goScreen('s-pin-setup'), 500);
-      }
+      if (!verifyResult.hasPin) setTimeout(() => goScreen('s-pin-setup'), 500);
     } else if (startFlowType === 'new') {
-      // ── NEW USER: verify OTP, create minimal account, then go to name setup ──
-      const r = await fetch('/api/verify-otp', {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({ contact: pendingReg.email, otp: code, name: pendingReg.email.split('@')[0], pin: '0000', lang: selectedLang || 'English', role: 'worker' })
-      });
-      const d = await r.json();
-      if (!d.ok) { showError('otp-error', d.error); document.getElementById('otp-btn').disabled = false; document.getElementById('otp-btn').textContent = 'Verify & Continue'; return; }
-      me = d.user;
-      me.email = pendingReg.email;
-      saveMe();
-      // Go to role selection, then name setup
       goScreen('s-role');
     } else {
-      // ── LEGACY FLOW (from old owner/worker reg screens) ──
-      const r = await fetch('/api/verify-otp', {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({ contact:pendingReg.email, otp:code, name:pendingReg.name||'User', pin:pendingReg.pin||'0000', lang:selectedLang||'English', role:pendingReg.role||'owner' })
-      });
-      const d = await r.json();
-      if (!d.ok) { showError('otp-error', d.error); document.getElementById('otp-btn').disabled = false; document.getElementById('otp-btn').textContent = 'Verify & Continue'; return; }
-      me = d.user;
-      me.email = pendingReg.email; me.lang = selectedLang;
-      saveMe();
-      if (typeof connectSocket === 'function') connectSocket();
       if (me.role === 'owner') {
-        if (me.propertyId) { await loadPropertyData(me.propertyId); goScreen('s-owner-home'); }
-        else { goScreen('s-property'); }
-      } else { goScreen('s-worker-lang'); }
+        if (me.propertyId) { try { await loadPropertyData(me.propertyId); } catch(e) {} goScreen('s-owner-home'); }
+        else goScreen('s-property');
+      } else goScreen('s-worker-lang');
     }
-  } catch(e) {
-    console.error('[OTP VERIFY ERROR]', e);
-    const msg = e && e.message ? e.message : 'Unknown error';
-    showError('otp-error', 'Error: ' + msg + '. Please try again.');
-  }
-  finally { document.getElementById('otp-btn').disabled = false; document.getElementById('otp-btn').textContent = 'Verify & Continue'; }
+  } catch(e) { console.error('[OTP NAV]', e); }
 }
 
 async function resendOTP() {
