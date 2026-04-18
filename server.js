@@ -165,6 +165,20 @@ async function connectDB() {
     try { await mongoose.connection.db.collection('users').dropIndex('name_1'); console.log('[DB] Dropped stale name_1 index'); } catch (e) { /**/ }
     // Auto-repair: ensure every property has a group chat with all members
     try { await repairAllGroupChats(); } catch (e) { console.error('[REPAIR ERR]', e.message); }
+    // Reset placeholder PINs ('0000') so users get prompted to set a real PIN
+    try {
+      const users = await User.find({ pinHash: { $ne: '' } });
+      let reset = 0;
+      for (const u of users) {
+        if (u.pinHash && await bcrypt.compare('0000', u.pinHash)) {
+          u.pinHash = '';
+          await u.save();
+          reset++;
+          console.log(`[PIN REPAIR] Reset placeholder PIN for ${u.name}`);
+        }
+      }
+      if (reset) console.log(`[PIN REPAIR] Reset ${reset} placeholder PINs`);
+    } catch(e) {}
   } catch (e) { console.error('[DB] Connection failed:', e.message); }
 }
 
@@ -354,7 +368,13 @@ app.post('/api/verify-otp-only', async (req, res) => {
     if (!user) return res.json({ ok: false, error: 'Account not found' });
     user.emailVerified = true;
     await user.save();
-    const hasPin = !!(user.pinHash && user.pinHash.length > 10);
+    // Check if user has a REAL PIN (not the placeholder '0000')
+    let hasPin = false;
+    if (user.pinHash && user.pinHash.length > 10) {
+      // Test if pinHash matches '0000' — if so, it's a placeholder
+      const isPlaceholder = await bcrypt.compare('0000', user.pinHash);
+      hasPin = !isPlaceholder;
+    }
     const token = signToken(user);
     console.log(`[AUTH] OTP-only verify: ${user.name} (${user.role}) hasPin=${hasPin}`);
     res.json({ ok: true, hasPin, user: userPayload(user, token) });
@@ -397,12 +417,27 @@ app.post('/api/login', async (req, res) => {
   try {
     const user = await User.findOne({ email: email.trim().toLowerCase() });
     if (!user) return res.json({ ok: false, error: 'Account not found' });
-    if (!user.pinHash) return res.json({ ok: false, error: 'Please verify email first' });
+    if (!user.pinHash || user.pinHash.length < 10) return res.json({ ok: false, error: 'No PIN set. Please log in with email + OTP first.' });
     const match = await bcrypt.compare(pin, user.pinHash);
     if (!match) return res.json({ ok: false, error: 'Wrong PIN' });
     if (lang) { user.lang = lang; await user.save(); }
     const token = signToken(user);
     console.log(`[LOGIN] ${user.name} (${user.role})`);
+    res.json({ ok: true, user: userPayload(user, token) });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+// Set/change PIN for a user
+app.post('/api/set-pin', async (req, res) => {
+  const { userId, pin } = req.body;
+  if (!userId || !pin || pin.length !== 4) return res.status(400).json({ ok: false, error: '4-digit PIN required' });
+  try {
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ ok: false, error: 'User not found' });
+    user.pinHash = await bcrypt.hash(pin, 10);
+    await user.save();
+    const token = signToken(user);
+    console.log(`[PIN] Set PIN for ${user.name}`);
     res.json({ ok: true, user: userPayload(user, token) });
   } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });

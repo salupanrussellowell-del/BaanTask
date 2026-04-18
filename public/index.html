@@ -1322,10 +1322,12 @@ async function savePinSetup() {
   showError('ps-error','');
   document.getElementById('ps-btn').disabled = true;
   try {
-    // Save PIN via verify-otp with skipOtp
-    await fetch('/api/verify-otp', { method:'POST', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({ contact: me.email, otp: '000000', name: me.name, pin: p1, lang: me.lang || 'English', role: me.role, skipOtp: true })
+    const r = await fetch('/api/set-pin', { method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ userId: me.id, pin: p1 })
     });
+    const d = await r.json();
+    if (!d.ok) { showError('ps-error', d.error || 'Failed to set PIN'); document.getElementById('ps-btn').disabled = false; return; }
+    if (d.user) { me = d.user; }
     saveMe();
     // Go to dashboard
     if (me.propertyId) {
@@ -1410,13 +1412,12 @@ async function submitSetupName() {
   showError('sn-error','');
   document.getElementById('sn-btn').disabled = true;
   try {
-    // Update name + set PIN
-    const pinHash = pin; // server will hash it
+    // Update name
     await fetch('/api/user/update', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ userId: me.id, name }) });
-    // Set PIN via a re-verify (re-register with same email to set PIN)
-    const r = await fetch('/api/verify-otp', { method:'POST', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({ contact: me.email, otp: '000000', name, pin, lang: selectedLang || 'English', role: pendingReg.role || me.role, skipOtp: true })
-    });
+    // Set PIN
+    const pr = await fetch('/api/set-pin', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ userId: me.id, pin }) });
+    const pd = await pr.json();
+    if (pd.user) me = pd.user;
     me.name = name;
     saveMe();
 
