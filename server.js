@@ -521,7 +521,10 @@ app.post('/api/tasks/update', async (req, res) => {
 // List all chats for a user (group + DMs), with member names + real last message
 app.get('/api/chats/:propertyId/:userId', async (req, res) => {
   try {
-    const chats = await Chat.find({ propertyId: req.params.propertyId, members: req.params.userId })
+    // Cast userId to ObjectId for reliable members array matching
+    let uid;
+    try { uid = new mongoose.Types.ObjectId(req.params.userId); } catch(e) { uid = req.params.userId; }
+    const chats = await Chat.find({ propertyId: req.params.propertyId, members: uid })
       .sort({ lastMessageAt: -1 }).lean();
     for (const c of chats) {
       const users = await User.find({ _id: { $in: c.members } }, 'name lang').lean();
@@ -657,17 +660,18 @@ app.post('/api/messages/send', async (req, res) => {
       time: msg.createdAt
     };
 
-    // Emit to every room for this chat's member pairs
+    // Emit to chatId room (for group chats and any listener)
+    const chatRoom = 'group:' + chatId;
+    io.to(chatRoom).emit('message', payload);
+    console.log(`[WS EMIT] → ${chatRoom}`);
+
+    // Also emit to sorted-pair rooms (for DMs)
     const memberIds = chat.members.map(m => m.toString());
-    const emittedRooms = new Set();
     for (let i = 0; i < memberIds.length; i++) {
       for (let j = i + 1; j < memberIds.length; j++) {
         const roomId = makeRoomId(memberIds[i], memberIds[j]);
-        if (!emittedRooms.has(roomId)) {
-          io.to(roomId).emit('message', payload);
-          emittedRooms.add(roomId);
-          console.log(`[WS EMIT] message → room ${roomId}`);
-        }
+        io.to(roomId).emit('message', payload);
+        console.log(`[WS EMIT] → ${roomId}`);
       }
     }
 

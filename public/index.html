@@ -2347,14 +2347,18 @@ function openChat(chatId, type, name, otherUserId, memberStr) {
   unreadChats.delete(String(chatId));
   updateChatBadge();
 
-  // Join socket rooms for every member pair
+  // Join socket rooms
   if (socket && socket.connected) {
     const myId = getChatMyId();
+    // Join the group room (chatId-based)
+    socket.emit('join', { roomId: 'group:' + chatId });
+    console.log('[WS] join group:' + chatId);
+    // Join sorted-pair rooms for DMs
     currentChatMembers.forEach(mid => {
       if (mid && mid !== myId) {
         const roomId = makeSortedRoom(myId, mid);
         socket.emit('join', { roomId });
-        console.log('[WS] join room ' + roomId);
+        console.log('[WS] join ' + roomId);
       }
     });
   }
@@ -2526,12 +2530,16 @@ async function joinAllRooms() {
     if (!d.ok) return;
     const myId = getChatMyId();
     d.chats.forEach(chat => {
+      // Join group room by chatId
+      socket.emit('join', { roomId: 'group:' + chat._id });
+      console.log('[WS] auto-join group:' + chat._id);
+      // Join sorted-pair rooms for DMs
       if (chat.memberDetails) {
         chat.memberDetails.forEach(m => {
           if (m.id !== myId) {
             const roomId = makeSortedRoom(myId, m.id);
             socket.emit('join', { roomId });
-            console.log('[WS] auto-join room ' + roomId);
+            console.log('[WS] auto-join ' + roomId);
           }
         });
       }
