@@ -17,8 +17,21 @@ const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: '*' } });
 const client = new Anthropic();
 
-app.use(express.json());
+app.use(express.json({ limit: '5mb' }));
+
+// CORS — allow custom domain and Render domain
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  if (req.method === 'OPTIONS') return res.sendStatus(200);
+  next();
+});
+
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Quick health ping
+app.get('/api/ping', (req, res) => res.json({ ok: true, ts: Date.now() }));
 
 const LANGUAGES = ['English','Thai','Russian','Filipino','Myanmar','Chinese','German','French','Arabic','Indonesian'];
 
@@ -166,11 +179,6 @@ async function connectDB() {
     // Run repairs in background (don't block server start)
     setTimeout(async () => {
       try { await repairAllGroupChats(); } catch (e) { console.error('[REPAIR ERR]', e.message); }
-      // Reset ALL PINs — users will set fresh PINs on next login
-      try {
-        const result = await User.updateMany({ pinHash: { $ne: '' } }, { pinHash: '' });
-        if (result.modifiedCount) console.log(`[PIN RESET] Cleared ${result.modifiedCount} PINs — users will set new PINs`);
-      } catch(e) {}
     }, 2000);
   } catch (e) { console.error('[DB] Connection failed:', e.message); }
 }
