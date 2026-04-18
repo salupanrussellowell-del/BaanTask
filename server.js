@@ -359,6 +359,7 @@ app.post('/api/send-otp', async (req, res) => {
 // Verify OTP only (for returning users — no PIN change)
 app.post('/api/verify-otp-only', async (req, res) => {
   const { contact, otp } = req.body;
+  console.log(`[VERIFY-OTP-ONLY] contact=${contact} otp=${otp ? '***' : 'missing'}`);
   if (!contact || !otp) return res.status(400).json({ ok: false, error: 'Email and code required' });
   const nc = contact.trim().toLowerCase();
   try {
@@ -369,12 +370,13 @@ app.post('/api/verify-otp-only', async (req, res) => {
     if (!user) return res.json({ ok: false, error: 'Account not found' });
     user.emailVerified = true;
     await user.save();
-    // Check if user has a REAL PIN (not the placeholder '0000')
+    // Check if user has a REAL PIN set
     let hasPin = false;
-    if (user.pinHash && user.pinHash.length > 10) {
-      // Test if pinHash matches '0000' — if so, it's a placeholder
-      const isPlaceholder = await bcrypt.compare('0000', user.pinHash);
-      hasPin = !isPlaceholder;
+    if (user.pinHash && typeof user.pinHash === 'string' && user.pinHash.length > 10) {
+      try {
+        const isPlaceholder = await bcrypt.compare('0000', user.pinHash);
+        hasPin = !isPlaceholder;
+      } catch(e) { hasPin = false; }
     }
     const token = signToken(user);
     console.log(`[AUTH] OTP-only verify: ${user.name} (${user.role}) hasPin=${hasPin}`);
@@ -385,6 +387,7 @@ app.post('/api/verify-otp-only', async (req, res) => {
 // Verify OTP + register/login
 app.post('/api/verify-otp', async (req, res) => {
   const { contact, otp, name, pin, lang, role, skipOtp } = req.body;
+  console.log(`[VERIFY-OTP] contact=${contact} name=${name} role=${role} skipOtp=${skipOtp} hasPin=${!!pin}`);
   if (!contact || !name || !pin || !lang) return res.status(400).json({ ok: false, error: 'All fields required' });
   const nc = contact.trim().toLowerCase();
   try {
@@ -418,7 +421,7 @@ app.post('/api/login', async (req, res) => {
   try {
     const user = await User.findOne({ email: email.trim().toLowerCase() });
     if (!user) return res.json({ ok: false, error: 'Account not found' });
-    if (!user.pinHash || user.pinHash.length < 10) return res.json({ ok: false, error: 'No PIN set. Please log in with email + OTP first.' });
+    if (!user.pinHash || typeof user.pinHash !== 'string' || user.pinHash.length < 10) return res.json({ ok: false, error: 'No PIN set. Please log in with email + OTP first.' });
     const match = await bcrypt.compare(pin, user.pinHash);
     if (!match) return res.json({ ok: false, error: 'Wrong PIN' });
     if (lang) { user.lang = lang; await user.save(); }

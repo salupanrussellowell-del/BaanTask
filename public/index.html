@@ -1710,7 +1710,11 @@ async function verifyOTP() {
         else { goScreen('s-property'); }
       } else { goScreen('s-worker-lang'); }
     }
-  } catch(e) { showError('otp-error','Network error'); }
+  } catch(e) {
+    console.error('[OTP VERIFY ERROR]', e);
+    const msg = e && e.message ? e.message : 'Unknown error';
+    showError('otp-error', 'Error: ' + msg + '. Please try again.');
+  }
   finally { document.getElementById('otp-btn').disabled = false; document.getElementById('otp-btn').textContent = 'Verify & Continue'; }
 }
 
