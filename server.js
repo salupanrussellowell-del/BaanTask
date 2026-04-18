@@ -206,6 +206,18 @@ async function repairAllGroupChats() {
     }
   }
   console.log(`[REPAIR] Checked ${props.length} properties`);
+  // Remove worker-to-worker DMs
+  const dms = await Chat.find({ type: 'direct' }).lean();
+  for (const dm of dms) {
+    if (dm.members.length === 2) {
+      const [m1, m2] = await Promise.all([User.findById(dm.members[0], 'role'), User.findById(dm.members[1], 'role')]);
+      if (m1 && m2 && m1.role === 'worker' && m2.role === 'worker') {
+        await Message.deleteMany({ chatId: dm._id });
+        await Chat.deleteOne({ _id: dm._id });
+        console.log(`[REPAIR] Removed worker-to-worker DM ${dm._id}`);
+      }
+    }
+  }
 }
 
 // ── Helpers ──
@@ -665,19 +677,23 @@ app.get('/api/chats/:propertyId/:userId', async (req, res) => {
   } catch (e) { res.json({ ok: true, chats: [] }); }
 });
 
-// Find or create a direct chat between two users
+// Find or create a direct chat — only owner↔worker allowed, no worker↔worker
 app.post('/api/chats/direct', async (req, res) => {
   const { propertyId, userId1, userId2 } = req.body;
   if (!propertyId || !userId1 || !userId2) return res.status(400).json({ ok: false, error: 'Missing fields' });
   try {
-    // Check if DM already exists between these two users
+    // Block worker-to-worker DMs
+    const u1 = await User.findById(userId1, 'name role');
+    const u2 = await User.findById(userId2, 'name role');
+    if (u1 && u2 && u1.role === 'worker' && u2.role === 'worker') {
+      return res.status(403).json({ ok: false, error: 'Workers can only message the owner directly' });
+    }
+    // Find or create DM
     let chat = await Chat.findOne({
       propertyId, type: 'direct',
       members: { $all: [userId1, userId2], $size: 2 }
     });
     if (!chat) {
-      const u2 = await User.findById(userId2, 'name');
-      const u1 = await User.findById(userId1, 'name');
       chat = await Chat.create({
         propertyId, type: 'direct',
         members: [userId1, userId2],
