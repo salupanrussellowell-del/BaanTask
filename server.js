@@ -162,8 +162,6 @@ async function connectDB() {
     try { await mongoose.connection.db.collection('users').dropIndex('name_1'); console.log('[DB] Dropped stale name_1 index'); } catch (e) { /**/ }
     // Auto-repair: ensure every property has a group chat with all members
     try { await repairAllGroupChats(); } catch (e) { console.error('[REPAIR ERR]', e.message); }
-    // Clear all messages for fresh start
-    try { const r = await Message.deleteMany({}); await Chat.updateMany({}, { lastMessage: '', lastMessageAt: new Date(0) }); console.log(`[DB] Cleared ${r.deletedCount} messages`); } catch(e) {}
   } catch (e) { console.error('[DB] Connection failed:', e.message); }
 }
 
