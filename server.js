@@ -159,11 +159,55 @@ async function connectDB() {
     dbConnected = true;
     console.log('[DB] Connected to MongoDB Atlas');
     // Drop stale unique index on name if it exists
-    try {
-      await mongoose.connection.db.collection('users').dropIndex('name_1');
-      console.log('[DB] Dropped stale name_1 index');
-    } catch (e) { /* index doesn't exist, fine */ }
+    try { await mongoose.connection.db.collection('users').dropIndex('name_1'); console.log('[DB] Dropped stale name_1 index'); } catch (e) { /**/ }
+    // Auto-repair: ensure every property has a group chat with all members
+    try { await repairAllGroupChats(); } catch (e) { console.error('[REPAIR ERR]', e.message); }
+    // Clear all messages for fresh start
+    try { const r = await Message.deleteMany({}); await Chat.updateMany({}, { lastMessage: '', lastMessageAt: new Date(0) }); console.log(`[DB] Cleared ${r.deletedCount} messages`); } catch(e) {}
   } catch (e) { console.error('[DB] Connection failed:', e.message); }
+}
+
+// ── Auto-repair group chats on startup ──
+async function repairAllGroupChats() {
+  const props = await Property.find({});
+  for (const prop of props) {
+    // Collect all member IDs: owner + all active workers
+    const memberIds = [prop.ownerId.toString()];
+    const workers = await WorkerProfile.find({ propertyId: prop._id, status: 'active' });
+    for (const w of workers) memberIds.push(w.userId.toString());
+    // Also find users directly linked to this property
+    const users = await User.find({ propertyId: prop._id, role: 'worker' }, '_id');
+    for (const u of users) {
+      const uid = u._id.toString();
+      if (!memberIds.includes(uid)) memberIds.push(uid);
+      // Ensure WorkerProfile exists
+      const hasWP = workers.some(w => w.userId.toString() === uid);
+      if (!hasWP) {
+        await WorkerProfile.create({ userId: u._id, propertyId: prop._id, jobRole: '', status: 'active' });
+        console.log(`[REPAIR] Created WorkerProfile for user ${uid}`);
+      }
+    }
+    // Find or create group chat
+    let gc = await Chat.findOne({ propertyId: prop._id, type: 'group' });
+    if (!gc) {
+      gc = await Chat.create({ propertyId: prop._id, type: 'group', members: memberIds.map(id => new mongoose.Types.ObjectId(id)), name: prop.name + ' Staff' });
+      console.log(`[REPAIR] Created group chat for "${prop.name}" with ${memberIds.length} members`);
+    } else {
+      // Ensure all members are in the group chat
+      let changed = false;
+      for (const mid of memberIds) {
+        if (!gc.members.some(m => m.toString() === mid)) {
+          gc.members.push(new mongoose.Types.ObjectId(mid));
+          changed = true;
+        }
+      }
+      if (changed) {
+        await gc.save();
+        console.log(`[REPAIR] Updated group chat for "${prop.name}" → ${gc.members.length} members`);
+      }
+    }
+  }
+  console.log(`[REPAIR] Checked ${props.length} properties`);
 }
 
 // ── Helpers ──

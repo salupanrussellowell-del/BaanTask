@@ -2367,41 +2367,56 @@ async function loadChatList() {
   body.innerHTML = '';
 
   try {
-    const [chatRes, workerRes] = await Promise.all([
+    const [chatRes, workerRes, propRes] = await Promise.all([
       fetch('/api/chats/' + me.propertyId + '/' + me.id).then(r => r.json()),
-      fetch('/api/workers/' + me.propertyId).then(r => r.json())
+      fetch('/api/workers/' + me.propertyId).then(r => r.json()),
+      fetch('/api/property/' + me.propertyId).then(r => r.json())
     ]);
-    const allChats = chatRes.ok ? chatRes.chats : [];
+    allChats = chatRes.ok ? chatRes.chats : [];
     const workers = workerRes.ok ? workerRes.workers : [];
+    const prop = propRes.ok ? propRes.property : null;
+    const propName = prop ? prop.name : 'Staff';
+    const ownerId = prop ? String(prop.ownerId) : '';
 
-    // Group chat
+    // ── GROUP CHAT (always at top) ──
     const group = allChats.find(c => c.type === 'group');
     if (group) {
       const preview = group.lastMessage ? esc(group.lastMessage) : '<span style="color:#9CA3AF">No messages yet</span>';
-      body.innerHTML += '<div class="chat-item" onclick="openChat(\'' + group._id + '\',\'group\',\'' + esc(group.name || 'Staff Group') + '\',null,\'' + (group.memberDetails||[]).map(m=>m.id).join(',') + '\')"><div class="wav" style="background:linear-gradient(135deg,#1B5E20,#2E7D32);width:46px;height:46px;font-size:1rem">👥</div><div class="ci-info"><div class="ci-name">' + esc(group.name || 'Staff Group') + '</div><div class="ci-msg">' + preview + '</div></div></div>';
+      const memberIds = (group.memberDetails || []).map(m => m.id).join(',');
+      body.innerHTML += '<div class="chat-item" onclick="openChat(\'' + group._id + '\',\'group\',\'' + esc(propName + ' Staff') + '\',null,\'' + memberIds + '\')"><div class="wav" style="background:linear-gradient(135deg,#1B5E20,#2E7D32);width:46px;height:46px;font-size:1rem">👥</div><div class="ci-info"><div class="ci-name">' + esc(propName) + ' <span style="font-weight:600;color:#9CA3AF">Staff Chat</span></div><div class="ci-msg">' + preview + '</div></div></div>';
+    } else {
+      body.innerHTML += '<p style="text-align:center;color:#9CA3AF;font-size:.78rem;padding:12px">Group chat loading...</p>';
     }
 
-    // DM contacts
-    const contacts = [];
+    // ── DIRECT MESSAGES ──
+    body.innerHTML += '<div style="padding:10px 14px 4px;font-size:.66rem;font-weight:900;color:#9CA3AF;text-transform:uppercase;letter-spacing:.06em">Direct Messages</div>';
+
     if (isOwner) {
+      // Owner sees ALL their workers
+      if (!workers.length) {
+        body.innerHTML += '<p style="text-align:center;color:#9CA3AF;font-size:.78rem;padding:12px">No workers yet — share your invite code</p>';
+      }
       workers.forEach((w, i) => {
         const u = w.userId || {};
-        if (u._id) contacts.push({ id: String(u._id), name: u.name || '—', lang: u.lang || 'English', role: w.jobRole || 'Staff', idx: i });
+        if (!u._id) return;
+        const name = u.name || '—';
+        const lang = u.lang || 'English';
+        const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+        const dm = allChats.find(ch => ch.type === 'direct' && ch.members.some(m => String(m) === String(u._id)));
+        const preview = dm && dm.lastMessage ? esc(dm.lastMessage) : '<span style="color:#9CA3AF">' + langFlag(lang) + ' ' + lang + '</span>';
+        body.innerHTML += '<div class="chat-item" onclick="openDM(\'' + u._id + '\',\'' + esc(name) + '\')"><div class="wav" style="background:' + avatarGrad(i) + ';width:46px;height:46px;font-size:.82rem">' + initials + '</div><div class="ci-info"><div class="ci-name">' + esc(name) + ' <span style="font-size:.65rem;color:#9CA3AF">' + (w.jobRole || 'Staff') + '</span></div><div class="ci-msg">' + preview + '</div></div></div>';
       });
-    } else if (group && group.memberDetails) {
-      group.memberDetails.forEach((m, i) => {
-        if (m.id !== getChatMyId()) contacts.push({ id: m.id, name: m.name || '—', lang: m.lang || 'English', role: '', idx: i });
-      });
-    }
-
-    if (contacts.length) {
-      body.innerHTML += '<div style="padding:10px 14px 4px;font-size:.66rem;font-weight:900;color:#9CA3AF;text-transform:uppercase;letter-spacing:.06em">Direct Messages</div>';
-      contacts.forEach(c => {
-        const dm = allChats.find(ch => ch.type === 'direct' && ch.members.some(m => String(m) === c.id));
-        const preview = dm && dm.lastMessage ? esc(dm.lastMessage) : '<span style="color:#9CA3AF">' + langFlag(c.lang) + ' ' + c.lang + '</span>';
-        const initials = c.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
-        body.innerHTML += '<div class="chat-item" onclick="openDM(\'' + c.id + '\',\'' + esc(c.name) + '\')"><div class="wav" style="background:' + avatarGrad(c.idx) + ';width:46px;height:46px;font-size:.82rem">' + initials + '</div><div class="ci-info"><div class="ci-name">' + esc(c.name) + '</div><div class="ci-msg">' + preview + '</div></div></div>';
-      });
+    } else {
+      // Worker sees ONLY the owner (not other workers)
+      if (ownerId) {
+        const owner = (group && group.memberDetails) ? group.memberDetails.find(m => m.id === ownerId) : null;
+        const ownerName = owner ? owner.name : (prop ? 'Owner' : '—');
+        const ownerLang = owner ? owner.lang : 'English';
+        const initials = ownerName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+        const dm = allChats.find(ch => ch.type === 'direct' && ch.members.some(m => String(m) === ownerId));
+        const preview = dm && dm.lastMessage ? esc(dm.lastMessage) : '<span style="color:#9CA3AF">' + langFlag(ownerLang) + ' Owner</span>';
+        body.innerHTML += '<div class="chat-item" onclick="openDM(\'' + ownerId + '\',\'' + esc(ownerName) + '\')"><div class="wav" style="background:linear-gradient(135deg,#00897B,#00695C);width:46px;height:46px;font-size:.82rem">' + initials + '</div><div class="ci-info"><div class="ci-name">' + esc(ownerName) + ' <span style="font-size:.65rem;color:#00897B">Owner</span></div><div class="ci-msg">' + preview + '</div></div></div>';
+      }
     }
   } catch(e) { body.innerHTML = '<p style="text-align:center;color:#9CA3AF;padding:20px">Could not load chats</p>'; }
 }
