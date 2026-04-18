@@ -7,7 +7,10 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const { Resend } = require('resend');
+const jwt = require('jsonwebtoken');
 const path = require('path');
+
+const JWT_SECRET = process.env.JWT_SECRET || 'baantask-secret-' + require('crypto').randomBytes(16).toString('hex');
 
 const app = express();
 const server = http.createServer(app);
@@ -223,6 +226,12 @@ async function repairAllGroupChats() {
 // ── Helpers ──
 function genCode() { return crypto.randomBytes(3).toString('hex').toUpperCase(); }
 function genOTP() { return String(Math.floor(100000 + Math.random() * 900000)); }
+function signToken(user) {
+  return jwt.sign({ id: user._id.toString(), email: user.email, role: user.role }, JWT_SECRET, { expiresIn: '30d' });
+}
+function userPayload(user, token) {
+  return { id: user._id, name: user.name, role: user.role, lang: user.lang, email: user.email, phone: user.phone, gender: user.gender, dob: user.dob, propertyId: user.propertyId, token };
+}
 
 // ── Translate ──
 // Normalize language names — Claude might detect "Tagalog" but we store "Filipino"
@@ -345,9 +354,10 @@ app.post('/api/verify-otp-only', async (req, res) => {
     if (!user) return res.json({ ok: false, error: 'Account not found' });
     user.emailVerified = true;
     await user.save();
-    const hasPin = !!(user.pinHash && user.pinHash.length > 10); // bcrypt hashes are 60 chars
+    const hasPin = !!(user.pinHash && user.pinHash.length > 10);
+    const token = signToken(user);
     console.log(`[AUTH] OTP-only verify: ${user.name} (${user.role}) hasPin=${hasPin}`);
-    res.json({ ok: true, hasPin, user: { id: user._id, name: user.name, role: user.role, lang: user.lang, email: user.email, propertyId: user.propertyId } });
+    res.json({ ok: true, hasPin, user: userPayload(user, token) });
   } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
@@ -374,8 +384,9 @@ app.post('/api/verify-otp', async (req, res) => {
     } else {
       user = await User.create({ name, email: nc, pinHash, lang, role: role || 'owner', emailVerified: true });
     }
+    const token = signToken(user);
     console.log(`[AUTH] Verified + logged in: ${name} (${user.role})`);
-    res.json({ ok: true, user: { id: user._id, name: user.name, role: user.role, lang: user.lang, propertyId: user.propertyId } });
+    res.json({ ok: true, user: userPayload(user, token) });
   } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
@@ -390,9 +401,23 @@ app.post('/api/login', async (req, res) => {
     const match = await bcrypt.compare(pin, user.pinHash);
     if (!match) return res.json({ ok: false, error: 'Wrong PIN' });
     if (lang) { user.lang = lang; await user.save(); }
+    const token = signToken(user);
     console.log(`[LOGIN] ${user.name} (${user.role})`);
-    res.json({ ok: true, user: { id: user._id, name: user.name, role: user.role, lang: user.lang, email: user.email, phone: user.phone, gender: user.gender, dob: user.dob, propertyId: user.propertyId } });
+    res.json({ ok: true, user: userPayload(user, token) });
   } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+// Token-based auto-login — validate JWT and return fresh user data
+app.get('/api/me', async (req, res) => {
+  const auth = req.headers.authorization;
+  if (!auth || !auth.startsWith('Bearer ')) return res.json({ ok: false });
+  try {
+    const decoded = jwt.verify(auth.split(' ')[1], JWT_SECRET);
+    const user = await User.findById(decoded.id);
+    if (!user) return res.json({ ok: false });
+    const token = signToken(user); // refresh token
+    res.json({ ok: true, user: userPayload(user, token) });
+  } catch (e) { res.json({ ok: false }); }
 });
 
 // ══════════════════════════════════════

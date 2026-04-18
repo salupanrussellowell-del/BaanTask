@@ -1160,6 +1160,12 @@ const LANG_DATA = [
   {code:'Indonesian',flag:'🇮🇩',name:'Indonesia',sub:'Pilih bahasa Anda',cont:'Lanjutkan →'}
 ];
 let me = null, myProperty = null;
+function saveMe() {
+  if (me) {
+    if (me.token) localStorage.setItem('bt_token', me.token);
+    saveMe();
+  }
+}
 let selectedLang = null, selectedRole = null, selectedGender = '', selectedPropType = '';
 let pendingReg = {};
 let screenHistory = [];
@@ -1208,13 +1214,40 @@ const splashInterval = setInterval(() => {
   document.getElementById('splash-bar').style.width = splashProgress + '%';
   if (splashProgress >= 100) {
     document.getElementById('splash-label').textContent = 'Ready!';
-    setTimeout(() => {
+    setTimeout(async () => {
+      const token = localStorage.getItem('bt_token');
       const saved = localStorage.getItem('bt_user');
+
+      // Try JWT auto-login first
+      if (token) {
+        try {
+          const r = await fetch('/api/me', { headers: { 'Authorization': 'Bearer ' + token } });
+          const d = await r.json();
+          if (d.ok && d.user) {
+            me = d.user;
+            localStorage.setItem('bt_token', d.user.token);
+            saveMe();
+            selectedLang = me.lang || 'English';
+            if (typeof applyLang === 'function') applyLang();
+            if (typeof connectSocket === 'function') connectSocket();
+            if (me.propertyId) {
+              await loadPropertyData(me.propertyId);
+              goScreen(me.role === 'owner' ? 's-owner-home' : 's-worker-home');
+            } else {
+              goScreen(me.role === 'owner' ? 's-property' : 's-worker-join');
+            }
+            return;
+          }
+        } catch(e) {}
+        // Token invalid/expired — clear it
+        localStorage.removeItem('bt_token');
+      }
+
+      // No valid token — show PIN login if user data saved, else start screen
       if (saved) {
         me = JSON.parse(saved);
         selectedLang = me.lang || 'English';
         if (typeof applyLang === 'function') applyLang();
-        // Show quick PIN login
         const initials = (me.name || '?').split(' ').map(n=>n[0]).join('').toUpperCase().substring(0,2);
         document.getElementById('pin-avatar').textContent = initials;
         document.getElementById('pin-welcome').textContent = 'Welcome back, ' + (me.name || '') + '!';
@@ -1247,7 +1280,7 @@ async function quickPinLogin() {
     if (!d.ok) { showError('pl-error', d.error); document.getElementById('pl-btn').disabled = false; return; }
     me = d.user; me.email = me.email || d.user.email;
     selectedLang = me.lang || 'English';
-    localStorage.setItem('bt_user', JSON.stringify(me));
+    saveMe();
     if (typeof connectSocket === 'function') connectSocket();
     if (typeof applyLang === 'function') applyLang();
     if (me.propertyId) {
@@ -1293,7 +1326,7 @@ async function savePinSetup() {
     await fetch('/api/verify-otp', { method:'POST', headers:{'Content-Type':'application/json'},
       body:JSON.stringify({ contact: me.email, otp: '000000', name: me.name, pin: p1, lang: me.lang || 'English', role: me.role, skipOtp: true })
     });
-    localStorage.setItem('bt_user', JSON.stringify(me));
+    saveMe();
     // Go to dashboard
     if (me.propertyId) {
       await loadPropertyData(me.propertyId);
@@ -1385,7 +1418,7 @@ async function submitSetupName() {
       body:JSON.stringify({ contact: me.email, otp: '000000', name, pin, lang: selectedLang || 'English', role: pendingReg.role || me.role, skipOtp: true })
     });
     me.name = name;
-    localStorage.setItem('bt_user', JSON.stringify(me));
+    saveMe();
 
     if (pendingReg.role === 'owner' || me.role === 'owner') {
       goScreen('s-property');
@@ -1459,7 +1492,7 @@ function selectRole(role) {
       body:JSON.stringify({ contact: me.email, otp: '000000', name: me.name || me.email.split('@')[0], pin: '0000', lang: selectedLang || 'English', role, skipOtp: true })
     }).catch(() => {});
     me.role = role;
-    localStorage.setItem('bt_user', JSON.stringify(me));
+    saveMe();
   }
   goScreen('s-setup-name');
 }
@@ -1553,7 +1586,7 @@ function workerLangNext() {
       body:JSON.stringify({ userId: me.id, lang: selectedLang })
     }).catch(() => {});
     me.lang = selectedLang;
-    localStorage.setItem('bt_user', JSON.stringify(me));
+    saveMe();
   }
   if (typeof applyLang === 'function') applyLang();
   goScreen('s-worker-type');
@@ -1614,7 +1647,7 @@ async function verifyOTP() {
       me = vd.user;
       me.email = pendingReg.email;
       selectedLang = me.lang || 'English';
-      localStorage.setItem('bt_user', JSON.stringify(me));
+      saveMe();
       if (typeof connectSocket === 'function') connectSocket();
       if (typeof applyLang === 'function') applyLang();
       // Check if user has a PIN set (pinHash !== empty and not '0000' hash)
@@ -1640,7 +1673,7 @@ async function verifyOTP() {
       if (!d.ok) { showError('otp-error', d.error); document.getElementById('otp-btn').disabled = false; document.getElementById('otp-btn').textContent = 'Verify & Continue'; return; }
       me = d.user;
       me.email = pendingReg.email;
-      localStorage.setItem('bt_user', JSON.stringify(me));
+      saveMe();
       // Go to role selection, then name setup
       goScreen('s-role');
     } else {
@@ -1653,7 +1686,7 @@ async function verifyOTP() {
       if (!d.ok) { showError('otp-error', d.error); document.getElementById('otp-btn').disabled = false; document.getElementById('otp-btn').textContent = 'Verify & Continue'; return; }
       me = d.user;
       me.email = pendingReg.email; me.lang = selectedLang;
-      localStorage.setItem('bt_user', JSON.stringify(me));
+      saveMe();
       if (typeof connectSocket === 'function') connectSocket();
       if (me.role === 'owner') {
         if (me.propertyId) { await loadPropertyData(me.propertyId); goScreen('s-owner-home'); }
@@ -1694,7 +1727,7 @@ async function signIn() {
     if (!d.ok) { showError('si-error', d.error); document.getElementById('si-btn').disabled = false; return; }
     me = d.user; me.email = email;
     selectedLang = me.lang || selectedLang || 'English';
-    localStorage.setItem('bt_user', JSON.stringify(me));
+    saveMe();
     if (typeof connectSocket === 'function') connectSocket();
     if (typeof applyLang === 'function') applyLang();
     if (me.propertyId) { await loadPropertyData(me.propertyId); goScreen(me.role==='owner'?'s-owner-home':'s-worker-home'); }
@@ -1722,7 +1755,7 @@ async function createProperty() {
     const d = await r.json();
     if (!d.ok) { showError('prop-error', d.error); document.getElementById('prop-btn').disabled = false; return; }
     myProperty = d.property; me.propertyId = myProperty.id;
-    localStorage.setItem('bt_user', JSON.stringify(me));
+    saveMe();
     document.getElementById('invite-code').textContent = myProperty.inviteCode;
     goScreen('s-invite');
   } catch(e) { showError('prop-error','Network error'); document.getElementById('prop-btn').disabled = false; }
@@ -1747,7 +1780,7 @@ async function workerJoin() {
     const d = await r.json();
     if (!d.ok) { showError('wj-error', d.error); document.getElementById('wj-btn').disabled = false; return; }
     me.propertyId = d.propertyId;
-    localStorage.setItem('bt_user', JSON.stringify(me));
+    saveMe();
     await loadPropertyData(d.propertyId);
     goScreen('s-worker-home');
   } catch(e) { showError('wj-error','Network error'); document.getElementById('wj-btn').disabled = false; }
