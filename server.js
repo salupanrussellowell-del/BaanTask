@@ -219,34 +219,47 @@ function genOTP() { return String(Math.floor(100000 + Math.random() * 900000)); 
 const LANG_ALIASES = { Tagalog:'Filipino', 'Filipino/Tagalog':'Filipino', Burmese:'Myanmar', Mandarin:'Chinese', 'Mandarin Chinese':'Chinese', 'Simplified Chinese':'Chinese', 'Traditional Chinese':'Chinese' };
 function normLang(lang) { return LANG_ALIASES[lang] || lang; }
 
+const TRANSLATION_SYSTEM = `You are an expert professional translator specializing in household employer-employee communication in Asia.
+
+CONTEXT: This is a conversation between a property owner and their household staff (driver, cleaner, cook, nanny, gardener, security guard). Messages are about daily tasks, schedules, house matters, and general communication.
+
+TRANSLATION RULES:
+- Translate the MEANING and INTENT, not word-for-word
+- Use natural conversational tone, not robotic or overly formal
+- Understand context: 'leave' in travel = depart/go NOT abandon; 'take care' = look after; 'follow up' = check on progress
+- Filipino: 'we will leave/go' = 'aalis kami' NOT 'iiwan natin'; 'we' exclusive = 'kami', inclusive = 'tayo'; use 'po'/'opo' appropriately
+- Thai: polite particles ครับ/ค่ะ; 'leave/depart' = ออกเดินทาง NOT ทิ้ง
+- Burmese: polite natural Burmese with appropriate honorifics
+- Indonesian: 'pergi' for leave/depart NOT 'tinggalkan'
+- Russian: natural conversational Russian
+- Chinese: simplified characters, conversational tone
+- Arabic: Modern Standard Arabic, respectful employer context
+- Japanese: polite form 丁寧語 for work setting
+- Korean: 존댓말 for worker-to-owner, polite casual for owner-to-worker
+- Hindi: natural Hindi, 'जाना' for leave/depart
+- Spanish: 'salir' for leave/depart NOT 'dejar'
+- French: 'partir' for leave/depart NOT 'laisser'
+- German: 'abreisen/abfahren' for leave/depart
+- "Filipino" means Tagalog/Filipino language; "Myanmar" means Burmese language`;
+
 async function detectAndTranslate(text, targetLangs) {
   if (!process.env.ANTHROPIC_API_KEY || !targetLangs.length) return { detectedLang: 'English', translations: {} };
   try {
     const r = await client.messages.create({
       model: 'claude-haiku-4-5-20251001', max_tokens: 2000,
-      messages: [{ role: 'user', content: `You are a translation API. Detect the language of the message, then translate it to each target language.
+      system: TRANSLATION_SYSTEM,
+      messages: [{ role: 'user', content: `Detect the language of this message and translate it to each target language.
 
 Message: ${JSON.stringify(text)}
 
 Target languages: ${targetLangs.join(', ')}
 
 Respond with ONLY valid JSON, no markdown fences, no explanation:
-{
-  "detectedLang": "<language name in English, e.g. Filipino, Thai, English, Russian>",
-  "translations": {
-    ${targetLangs.map(l => `"${l}": "<accurate translation into ${l}>"`).join(',\n    ')}
-  }
-}
+{"detectedLang":"<language name>","translations":{${targetLangs.map(l => `"${l}":"<translation>"`).join(',')}}}
 
-Rules:
-- If the message is already in a target language, copy the original text as that translation
-- Use natural, conversational translations (not formal/literary)
-- "Filipino" means Tagalog/Filipino language
-- "Myanmar" means Burmese language
-- Detect the actual language — do NOT assume English` }]
+If already in a target language, copy original text as that translation.` }]
     });
     let raw = r.content[0].text.trim();
-    // Strip markdown fences if present
     if (raw.startsWith('```')) { raw = raw.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim(); }
     const parsed = JSON.parse(raw);
     parsed.detectedLang = normLang(parsed.detectedLang || 'English');
@@ -258,13 +271,14 @@ Rules:
   }
 }
 
-// Legacy helper — still used for on-demand single translations
+// Fallback single translation
 async function translateOne(text, fromLang, toLang) {
   if (!process.env.ANTHROPIC_API_KEY || fromLang === toLang) return null;
   try {
     const r = await client.messages.create({
       model: 'claude-haiku-4-5-20251001', max_tokens: 500,
-      messages: [{ role: 'user', content: `Translate from ${fromLang} to ${toLang}. Output ONLY the translation.\n\n${text}` }]
+      system: TRANSLATION_SYSTEM,
+      messages: [{ role: 'user', content: `Translate from ${fromLang} to ${toLang}. Output ONLY the translated text, nothing else.\n\n${text}` }]
     });
     return r.content[0].text.trim();
   } catch (e) { return null; }
