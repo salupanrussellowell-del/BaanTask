@@ -365,68 +365,71 @@ app.post('/api/send-otp', async (req, res) => {
   res.json({ ok: true, method: 'console' });
 });
 
-// Verify OTP only (for returning users — no PIN change)
+// ── Verify OTP (returning user — no PIN change) ──
 app.post('/api/verify-otp-only', async (req, res) => {
-  const { contact, otp } = req.body;
-  console.log(`[VERIFY-OTP-ONLY] START contact=${contact}`);
-  if (!contact || !otp) return res.status(400).json({ ok: false, error: 'Email and code required' });
-  const nc = contact.trim().toLowerCase();
   try {
-    console.log('[VERIFY-OTP-ONLY] Step 1: finding OTP record');
-    const record = await OTP.findOne({ contact: nc, otp: String(otp).trim(), expiresAt: { $gt: new Date() } }).sort({ createdAt: -1 });
-    if (!record) { console.log('[VERIFY-OTP-ONLY] OTP not found'); return res.json({ ok: false, error: 'Invalid or expired code' }); }
-    console.log('[VERIFY-OTP-ONLY] Step 2: deleting used OTPs');
-    await OTP.deleteMany({ contact: nc });
-    console.log('[VERIFY-OTP-ONLY] Step 3: finding user');
-    const user = await User.findOne({ email: nc });
-    if (!user) { console.log('[VERIFY-OTP-ONLY] User not found'); return res.json({ ok: false, error: 'Account not found' }); }
-    console.log('[VERIFY-OTP-ONLY] Step 4: marking verified');
+    const email = (req.body.contact || '').trim().toLowerCase();
+    const otp = String(req.body.otp || '').trim();
+    console.log('[VERIFY] otp-only for', email);
+    if (!email || !otp) return res.json({ ok: false, error: 'Email and code required' });
+
+    const record = await OTP.findOne({ contact: email, otp, expiresAt: { $gt: new Date() } });
+    if (!record) return res.json({ ok: false, error: 'Invalid or expired code' });
+    await OTP.deleteMany({ contact: email });
+
+    const user = await User.findOne({ email });
+    if (!user) return res.json({ ok: false, error: 'Account not found' });
     user.emailVerified = true;
     await user.save();
-    // Simple PIN check — no bcrypt, just check if pinHash looks like a real hash
+
     const hasPin = !!(user.pinHash && user.pinHash.length > 50);
-    console.log('[VERIFY-OTP-ONLY] Step 5: signing token');
     const token = signToken(user);
-    console.log(`[VERIFY-OTP-ONLY] DONE: ${user.name} (${user.role}) hasPin=${hasPin}`);
+    console.log('[VERIFY] otp-only OK:', user.name, 'hasPin=' + hasPin);
     return res.json({ ok: true, hasPin, user: userPayload(user, token) });
   } catch (e) {
-    console.error('[VERIFY-OTP-ONLY] CRASH:', e.message);
-    return res.status(500).json({ ok: false, error: 'Server error: ' + e.message });
+    console.error('[VERIFY] otp-only ERROR:', e.message);
+    return res.json({ ok: false, error: 'Server error' });
   }
 });
 
-// Verify OTP + register/login
+// ── Verify OTP + register/create account ──
 app.post('/api/verify-otp', async (req, res) => {
-  const { contact, otp, name, pin, lang, role, skipOtp } = req.body;
-  console.log(`[VERIFY-OTP] START contact=${contact} name=${name} role=${role}`);
-  if (!contact || !name || !pin || !lang) return res.json({ ok: false, error: 'All fields required' });
-  const nc = contact.trim().toLowerCase();
   try {
+    const email = (req.body.contact || '').trim().toLowerCase();
+    const otp = String(req.body.otp || '').trim();
+    const name = req.body.name || email.split('@')[0];
+    const pin = req.body.pin || '0000';
+    const lang = req.body.lang || 'English';
+    const role = req.body.role || 'owner';
+    const skipOtp = req.body.skipOtp;
+    console.log('[VERIFY] register for', email, 'name=' + name, 'role=' + role);
+    if (!email) return res.json({ ok: false, error: 'Email required' });
+
     if (!skipOtp) {
-      console.log('[VERIFY-OTP] Step 1: checking OTP');
-      const record = await OTP.findOne({ contact: nc, otp: String(otp).trim(), expiresAt: { $gt: new Date() } }).sort({ createdAt: -1 });
+      const record = await OTP.findOne({ contact: email, otp, expiresAt: { $gt: new Date() } });
       if (!record) return res.json({ ok: false, error: 'Invalid or expired code' });
-      await OTP.deleteMany({ contact: nc });
+      await OTP.deleteMany({ contact: email });
     }
-    console.log('[VERIFY-OTP] Step 2: hashing PIN');
-    const pinHash = await bcrypt.hash(pin, 10);
-    console.log('[VERIFY-OTP] Step 3: finding/creating user');
-    let user = await User.findOne({ email: nc });
+
+    let user = await User.findOne({ email });
     if (user) {
-      user.pinHash = pinHash; user.lang = lang; user.name = name;
+      user.lang = lang; user.name = name;
       if (role) user.role = role;
       user.emailVerified = true;
+      // Only set PIN if it's not the placeholder
+      if (pin && pin !== '0000') user.pinHash = await bcrypt.hash(pin, 10);
       await user.save();
     } else {
-      user = await User.create({ name, email: nc, pinHash, lang, role: role || 'owner', emailVerified: true });
+      const pinHash = (pin && pin !== '0000') ? await bcrypt.hash(pin, 10) : '';
+      user = await User.create({ name, email, pinHash, lang, role, emailVerified: true });
     }
-    console.log('[VERIFY-OTP] Step 4: signing token');
+
     const token = signToken(user);
-    console.log(`[VERIFY-OTP] DONE: ${name} (${user.role})`);
+    console.log('[VERIFY] register OK:', user.name, '(' + user.role + ')');
     return res.json({ ok: true, user: userPayload(user, token) });
   } catch (e) {
-    console.error('[VERIFY-OTP] CRASH:', e.message);
-    return res.status(500).json({ ok: false, error: 'Server error: ' + e.message });
+    console.error('[VERIFY] register ERROR:', e.message);
+    return res.json({ ok: false, error: 'Server error' });
   }
 });
 
