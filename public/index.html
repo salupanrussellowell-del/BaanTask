@@ -1696,35 +1696,31 @@ async function verifyOTP() {
     return;
   }
 
-  // Step 3: Save user + token (this MUST succeed)
+  // Step 3: Save user + token → go to dashboard IMMEDIATELY
   me = verifyResult.user;
   me.email = email;
   selectedLang = me.lang || selectedLang || 'English';
   saveMe();
+  console.log('[OTP] Saved user:', me.name, 'role:', me.role, 'propertyId:', me.propertyId);
   if (typeof connectSocket === 'function') connectSocket();
   if (typeof applyLang === 'function') applyLang();
   document.getElementById('otp-btn').disabled = false;
   document.getElementById('otp-btn').textContent = 'Verify & Continue';
 
-  // Step 4: Navigate to the right screen (errors here don't block login)
-  try {
-    if (startFlowType === 'returning') {
-      if (me.propertyId) {
-        try { await loadPropertyData(me.propertyId); } catch(e) {}
-        goScreen(me.role === 'owner' ? 's-owner-home' : 's-worker-home');
-      } else {
-        goScreen(me.role === 'owner' ? 's-property' : 's-worker-join');
-      }
-      if (!verifyResult.hasPin) setTimeout(() => goScreen('s-pin-setup'), 500);
-    } else if (startFlowType === 'new') {
-      goScreen('s-role');
-    } else {
-      if (me.role === 'owner') {
-        if (me.propertyId) { try { await loadPropertyData(me.propertyId); } catch(e) {} goScreen('s-owner-home'); }
-        else goScreen('s-property');
-      } else goScreen('s-worker-lang');
-    }
-  } catch(e) { console.error('[OTP NAV]', e); }
+  // Step 4: Navigate — go to dashboard NOW, no waiting
+  const pid = me.propertyId ? String(me.propertyId) : null;
+  if (startFlowType === 'new') {
+    // New user → role selection
+    goScreen('s-role');
+  } else if (pid) {
+    // Returning user with property → dashboard
+    try { await loadPropertyData(pid); } catch(e) { console.log('[OTP] Property load failed, continuing'); }
+    goScreen(me.role === 'owner' ? 's-owner-home' : 's-worker-home');
+  } else {
+    // Returning user without property
+    goScreen(me.role === 'owner' ? 's-property' : 's-worker-join');
+  }
+  console.log('[OTP] Navigation complete');
 }
 
 async function resendOTP() {
