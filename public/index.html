@@ -1163,7 +1163,7 @@ let me = null, myProperty = null;
 function saveMe() {
   if (me) {
     if (me.token) localStorage.setItem('bt_token', me.token);
-    saveMe();
+    localStorage.setItem('bt_user', JSON.stringify(me));
   }
 }
 let selectedLang = null, selectedRole = null, selectedGender = '', selectedPropType = '';
