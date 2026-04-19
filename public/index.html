@@ -1654,19 +1654,29 @@ async function verifyOTP() {
   document.getElementById('otp-btn').disabled = true;
   document.getElementById('otp-btn').textContent = 'Verifying...';
 
+  // Safety: ensure pendingReg.email exists
+  const email = (pendingReg && pendingReg.email) ? pendingReg.email : (me && me.email ? me.email : null);
+  if (!email) {
+    showError('otp-error', 'Email not found. Please go back and enter your email.');
+    document.getElementById('otp-btn').disabled = false;
+    document.getElementById('otp-btn').textContent = 'Verify & Continue';
+    return;
+  }
+  console.log('[OTP] verifyOTP flow=' + startFlowType + ' email=' + email);
+
   // Step 1: Verify the OTP with the server
   let verifyResult = null;
   try {
     let url, body;
     if (startFlowType === 'returning') {
       url = '/api/verify-otp-only';
-      body = { contact: pendingReg.email, otp: code };
+      body = { contact: email, otp: code };
     } else if (startFlowType === 'new') {
       url = '/api/verify-otp';
-      body = { contact: pendingReg.email, otp: code, name: pendingReg.email.split('@')[0], pin: '0000', lang: selectedLang || 'English', role: 'worker' };
+      body = { contact: email, otp: code, name: email.split('@')[0], pin: '0000', lang: selectedLang || 'English', role: 'worker' };
     } else {
       url = '/api/verify-otp';
-      body = { contact: pendingReg.email, otp: code, name: pendingReg.name || 'User', pin: pendingReg.pin || '0000', lang: selectedLang || 'English', role: pendingReg.role || 'owner' };
+      body = { contact: email, otp: code, name: (pendingReg && pendingReg.name) || 'User', pin: (pendingReg && pendingReg.pin) || '0000', lang: selectedLang || 'English', role: (pendingReg && pendingReg.role) || 'owner' };
     }
     const r = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
     verifyResult = await r.json();
@@ -1688,7 +1698,7 @@ async function verifyOTP() {
 
   // Step 3: Save user + token (this MUST succeed)
   me = verifyResult.user;
-  me.email = pendingReg.email;
+  me.email = email;
   selectedLang = me.lang || selectedLang || 'English';
   saveMe();
   if (typeof connectSocket === 'function') connectSocket();
