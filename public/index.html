@@ -1649,78 +1649,74 @@ document.getElementById('otp-input').addEventListener('input', function() {
 });
 
 async function verifyOTP() {
-  const code = document.getElementById('otp-input').value.trim();
-  showError('otp-error','');
-  document.getElementById('otp-btn').disabled = true;
-  document.getElementById('otp-btn').textContent = 'Verifying...';
+  var btn = document.getElementById('otp-btn');
+  var code = document.getElementById('otp-input').value.trim();
+  var email = (pendingReg && pendingReg.email) || (me && me.email) || '';
+  btn.disabled = true;
+  btn.textContent = 'Verifying...';
+  showError('otp-error', '');
+  console.log('=== VERIFY OTP START === email=' + email + ' flow=' + startFlowType);
 
-  // Safety: ensure pendingReg.email exists
-  const email = (pendingReg && pendingReg.email) ? pendingReg.email : (me && me.email ? me.email : null);
-  if (!email) {
-    showError('otp-error', 'Email not found. Please go back and enter your email.');
-    document.getElementById('otp-btn').disabled = false;
-    document.getElementById('otp-btn').textContent = 'Verify & Continue';
+  if (!email || !code) {
+    showError('otp-error', 'Email or code missing');
+    btn.disabled = false; btn.textContent = 'Verify & Continue';
     return;
   }
-  console.log('[OTP] verifyOTP flow=' + startFlowType + ' email=' + email);
 
-  // Step 1: Verify the OTP with the server
-  let verifyResult = null;
+  // 1. Call the API
+  var data;
   try {
-    let url, body;
-    if (startFlowType === 'returning') {
-      url = '/api/verify-otp-only';
-      body = { contact: email, otp: code };
-    } else if (startFlowType === 'new') {
-      url = '/api/verify-otp';
-      body = { contact: email, otp: code, name: email.split('@')[0], pin: '0000', lang: selectedLang || 'English', role: 'worker' };
-    } else {
-      url = '/api/verify-otp';
-      body = { contact: email, otp: code, name: (pendingReg && pendingReg.name) || 'User', pin: (pendingReg && pendingReg.pin) || '0000', lang: selectedLang || 'English', role: (pendingReg && pendingReg.role) || 'owner' };
-    }
-    const r = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
-    verifyResult = await r.json();
-  } catch(e) {
-    console.error('[OTP] Fetch failed:', e);
-    showError('otp-error', 'Could not connect to server. Please try again.');
-    document.getElementById('otp-btn').disabled = false;
-    document.getElementById('otp-btn').textContent = 'Verify & Continue';
+    var url = (startFlowType === 'returning') ? '/api/verify-otp-only' : '/api/verify-otp';
+    var payload = (startFlowType === 'returning')
+      ? { contact: email, otp: code }
+      : { contact: email, otp: code, name: (pendingReg && pendingReg.name) || email.split('@')[0], pin: '0000', lang: selectedLang || 'English', role: (pendingReg && pendingReg.role) || 'owner' };
+    console.log('Calling ' + url);
+    var resp = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    console.log('Response status: ' + resp.status);
+    data = await resp.json();
+    console.log('Response data:', JSON.stringify(data).substring(0, 200));
+  } catch (err) {
+    console.error('Fetch error:', err);
+    showError('otp-error', 'Network error: ' + (err.message || err));
+    btn.disabled = false; btn.textContent = 'Verify & Continue';
     return;
   }
 
-  // Step 2: Check result
-  if (!verifyResult.ok) {
-    showError('otp-error', verifyResult.error || 'Verification failed');
-    document.getElementById('otp-btn').disabled = false;
-    document.getElementById('otp-btn').textContent = 'Verify & Continue';
+  // 2. Check success
+  if (!data.ok) {
+    console.log('Verify failed:', data.error);
+    showError('otp-error', data.error || 'Invalid code');
+    btn.disabled = false; btn.textContent = 'Verify & Continue';
     return;
   }
 
-  // Step 3: Save user + token → go to dashboard IMMEDIATELY
-  me = verifyResult.user;
+  // 3. SAVE TOKEN AND USER - this is the critical part
+  console.log('=== VERIFY SUCCESS ===');
+  me = data.user;
   me.email = email;
   selectedLang = me.lang || selectedLang || 'English';
-  saveMe();
-  console.log('[OTP] Saved user:', me.name, 'role:', me.role, 'propertyId:', me.propertyId);
-  if (typeof connectSocket === 'function') connectSocket();
-  if (typeof applyLang === 'function') applyLang();
-  document.getElementById('otp-btn').disabled = false;
-  document.getElementById('otp-btn').textContent = 'Verify & Continue';
+  // Save directly - no function call that could fail
+  if (me.token) localStorage.setItem('bt_token', me.token);
+  localStorage.setItem('bt_user', JSON.stringify(me));
+  console.log('Saved to localStorage. User: ' + me.name + ' Role: ' + me.role);
 
-  // Step 4: Navigate — go to dashboard NOW, no waiting
-  const pid = me.propertyId ? String(me.propertyId) : null;
+  // 4. GO TO DASHBOARD - no awaits, no try/catch, just go
+  btn.disabled = false; btn.textContent = 'Verify & Continue';
+  try { if (typeof connectSocket === 'function') connectSocket(); } catch(e) {}
+  try { if (typeof applyLang === 'function') applyLang(); } catch(e) {}
+
   if (startFlowType === 'new') {
-    // New user → role selection
+    console.log('New user → role select');
     goScreen('s-role');
-  } else if (pid) {
-    // Returning user with property → dashboard
-    try { await loadPropertyData(pid); } catch(e) { console.log('[OTP] Property load failed, continuing'); }
+  } else if (me.propertyId) {
+    console.log('Returning user → dashboard');
+    try { await loadPropertyData(String(me.propertyId)); } catch(e) {}
     goScreen(me.role === 'owner' ? 's-owner-home' : 's-worker-home');
   } else {
-    // Returning user without property
+    console.log('Returning user → setup');
     goScreen(me.role === 'owner' ? 's-property' : 's-worker-join');
   }
-  console.log('[OTP] Navigation complete');
+  console.log('=== VERIFY OTP DONE ===');
 }
 
 async function resendOTP() {
