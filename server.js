@@ -10,7 +10,7 @@ const { Resend } = require('resend');
 const jwt = require('jsonwebtoken');
 const path = require('path');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'baantask-default-jwt-secret-2026';
+const JWT_SECRET = process.env.JWT_SECRET || 'baantask-jwt-v2-20260420';
 
 const app = express();
 const server = http.createServer(app);
@@ -985,9 +985,17 @@ app.get('/status', async (req, res) => {
 app.get('/admin/clear-messages', async (req, res) => {
   try {
     const r = await Message.deleteMany({});
-    // Also clear lastMessage on all chats so previews don't show stale text
     await Chat.updateMany({}, { lastMessage: '', lastMessageAt: new Date(0) });
     res.json({ ok: true, deleted: r.deletedCount });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+app.get('/admin/reset-all', async (req, res) => {
+  try {
+    const pins = await User.updateMany({}, { pinHash: '' });
+    const msgs = await Message.deleteMany({});
+    await Chat.updateMany({}, { lastMessage: '', lastMessageAt: new Date(0) });
+    res.json({ ok: true, pinsReset: pins.modifiedCount, messagesDeleted: msgs.deletedCount });
   } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
