@@ -1149,15 +1149,19 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
 // ══════════════════════════════════════
 const LANG_DATA = [
   {code:'English',flag:'🇬🇧',name:'English',sub:'Choose your language',cont:'Continue →'},
-  {code:'Thai',flag:'🇹🇭',name:'ไทย',sub:'เลือกภาษาของคุณ',cont:'ต่อไป →'},
   {code:'Russian',flag:'🇷🇺',name:'Русский',sub:'Выберите ваш язык',cont:'Продолжить →'},
+  {code:'Thai',flag:'🇹🇭',name:'ไทย',sub:'เลือกภาษาของคุณ',cont:'ต่อไป →'},
   {code:'Filipino',flag:'🇵🇭',name:'Filipino',sub:'Piliin ang iyong wika',cont:'Magpatuloy →'},
   {code:'Myanmar',flag:'🇲🇲',name:'မြန်မာ',sub:'သင်၏ဘာသာစကားကိုရွေးပါ',cont:'ဆက်လက် →'},
+  {code:'Indonesian',flag:'🇮🇩',name:'Indonesia',sub:'Pilih bahasa Anda',cont:'Lanjutkan →'},
   {code:'Chinese',flag:'🇨🇳',name:'中文',sub:'选择您的语言',cont:'继续 →'},
-  {code:'German',flag:'🇩🇪',name:'Deutsch',sub:'Wähle deine Sprache',cont:'Weiter →'},
-  {code:'French',flag:'🇫🇷',name:'Français',sub:'Choisissez votre langue',cont:'Continuer →'},
+  {code:'Japanese',flag:'🇯🇵',name:'日本語',sub:'言語を選択してください',cont:'続行 →'},
+  {code:'Korean',flag:'🇰🇷',name:'한국어',sub:'언어를 선택하세요',cont:'계속 →'},
+  {code:'Hindi',flag:'🇮🇳',name:'हिन्दी',sub:'अपनी भाषा चुनें',cont:'जारी रखें →'},
   {code:'Arabic',flag:'🇸🇦',name:'العربية',sub:'اختر لغتك',cont:'متابعة →'},
-  {code:'Indonesian',flag:'🇮🇩',name:'Indonesia',sub:'Pilih bahasa Anda',cont:'Lanjutkan →'}
+  {code:'Spanish',flag:'🇪🇸',name:'Español',sub:'Elige tu idioma',cont:'Continuar →'},
+  {code:'French',flag:'🇫🇷',name:'Français',sub:'Choisissez votre langue',cont:'Continuer →'},
+  {code:'German',flag:'🇩🇪',name:'Deutsch',sub:'Wähle deine Sprache',cont:'Weiter →'}
 ];
 let me = null, myProperty = null;
 function saveMe() {
@@ -1215,63 +1219,57 @@ const splashInterval = setInterval(() => {
   if (splashProgress >= 100) {
     document.getElementById('splash-label').textContent = 'Ready!';
     setTimeout(async () => {
-      // Step 1: Ping server to make sure it's alive
-      const label = document.getElementById('splash-label');
-      let serverReady = false;
-      for (let attempt = 1; attempt <= 5; attempt++) {
-        try {
-          const pr = await fetch('/api/ping');
-          const pd = await pr.json();
-          if (pd.ok) { serverReady = true; break; }
-        } catch(e) {}
-        label.textContent = 'Connecting to server... (' + attempt + '/5)';
-        await new Promise(r => setTimeout(r, 3000));
-      }
-      if (!serverReady) {
-        label.textContent = 'Server unavailable — tap to retry';
-        label.style.cursor = 'pointer';
-        label.onclick = () => location.reload();
-        return;
-      }
+      var label = document.getElementById('splash-label');
 
-      // Step 2: Try JWT auto-login
-      const token = localStorage.getItem('bt_token');
-      const saved = localStorage.getItem('bt_user');
+      // Ping server (retry up to 3 times)
+      var serverOk = false;
+      for (var i = 1; i <= 3; i++) {
+        try { var pr = await fetch('/api/ping'); var pd = await pr.json(); if (pd.ok) { serverOk = true; break; } } catch(e) {}
+        label.textContent = 'Connecting... (' + i + '/3)';
+        await new Promise(function(r) { setTimeout(r, 2000); });
+      }
+      if (!serverOk) { label.textContent = 'Tap to retry'; label.style.cursor = 'pointer'; label.onclick = function() { location.reload(); }; return; }
 
+      // ROUTE 1: Has JWT token → auto-login → dashboard
+      var token = localStorage.getItem('bt_token');
       if (token) {
         try {
-          const r = await fetch('/api/me', { headers: { 'Authorization': 'Bearer ' + token } });
-          const d = await r.json();
+          var r = await fetch('/api/me', { headers: { 'Authorization': 'Bearer ' + token } });
+          var d = await r.json();
           if (d.ok && d.user) {
             me = d.user;
             if (d.user.token) localStorage.setItem('bt_token', d.user.token);
-            saveMe();
+            localStorage.setItem('bt_user', JSON.stringify(me));
             selectedLang = me.lang || 'English';
-            if (typeof applyLang === 'function') applyLang();
-            if (typeof connectSocket === 'function') connectSocket();
+            try { applyLang(); } catch(e) {}
+            try { connectSocket(); } catch(e) {}
             if (me.propertyId) {
-              await loadPropertyData(me.propertyId);
+              try { await loadPropertyData(String(me.propertyId)); } catch(e) {}
               goScreen(me.role === 'owner' ? 's-owner-home' : 's-worker-home');
             } else {
               goScreen(me.role === 'owner' ? 's-property' : 's-worker-join');
             }
+            console.log('[BOOT] Auto-login → dashboard');
             return;
           }
         } catch(e) {}
         localStorage.removeItem('bt_token');
       }
 
-      // Step 3: No valid token — show start screen
-      if (saved) {
-        me = JSON.parse(saved);
-        selectedLang = me.lang || 'English';
-        if (typeof applyLang === 'function') applyLang();
+      // ROUTE 2: Has role saved (returning user, token expired) → email screen
+      var savedRole = localStorage.getItem('bt_role');
+      var saved = localStorage.getItem('bt_user');
+      if (savedRole || saved) {
+        if (saved) { try { me = JSON.parse(saved); selectedLang = me.lang || 'English'; try { applyLang(); } catch(e) {} } catch(e) {} }
+        goScreen('s-start');
+        if (me && me.email) { document.getElementById('st-email').value = me.email; document.getElementById('st-btn').disabled = false; }
+        console.log('[BOOT] Returning user → email screen');
+        return;
       }
-      goScreen('s-start');
-      if (me && me.email) {
-        document.getElementById('st-email').value = me.email;
-        document.getElementById('st-btn').disabled = false;
-      }
+
+      // ROUTE 3: Brand new user → language selection
+      console.log('[BOOT] New user → language select');
+      goScreen('s-lang');
     }, 400);
   }
 }, 120);
@@ -1489,6 +1487,7 @@ function workerTypeNext() {
       btn.style.background = '#00897B'; btn.style.color = '#fff'; btn.style.borderColor = '#00897B';
       btn.querySelector('.lang-label').textContent = l.name + ' ✓';
       selectedLang = l.code;
+      localStorage.setItem('bt_lang', l.code);
       document.getElementById('lang-sub').textContent = l.sub;
       document.getElementById('lang-continue-btn').textContent = l.cont;
       document.getElementById('lang-continue-btn').disabled = false;
@@ -1504,16 +1503,23 @@ function langNext() { if (selectedLang) goScreen('s-role'); }
 
 function selectRole(role) {
   selectedRole = role;
+  if (!pendingReg) pendingReg = {};
   pendingReg.role = role;
-  // Update role on the server if we already have a user
+  // Save role to localStorage so we never show role select again
+  localStorage.setItem('bt_role', role);
+
   if (me && me.id) {
+    // User already has an account (came from OTP verify for new user)
     fetch('/api/verify-otp', { method:'POST', headers:{'Content-Type':'application/json'},
       body:JSON.stringify({ contact: me.email, otp: '000000', name: me.name || me.email.split('@')[0], pin: '0000', lang: selectedLang || 'English', role, skipOtp: true })
-    }).catch(() => {});
+    }).catch(function() {});
     me.role = role;
-    saveMe();
+    localStorage.setItem('bt_user', JSON.stringify(me));
+    goScreen('s-setup-name');
+  } else {
+    // Brand new user — hasn't entered email yet → go to email screen
+    goScreen('s-start');
   }
-  goScreen('s-setup-name');
 }
 
 // ══════════════════════════════════════
