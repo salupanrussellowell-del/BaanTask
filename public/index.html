@@ -289,6 +289,7 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
       <div class="form-group"><label data-i18n="email">Email</label><input id="st-email" type="email" placeholder="your@email.com"></div>
       <div id="st-error" class="error-msg"></div>
       <button class="btn" style="background:#1B5E20;color:#fff;max-width:360px" id="st-btn" disabled onclick="startEmailCheck()">Continue →</button>
+      <button class="btn-link" onclick="goScreen('s-lang')" style="margin-top:16px">New user? Create account →</button>
     </div>
   </div>
 </div>
@@ -1264,20 +1265,14 @@ const splashInterval = setInterval(() => {
         localStorage.removeItem('bt_token');
       }
 
-      // ROUTE 2: Has role saved (returning user, token expired) → email screen
-      var savedRole = localStorage.getItem('bt_role');
+      // ROUTE 2: Show email screen (works for both new and returning users)
+      // New users can click "Create account" to go through full onboarding
+      // Returning users just enter email → OTP → dashboard
       var saved = localStorage.getItem('bt_user');
-      if (savedRole || saved) {
-        if (saved) { try { me = JSON.parse(saved); selectedLang = me.lang || 'English'; try { applyLang(); } catch(e) {} } catch(e) {} }
-        goScreen('s-start');
-        if (me && me.email) { document.getElementById('st-email').value = me.email; document.getElementById('st-btn').disabled = false; }
-        console.log('[BOOT] Returning user → email screen');
-        return;
-      }
-
-      // ROUTE 3: Brand new user → language selection
-      console.log('[BOOT] New user → language select');
-      goScreen('s-lang');
+      if (saved) { try { me = JSON.parse(saved); selectedLang = me.lang || 'English'; try { applyLang(); } catch(e) {} } catch(e) {} }
+      goScreen('s-start');
+      if (me && me.email) { document.getElementById('st-email').value = me.email; document.getElementById('st-btn').disabled = false; }
+      console.log('[BOOT] → email screen');
     }, 400);
   }
 }, 120);
@@ -1396,10 +1391,15 @@ async function startEmailCheck() {
 
     if (cd.exists) {
       startFlowType = 'returning';
-      pendingReg = { email, name: cd.user.name, role: cd.user.role, lang: cd.user.lang };
+      pendingReg = { email, name: cd.user.name, role: cd.user.role, lang: cd.user.lang, hasProperty: cd.user.hasProperty };
+      selectedLang = cd.user.lang || selectedLang || 'English';
+      try { applyLang(); } catch(e) {}
+      console.log('[START] Returning user: ' + cd.user.name + ' role=' + cd.user.role + ' hasProperty=' + cd.user.hasProperty);
     } else {
       startFlowType = 'new';
       pendingReg = { email, role: null };
+      console.log('[START] New user');
+      // New user entered email directly — go to lang/role first? No, send OTP first, set up after
     }
 
     // Send OTP

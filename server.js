@@ -185,15 +185,9 @@ async function connectDB() {
     console.log('[DB] Connected to MongoDB Atlas');
     // Drop stale unique index on name if it exists
     try { await mongoose.connection.db.collection('users').dropIndex('name_1'); console.log('[DB] Dropped stale name_1 index'); } catch (e) { /**/ }
-    // Run repairs + cleanup in background
+    // Run repairs in background
     setTimeout(async () => {
       try { await repairAllGroupChats(); } catch (e) { console.error('[REPAIR ERR]', e.message); }
-      // One-time: clear all OTPs and PINs
-      try {
-        await OTP.deleteMany({});
-        var pr = await User.updateMany({}, { pinHash: '' });
-        console.log('[CLEANUP] Cleared all OTPs + reset ' + pr.modifiedCount + ' PINs');
-      } catch(e) {}
     }, 2000);
   } catch (e) { console.error('[DB] Connection failed:', e.message); }
 }
