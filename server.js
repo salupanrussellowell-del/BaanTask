@@ -10,7 +10,7 @@ const { Resend } = require('resend');
 const jwt = require('jsonwebtoken');
 const path = require('path');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'baantask-jwt-v4-20260422';
+const JWT_SECRET = process.env.JWT_SECRET || 'baantask-jwt-v5-20260422b';
 
 const app = express();
 const server = http.createServer(app);

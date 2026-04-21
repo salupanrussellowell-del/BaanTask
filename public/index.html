@@ -1212,11 +1212,13 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
 //  STATE
 // ══════════════════════════════════════
 // App version — change to force all users to re-login
-var APP_VERSION = 'v6-20260422';
+var APP_VERSION = 'v7-20260422';
 if (localStorage.getItem('bt_version') !== APP_VERSION) {
-  console.log('[BOOT] Version changed → clearing all local data');
+  var savedLang = localStorage.getItem('bt_lang');
   localStorage.clear();
+  if (savedLang) localStorage.setItem('bt_lang', savedLang);
   localStorage.setItem('bt_version', APP_VERSION);
+  console.log('[BOOT] Version changed → cleared localStorage, kept lang=' + savedLang);
 }
 
 const LANG_DATA = [
