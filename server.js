@@ -478,6 +478,18 @@ app.get('/api/me', async (req, res) => {
   } catch (e) { res.json({ ok: false }); }
 });
 
+// Check invite code (validates without joining)
+app.post('/api/check-invite', async (req, res) => {
+  const { inviteCode } = req.body;
+  if (!inviteCode) return res.json({ ok: false, error: 'Code required' });
+  try {
+    const prop = await Property.findOne({ inviteCode: inviteCode.toUpperCase() });
+    if (!prop) return res.json({ ok: false, error: 'Invalid invite code' });
+    const owner = await User.findById(prop.ownerId, 'name');
+    res.json({ ok: true, property: { id: prop._id, name: prop.name, type: prop.type }, owner: { name: owner ? owner.name : 'Owner' } });
+  } catch (e) { res.json({ ok: false, error: 'Server error' }); }
+});
+
 // ══════════════════════════════════════
 //  OWNER SETUP ROUTES
 // ══════════════════════════════════════
