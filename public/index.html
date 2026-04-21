@@ -1149,7 +1149,7 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
 //  STATE
 // ══════════════════════════════════════
 // App version — change to force all users to re-login
-var APP_VERSION = 'v4-20260422';
+var APP_VERSION = 'v5-20260422';
 if (localStorage.getItem('bt_version') !== APP_VERSION) {
   console.log('[BOOT] Version changed → clearing all local data');
   localStorage.clear();
@@ -1239,7 +1239,7 @@ const splashInterval = setInterval(() => {
       }
       if (!serverOk) { label.textContent = 'Tap to retry'; label.style.cursor = 'pointer'; label.onclick = function() { location.reload(); }; return; }
 
-      // ROUTE 1: Has JWT token → auto-login → dashboard
+      // ── ROUTE 1: Has valid JWT token → dashboard ──
       var token = localStorage.getItem('bt_token');
       if (token) {
         try {
@@ -1258,21 +1258,27 @@ const splashInterval = setInterval(() => {
             } else {
               goScreen(me.role === 'owner' ? 's-property' : 's-worker-join');
             }
-            console.log('[BOOT] Auto-login → dashboard');
+            console.log('[BOOT] Token valid → dashboard');
             return;
           }
         } catch(e) {}
         localStorage.removeItem('bt_token');
       }
 
-      // ROUTE 2: Show email screen (works for both new and returning users)
-      // New users can click "Create account" to go through full onboarding
-      // Returning users just enter email → OTP → dashboard
-      var saved = localStorage.getItem('bt_user');
-      if (saved) { try { me = JSON.parse(saved); selectedLang = me.lang || 'English'; try { applyLang(); } catch(e) {} } catch(e) {} }
-      goScreen('s-start');
-      if (me && me.email) { document.getElementById('st-email').value = me.email; document.getElementById('st-btn').disabled = false; }
-      console.log('[BOOT] → email screen');
+      // ── ROUTE 2: Has onboarded before (returning user) → email login ──
+      var onboarded = localStorage.getItem('bt_onboarded');
+      if (onboarded) {
+        var saved = localStorage.getItem('bt_user');
+        if (saved) { try { me = JSON.parse(saved); selectedLang = me.lang || 'English'; try { applyLang(); } catch(e) {} } catch(e) {} }
+        goScreen('s-start');
+        if (me && me.email) { document.getElementById('st-email').value = me.email; document.getElementById('st-btn').disabled = false; }
+        console.log('[BOOT] Returning user → email screen');
+        return;
+      }
+
+      // ── ROUTE 3: Brand new user → language selection ──
+      console.log('[BOOT] New user → language selection');
+      goScreen('s-lang');
     }, 400);
   }
 }, 120);
@@ -1499,11 +1505,13 @@ async function workerTypeNext() {
 // ══════════════════════════════════════
 // ── Complete onboarding ──
 async function completeOnboarding(role) {
+  localStorage.setItem('bt_onboarded', 'true');
   if (me && me.id) {
     me.onboardingComplete = true;
     localStorage.setItem('bt_user', JSON.stringify(me));
     try { await fetch('/api/onboarding-complete', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({userId:me.id}) }); } catch(e) {}
   }
+  console.log('[ONBOARD] Complete → dashboard');
   goScreen(role === 'owner' ? 's-owner-home' : 's-worker-home');
 }
 
@@ -1746,8 +1754,9 @@ async function verifyOTP() {
   // 3. Navigate based on flow
   console.log('[OTP] Navigate: flow=' + startFlowType + ' role=' + me.role + ' propertyId=' + me.propertyId + ' onboarding=' + me.onboardingComplete);
 
-  if (startFlowType === 'returning' && me.onboardingComplete && me.propertyId) {
-    // RETURNING USER with complete setup → straight to dashboard
+  if (startFlowType === 'returning' && me.propertyId) {
+    // RETURNING USER with property → straight to dashboard
+    localStorage.setItem('bt_onboarded', 'true');
     try { await loadPropertyData(String(me.propertyId)); } catch(e) {}
     goScreen(me.role === 'owner' ? 's-owner-home' : 's-worker-home');
     // Prompt PIN setup if they don't have one
@@ -2193,7 +2202,14 @@ function loadMeScreen() {
 
 function doLogout() {
   if (!confirm('Log out of BaanTask?')) return;
+  // Keep bt_version and bt_onboarded so user goes to email screen (not full onboarding)
+  var version = localStorage.getItem('bt_version');
+  var onboarded = localStorage.getItem('bt_onboarded');
+  var savedUser = localStorage.getItem('bt_user');
   localStorage.clear();
+  if (version) localStorage.setItem('bt_version', version);
+  if (onboarded) localStorage.setItem('bt_onboarded', onboarded);
+  if (savedUser) localStorage.setItem('bt_user', savedUser); // keep email for pre-fill
   location.reload();
 }
 
