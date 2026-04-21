@@ -399,33 +399,20 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
 </div>
 
 <!-- ═══ OWNER REGISTER ═══ -->
+<!-- ═══ OWNER REGISTER (Step 1/3) ═══ -->
 <div id="s-owner-reg" class="screen" style="background:#fff">
-  <div class="sb">9:41<span>📶 🔋</span></div>
+  <div class="sb" style="background:#00695C">9:41<span>📶 🔋</span></div>
   <div style="background:linear-gradient(160deg,#00897B,#00695C);padding:16px 22px;color:#fff;flex-shrink:0">
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px"><span class="bk" onclick="goBack()" style="color:#fff">‹</span><span style="font-size:.9rem;font-weight:800" data-i18n="create_account">Create Account</span></div>
-    <p style="font-size:.76rem;opacity:.85" data-i18n="owner_reg">Owner registration</p>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px"><span class="bk" onclick="goBack()" style="color:#fff">‹</span><span style="font-size:.9rem;font-weight:800">Your Details</span></div>
+    <p style="font-size:.72rem;opacity:.85">Step 1 of 3 — Owner setup</p>
   </div>
   <div class="sc" style="background:#fff">
-    <div style="padding:16px;display:flex;flex-direction:column;align-items:center">
-      <div class="form-group"><label data-i18n="full_name">Full Name</label><input id="or-name" type="text" placeholder="Your full name" maxlength="40"></div>
-      <div class="form-group"><label data-i18n="email">Email</label><input id="or-email" type="email" placeholder="your@email.com"></div>
-      <div class="form-group"><label data-i18n="phone_optional">Phone (optional)</label><input id="or-phone" type="tel" placeholder="+66 81 234 5678"></div>
-      <label style="font-size:.78rem;color:#6B7280;margin-bottom:4px;width:100%;max-width:360px;font-weight:700" data-i18n="gender">Gender</label>
-      <div class="gender-row">
-        <div class="gender-btn" onclick="pickGender('male',this)" data-i18n="male">Male</div>
-        <div class="gender-btn" onclick="pickGender('female',this)" data-i18n="female">Female</div>
-      </div>
-      <div class="form-group"><label data-i18n="dob">Date of Birth</label>
-        <div style="display:flex;gap:6px">
-          <select id="or-dob-day" class="finput" style="flex:1;padding:10px 6px;font-size:.85rem"><option value="">Day</option></select>
-          <select id="or-dob-month" class="finput" style="flex:1.4;padding:10px 6px;font-size:.85rem"><option value="">Month</option></select>
-          <select id="or-dob-year" class="finput" style="flex:1.2;padding:10px 6px;font-size:.85rem"><option value="">Year</option></select>
-        </div>
-      </div>
-      <div class="form-group"><label data-i18n="pin_label">4-Digit PIN</label><input id="or-pin" type="password" inputmode="numeric" class="pin-input" placeholder="••••" maxlength="4"></div>
+    <div style="padding:20px 16px;display:flex;flex-direction:column;align-items:center">
+      <div class="form-group"><label>Full Name *</label><input id="or-name" type="text" placeholder="Your full name" maxlength="40"></div>
+      <div class="form-group"><label>Email *</label><input id="or-email" type="email" placeholder="your@email.com"></div>
       <div id="or-error" class="error-msg"></div>
-      <button class="btn btn-t" id="or-btn" disabled onclick="ownerRegister()" style="max-width:360px" data-i18n="send_code">Send Verification Code</button>
-      <button class="btn-link" onclick="goScreen('s-signin')" data-i18n="have_account">Already have an account? Sign in</button>
+      <button class="btn btn-t" id="or-btn" disabled onclick="ownerRegister()" style="max-width:360px">Continue →</button>
+      <button class="btn-link" onclick="goScreen('s-start')" style="margin-top:12px">Already have an account? Sign in →</button>
     </div>
   </div>
 </div>
@@ -1649,26 +1636,24 @@ function checkOwnerReg() {
   const e = document.getElementById('or-email').value.trim();
   document.getElementById('or-btn').disabled = !(n && e.includes('@'));
 }
-['or-name','or-email','or-phone'].forEach(id => document.getElementById(id).addEventListener('input', checkOwnerReg));
-['or-dob-day','or-dob-month','or-dob-year'].forEach(id => document.getElementById(id).addEventListener('change', checkOwnerReg));
-document.getElementById('or-pin').addEventListener('input', function() { this.value = this.value.replace(/\D/g,'').substring(0,4); checkOwnerReg(); });
+['or-name','or-email'].forEach(function(id) { document.getElementById(id).addEventListener('input', checkOwnerReg); });
 
 async function ownerRegister() {
-  const name = document.getElementById('or-name').value.trim();
-  const email = document.getElementById('or-email').value.trim();
-  const pin = document.getElementById('or-pin').value;
+  var name = document.getElementById('or-name').value.trim();
+  var email = document.getElementById('or-email').value.trim();
   showError('or-error','');
   document.getElementById('or-btn').disabled = true;
   document.getElementById('or-btn').textContent = 'Sending code...';
-  pendingReg = { name, email, pin, phone: document.getElementById('or-phone').value.trim(), gender: selectedGender, dob: getDateFromDropdowns('or-dob-day', 'or-dob-month', 'or-dob-year'), role: 'owner' };
+  pendingReg = { name: name, email: email, role: 'owner' };
+  startFlowType = 'new';
   try {
-    const r = await fetch('/api/send-otp', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({contact:email,name}) });
-    const d = await r.json();
+    var r = await fetch('/api/send-otp', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({contact:email,name:name}) });
+    var d = await r.json();
     if (!d.ok) { showError('or-error', d.error); return; }
-    document.getElementById('otp-subtitle').textContent = d.method === 'console' ? 'Check server logs for the code' : `Code sent to ${email}`;
+    document.getElementById('otp-subtitle').textContent = d.method === 'console' ? 'Check server logs' : 'Code sent to ' + email;
     goScreen('s-otp');
   } catch(e) { showError('or-error','Network error'); }
-  finally { document.getElementById('or-btn').disabled = false; document.getElementById('or-btn').textContent = 'Send Verification Code'; }
+  finally { document.getElementById('or-btn').disabled = false; document.getElementById('or-btn').textContent = 'Continue →'; }
 }
 
 // ══════════════════════════════════════
