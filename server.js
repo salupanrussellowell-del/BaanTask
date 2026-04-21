@@ -71,6 +71,7 @@ const userSchema = new mongoose.Schema({
   dob: { type: String, default: '' },
   photo: { type: String, default: '' },
   emailVerified: { type: Boolean, default: false },
+  onboardingComplete: { type: Boolean, default: false },
   propertyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Property', default: null },
   createdAt: { type: Date, default: Date.now }
 });
@@ -185,10 +186,9 @@ async function connectDB() {
     console.log('[DB] Connected to MongoDB Atlas');
     // Drop stale unique index on name if it exists
     try { await mongoose.connection.db.collection('users').dropIndex('name_1'); console.log('[DB] Dropped stale name_1 index'); } catch (e) { /**/ }
-    // Run repairs + one-time cleanup in background
+    // Run repairs in background
     setTimeout(async () => {
       try { await repairAllGroupChats(); } catch (e) { console.error('[REPAIR ERR]', e.message); }
-      try { await OTP.deleteMany({}); await User.updateMany({}, { $set: { pinHash: '' } }); console.log('[CLEANUP] Cleared OTPs + PINs'); } catch(e) {}
     }, 2000);
   } catch (e) { console.error('[DB] Connection failed:', e.message); }
 }
@@ -255,7 +255,7 @@ function signToken(user) {
   return jwt.sign({ id: user._id.toString(), email: user.email, role: user.role }, JWT_SECRET, { expiresIn: '30d' });
 }
 function userPayload(user, token) {
-  return { id: user._id, name: user.name, role: user.role, lang: user.lang, email: user.email, phone: user.phone, gender: user.gender, dob: user.dob, propertyId: user.propertyId, token };
+  return { id: user._id, name: user.name, role: user.role, lang: user.lang, email: user.email, phone: user.phone, gender: user.gender, dob: user.dob, propertyId: user.propertyId, onboardingComplete: !!user.onboardingComplete, token };
 }
 
 // ── Translate ──
@@ -337,8 +337,8 @@ app.post('/api/check-email', async (req, res) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ ok: false });
   try {
-    const user = await User.findOne({ email: email.trim().toLowerCase() }, 'name role lang propertyId');
-    if (user) return res.json({ ok: true, exists: true, user: { name: user.name, role: user.role, lang: user.lang, hasProperty: !!user.propertyId } });
+    const user = await User.findOne({ email: email.trim().toLowerCase() }, 'name role lang propertyId onboardingComplete');
+    if (user) return res.json({ ok: true, exists: true, user: { name: user.name, role: user.role, lang: user.lang, hasProperty: !!user.propertyId, onboardingComplete: !!user.onboardingComplete } });
     res.json({ ok: true, exists: false });
   } catch (e) { res.json({ ok: true, exists: false }); }
 });
@@ -464,6 +464,17 @@ app.post('/api/set-pin', async (req, res) => {
     console.log(`[PIN] Set PIN for ${user.name}`);
     res.json({ ok: true, user: userPayload(user, token) });
   } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+// Mark onboarding complete
+app.post('/api/onboarding-complete', async (req, res) => {
+  const { userId } = req.body;
+  if (!userId) return res.json({ ok: false });
+  try {
+    await User.findByIdAndUpdate(userId, { onboardingComplete: true });
+    console.log('[ONBOARD] Complete for ' + userId);
+    res.json({ ok: true });
+  } catch(e) { res.json({ ok: false }); }
 });
 
 // Token-based auto-login — validate JWT and return fresh user data

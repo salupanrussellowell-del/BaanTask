@@ -507,8 +507,8 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
         <div class="ib-code" id="invite-code"></div>
         <div class="ib-hint" data-i18n="workers_enter_code">Workers enter this code when they sign up</div>
       </div>
-      <button class="btn btn-t" onclick="goScreen('s-owner-home')" style="max-width:360px" data-i18n="go_dashboard">Go to Dashboard</button>
-      <button class="btn-link" onclick="goScreen('s-owner-home')" data-i18n="skip">Skip for now</button>
+      <button class="btn btn-t" onclick="completeOnboarding('owner')" style="max-width:360px" data-i18n="go_dashboard">Go to Dashboard</button>
+      <button class="btn-link" onclick="completeOnboarding('owner')" data-i18n="skip">Skip for now</button>
     </div>
   </div>
 </div>
@@ -1484,7 +1484,7 @@ async function workerTypeNext() {
         localStorage.setItem('bt_user', JSON.stringify(me));
         try { await loadPropertyData(String(d.propertyId)); } catch(e) {}
         console.log('[WORKER] Joined property via invite code');
-        goScreen('s-worker-home');
+        completeOnboarding('worker');
         return;
       }
     } catch(e) {}
@@ -1497,6 +1497,16 @@ async function workerTypeNext() {
 }
 
 // ══════════════════════════════════════
+// ── Complete onboarding ──
+async function completeOnboarding(role) {
+  if (me && me.id) {
+    me.onboardingComplete = true;
+    localStorage.setItem('bt_user', JSON.stringify(me));
+    try { await fetch('/api/onboarding-complete', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({userId:me.id}) }); } catch(e) {}
+  }
+  goScreen(role === 'owner' ? 's-owner-home' : 's-worker-home');
+}
+
 //  LANGUAGE SELECT (mockup style)
 // ══════════════════════════════════════
 (function buildLangGrid() {
@@ -1734,25 +1744,31 @@ async function verifyOTP() {
   try { applyLang(); } catch(e) {}
 
   // 3. Navigate based on flow
-  console.log('[OTP] Navigate: flow=' + startFlowType + ' role=' + me.role + ' propertyId=' + me.propertyId);
+  console.log('[OTP] Navigate: flow=' + startFlowType + ' role=' + me.role + ' propertyId=' + me.propertyId + ' onboarding=' + me.onboardingComplete);
 
-  if (startFlowType === 'returning') {
-    // RETURNING USER → dashboard or setup
+  if (startFlowType === 'returning' && me.onboardingComplete && me.propertyId) {
+    // RETURNING USER with complete setup → straight to dashboard
+    try { await loadPropertyData(String(me.propertyId)); } catch(e) {}
+    goScreen(me.role === 'owner' ? 's-owner-home' : 's-worker-home');
+    // Prompt PIN setup if they don't have one
+    if (data.hasPin === false) {
+      setTimeout(function() { goScreen('s-pin-setup'); }, 800);
+    }
+  } else if (startFlowType === 'returning') {
+    // RETURNING USER but setup incomplete → finish what's missing
     if (me.propertyId) {
       try { await loadPropertyData(String(me.propertyId)); } catch(e) {}
       goScreen(me.role === 'owner' ? 's-owner-home' : 's-worker-home');
     } else if (me.role === 'owner') {
-      goScreen('s-property'); // owner needs property
+      goScreen('s-property');
     } else {
-      goScreen('s-worker-join'); // worker needs invite code
+      goScreen('s-worker-join');
     }
   } else {
     // NEW USER — continue onboarding
     if (role === 'owner') {
-      // Owner OTP verified → property setup
       goScreen('s-property');
     } else {
-      // Worker OTP verified → language → job type → done
       goScreen('s-worker-lang');
     }
   }
