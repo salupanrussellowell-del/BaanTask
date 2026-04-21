@@ -469,72 +469,157 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
 </div>
 
 <!-- ═══ PROPERTY SETUP ═══ -->
+<!-- ═══ PROPERTY SETUP (Step 2/3 Owner) ═══ -->
 <div id="s-property" class="screen" style="background:#fff">
-  <div class="sb">9:41<span>📶 🔋</span></div>
+  <div class="sb" style="background:#00695C">9:41<span>📶 🔋</span></div>
   <div style="background:linear-gradient(160deg,#00897B,#00695C);padding:16px 22px;color:#fff;flex-shrink:0">
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px"><span class="bk" onclick="goBack()" style="color:#fff">‹</span><span style="font-size:.9rem;font-weight:800" data-i18n="your_property">Your Property</span></div>
-    <p style="font-size:.76rem;opacity:.85" data-i18n="tell_home">Tell us about your home</p>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px"><span class="bk" onclick="goBack()" style="color:#fff">‹</span><span style="font-size:.9rem;font-weight:800">Your Property</span></div>
+    <p style="font-size:.72rem;opacity:.8">Step 2 of 3 — Where do your workers come to work?</p>
   </div>
   <div class="sc" style="background:#fff">
     <div style="padding:16px;display:flex;flex-direction:column;align-items:center">
-      <div class="prop-grid">
-        <div class="prop-item" onclick="pickPropType('house',this)"><div class="pi-icon">🏠</div><div class="pi-name" data-i18n="house">House</div></div>
-        <div class="prop-item" onclick="pickPropType('condo',this)"><div class="pi-icon">🏢</div><div class="pi-name" data-i18n="condo">Condo</div></div>
-        <div class="prop-item" onclick="pickPropType('villa',this)"><div class="pi-icon">🌴</div><div class="pi-name" data-i18n="villa">Villa</div></div>
-        <div class="prop-item" onclick="pickPropType('other',this)"><div class="pi-icon">🏗️</div><div class="pi-name" data-i18n="other">Other</div></div>
+      <div class="form-group"><label>Property Name *</label><input id="prop-name" type="text" placeholder="e.g. Deva Moon Villa"></div>
+      <div class="prop-grid" style="margin-bottom:14px">
+        <div class="prop-item" onclick="pickPropType('house',this)"><div class="pi-icon">🏠</div><div class="pi-name">House</div></div>
+        <div class="prop-item" onclick="pickPropType('condo',this)"><div class="pi-icon">🏢</div><div class="pi-name">Condo</div></div>
+        <div class="prop-item" onclick="pickPropType('villa',this)"><div class="pi-icon">🌴</div><div class="pi-name">Villa</div></div>
+        <div class="prop-item" onclick="pickPropType('other',this)"><div class="pi-icon">🏗️</div><div class="pi-name">Other</div></div>
       </div>
-      <div class="form-group"><label data-i18n="prop_name">Property Name</label><input id="prop-name" type="text" placeholder="e.g. Deva Moon Villa"></div>
-      <div class="form-group"><label data-i18n="location">Location / City</label><input id="prop-location" type="text" placeholder="e.g. Phuket"></div>
+      <div class="form-group"><label>Country *</label><select id="prop-country" class="finput"><option>Thailand 🇹🇭</option><option>Indonesia 🇮🇩</option><option>Philippines 🇵🇭</option><option>Vietnam 🇻🇳</option><option>Malaysia 🇲🇾</option><option>Other</option></select></div>
+      <div style="display:flex;gap:8px;width:100%;max-width:360px">
+        <div class="form-group" style="flex:1"><label>City *</label><input id="prop-city" type="text" placeholder="e.g. Phuket"></div>
+        <div class="form-group" style="flex:.6"><label>Postal</label><input id="prop-postal" type="text" placeholder="83110"></div>
+      </div>
+      <div class="form-group"><label>Address</label><input id="prop-address" type="text" placeholder="e.g. 123/4 Soi Saiyuan"></div>
       <div id="prop-error" class="error-msg"></div>
-      <button class="btn btn-t" id="prop-btn" disabled onclick="createProperty()" style="max-width:360px" data-i18n="continue_btn">Continue</button>
+      <button class="btn btn-t" id="prop-btn" disabled onclick="createProperty()" style="max-width:360px">Continue →</button>
     </div>
   </div>
 </div>
 
-<!-- ═══ INVITE CODE ═══ -->
+<!-- ═══ ADD FIRST WORKER (Step 3/3 Owner) ═══ -->
 <div id="s-invite" class="screen" style="background:#fff">
-  <div class="sb">9:41<span>📶 🔋</span></div>
+  <div class="sb" style="background:#00695C">9:41<span>📶 🔋</span></div>
   <div style="background:linear-gradient(160deg,#00897B,#00695C);padding:16px 22px;color:#fff;flex-shrink:0">
-    <span style="font-size:.9rem;font-weight:800" data-i18n="invite_staff">Invite Your Staff</span>
+    <span style="font-size:.9rem;font-weight:800">Add Your First Worker</span>
+    <p style="font-size:.72rem;opacity:.8;margin-top:4px">Step 3 of 3 — Invite your household staff</p>
+  </div>
+  <div class="sc" style="background:#F9FAFB">
+    <div style="padding:16px;display:flex;flex-direction:column;gap:12px">
+      <div style="background:#fff;border:2px solid #E5E7EB;border-radius:16px;padding:16px">
+        <div style="font-size:.82rem;font-weight:900;color:#1F2937;margin-bottom:8px">How to invite your worker:</div>
+        <div style="font-size:.76rem;color:#6B7280;line-height:1.7">
+          1. Choose how to invite below<br>
+          2. Worker scans QR or taps link<br>
+          3. They fill in their name, role and skills<br>
+          4. You set their salary on their profile
+        </div>
+      </div>
+      <div onclick="goScreen('s-qr-display')" style="background:#fff;border:2px solid #E5E7EB;border-radius:16px;padding:16px;display:flex;align-items:center;gap:14px;cursor:pointer">
+        <div style="width:48px;height:48px;background:#E0F2F1;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.6rem">📱</div>
+        <div><div style="font-size:.92rem;font-weight:800;color:#1F2937">Show QR Code</div><div style="font-size:.72rem;color:#9CA3AF;margin-top:2px">Worker scans with their phone camera</div></div>
+        <span style="font-size:1.1rem;color:#9CA3AF;margin-left:auto">›</span>
+      </div>
+      <div onclick="shareInvite('copy')" style="background:#fff;border:2px solid #E5E7EB;border-radius:16px;padding:16px;display:flex;align-items:center;gap:14px;cursor:pointer">
+        <div style="width:48px;height:48px;background:#E3F2FD;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.6rem">🔗</div>
+        <div><div style="font-size:.92rem;font-weight:800;color:#1F2937">Share Invite Link</div><div style="font-size:.72rem;color:#9CA3AF;margin-top:2px">Copy link to send via WhatsApp, LINE, etc.</div></div>
+        <span style="font-size:1.1rem;color:#9CA3AF;margin-left:auto">›</span>
+      </div>
+      <div style="text-align:center;background:#E0F2F1;border-radius:12px;padding:14px;margin-top:4px">
+        <div style="font-size:.68rem;color:#6B7280;font-weight:700;margin-bottom:4px">Your invite code</div>
+        <div id="invite-code" style="font-size:1.8rem;font-weight:900;letter-spacing:6px;color:#00695C;font-family:'DM Sans',monospace">——</div>
+      </div>
+    </div>
+  </div>
+  <div style="padding:12px 16px;background:#fff;border-top:1.5px solid #F3F4F6;flex-shrink:0">
+    <button class="btn btn-t" onclick="completeOnboarding('owner')" style="max-width:360px">Go to Dashboard →</button>
+    <button class="btn-link" onclick="completeOnboarding('owner')" style="text-align:center;width:100%;display:block;margin-top:8px">Skip for now</button>
+  </div>
+</div>
+
+<!-- ═══ WORKER: Scan QR / Enter Code ═══ -->
+<div id="s-worker-reg" class="screen" style="background:#fff">
+  <div class="sb" style="background:#BF360C">9:41<span>📶 🔋</span></div>
+  <div style="background:linear-gradient(160deg,#E65100,#BF360C);padding:16px 22px;color:#fff;flex-shrink:0">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px"><span class="bk" onclick="goBack()" style="color:#fff">‹</span><span style="font-size:.9rem;font-weight:800">Join a Household</span></div>
+    <p style="font-size:.72rem;opacity:.85">Enter the invite code from your employer</p>
   </div>
   <div class="sc" style="background:#fff">
-    <div style="padding:32px 16px;display:flex;flex-direction:column;align-items:center;text-align:center">
-      <div style="font-size:2.5rem;margin-bottom:12px">🔗</div>
-      <h2 style="font-size:1.2rem;font-weight:900;color:#1F2937;margin-bottom:4px" data-i18n="share_code">Share This Code</h2>
-      <p style="font-size:.82rem;color:#6B7280;margin-bottom:24px;font-weight:600">Your workers enter this to join your household</p>
-      <div class="invite-box">
-        <div class="ib-label" data-i18n="invite_code">Invite Code</div>
-        <div class="ib-code" id="invite-code"></div>
-        <div class="ib-hint" data-i18n="workers_enter_code">Workers enter this code when they sign up</div>
-      </div>
-      <button class="btn btn-t" onclick="completeOnboarding('owner')" style="max-width:360px" data-i18n="go_dashboard">Go to Dashboard</button>
-      <button class="btn-link" onclick="completeOnboarding('owner')" data-i18n="skip">Skip for now</button>
+    <div style="padding:20px 16px;display:flex;flex-direction:column;align-items:center;text-align:center">
+      <div style="font-size:2.5rem;margin-bottom:12px">📱</div>
+      <p style="font-size:.88rem;font-weight:700;color:#1F2937;margin-bottom:16px">Ask your employer for the invite code</p>
+      <div class="form-group"><input id="wr-code" type="text" style="text-align:center;font-size:1.5rem;letter-spacing:6px;font-weight:900;text-transform:uppercase" placeholder="ABC123" maxlength="6"></div>
+      <div id="wr-code-error" class="error-msg"></div>
+      <button class="btn btn-o" id="wr-code-btn" disabled onclick="workerCheckCode()" style="max-width:360px">Join →</button>
+      <button class="btn-link" onclick="goScreen('s-start')" style="margin-top:16px">Already have an account? Sign in</button>
     </div>
   </div>
 </div>
 
-<!-- ═══ WORKER REGISTER ═══ -->
-<div id="s-worker-reg" class="screen" style="background:#fff">
-  <div class="sb">9:41<span>📶 🔋</span></div>
-  <div style="background:linear-gradient(160deg,#00897B,#00695C);padding:16px 22px;color:#fff;flex-shrink:0">
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px"><span class="bk" onclick="goBack()" style="color:#fff">‹</span><span style="font-size:.9rem;font-weight:800" data-i18n="join_household">Join a Household</span></div>
-    <p style="font-size:.76rem;opacity:.85" data-i18n="worker_reg">Create your worker account</p>
+<!-- ═══ WORKER: Accept Invitation ═══ -->
+<div id="s-worker-accept" class="screen" style="background:#fff">
+  <div class="sb" style="background:#BF360C">9:41<span>📶 🔋</span></div>
+  <div style="background:linear-gradient(160deg,#E65100,#BF360C);padding:16px 22px;color:#fff;flex-shrink:0">
+    <span style="font-size:.9rem;font-weight:800">Accept Invitation</span>
+  </div>
+  <div class="sc" style="background:#fff">
+    <div style="padding:28px 16px;display:flex;flex-direction:column;align-items:center;text-align:center">
+      <div style="font-size:3rem;margin-bottom:12px">🏠</div>
+      <h2 style="font-size:1.1rem;font-weight:900;color:#1F2937" id="wa-property">—</h2>
+      <p style="font-size:.82rem;color:#6B7280;font-weight:600;margin-top:4px">by <span id="wa-owner">—</span></p>
+      <div style="background:#FBE9E7;border-radius:12px;padding:12px 20px;margin:20px 0;font-size:.82rem;font-weight:700;color:#BF360C">You've been invited to join this household</div>
+      <button class="btn btn-o" onclick="workerAcceptInvite()" style="max-width:360px">✅ Accept and Join</button>
+      <button class="btn-link" onclick="goBack()" style="margin-top:12px">Decline</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ WORKER: Details + Job Type (Step 1/2) ═══ -->
+<div id="s-worker-details" class="screen" style="background:#fff">
+  <div class="sb" style="background:#BF360C">9:41<span>📶 🔋</span></div>
+  <div style="background:linear-gradient(160deg,#E65100,#BF360C);padding:16px 22px;color:#fff;flex-shrink:0">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px"><span class="bk" onclick="goBack()" style="color:#fff">‹</span><span style="font-size:.9rem;font-weight:800">Your Details</span></div>
+    <p style="font-size:.72rem;opacity:.85">Step 1 of 2 — Worker setup</p>
   </div>
   <div class="sc" style="background:#fff">
     <div style="padding:16px;display:flex;flex-direction:column;align-items:center">
-      <div class="form-group"><label data-i18n="full_name">Full Name</label><input id="wr-name" type="text" placeholder="Your full name" maxlength="40"></div>
-      <div class="form-group"><label data-i18n="email">Email</label><input id="wr-email" type="email" placeholder="your@email.com"></div>
-      <div class="form-group"><label data-i18n="pin_label">4-Digit PIN</label><input id="wr-pin" type="password" inputmode="numeric" class="pin-input" placeholder="••••" maxlength="4"></div>
-      <div id="wr-error" class="error-msg"></div>
-      <button class="btn btn-t" id="wr-btn" disabled onclick="workerRegister()" style="max-width:360px" data-i18n="send_code">Send Verification Code</button>
-      <button class="btn-link" onclick="goScreen('s-signin')" data-i18n="have_account">Already have an account? Sign in</button>
+      <div class="form-group"><label>Full Name *</label><input id="wd-name" type="text" placeholder="Your full name" maxlength="40"></div>
+      <div class="form-group"><label>Email *</label><input id="wd-email" type="email" placeholder="your@email.com"></div>
+      <label style="font-size:.78rem;color:#6B7280;margin-bottom:6px;width:100%;max-width:360px;font-weight:700">Your Job *</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;width:100%;max-width:360px;margin-bottom:14px" id="wd-jobs">
+        <div class="prop-item" onclick="pickWorkerJob('Cleaner',this)" style="padding:12px 4px"><div class="pi-icon">🧹</div><div class="pi-name" style="font-size:.72rem">Cleaner</div></div>
+        <div class="prop-item" onclick="pickWorkerJob('Cook',this)" style="padding:12px 4px"><div class="pi-icon">🍳</div><div class="pi-name" style="font-size:.72rem">Cook</div></div>
+        <div class="prop-item" onclick="pickWorkerJob('Nanny',this)" style="padding:12px 4px"><div class="pi-icon">👶</div><div class="pi-name" style="font-size:.72rem">Nanny</div></div>
+        <div class="prop-item" onclick="pickWorkerJob('Driver',this)" style="padding:12px 4px"><div class="pi-icon">🚗</div><div class="pi-name" style="font-size:.72rem">Driver</div></div>
+        <div class="prop-item" onclick="pickWorkerJob('Gardener',this)" style="padding:12px 4px"><div class="pi-icon">🌿</div><div class="pi-name" style="font-size:.72rem">Gardener</div></div>
+        <div class="prop-item" onclick="pickWorkerJob('Maintenance',this)" style="padding:12px 4px"><div class="pi-icon">🔧</div><div class="pi-name" style="font-size:.72rem">Maintenance</div></div>
+      </div>
+      <div id="wd-error" class="error-msg"></div>
+      <button class="btn btn-o" id="wd-btn" disabled onclick="workerSubmitDetails()" style="max-width:360px">Continue →</button>
     </div>
   </div>
 </div>
 
-<!-- ═══ WORKER LANGUAGE SELECT ═══ -->
+<!-- ═══ WORKER: Done Screen (Step 2/2) ═══ -->
+<div id="s-worker-done" class="screen" style="background:#fff">
+  <div class="sb" style="background:#BF360C">9:41<span>📶 🔋</span></div>
+  <div style="background:linear-gradient(160deg,#E65100,#BF360C);padding:16px 22px;color:#fff;flex-shrink:0">
+    <span style="font-size:.9rem;font-weight:800">Step 2 of 2 — All Set!</span>
+  </div>
+  <div class="sc" style="background:#fff">
+    <div style="padding:40px 16px;display:flex;flex-direction:column;align-items:center;text-align:center">
+      <div style="font-size:3rem;margin-bottom:12px">✅</div>
+      <h2 style="font-size:1.3rem;font-weight:900;color:#1F2937">You're all set!</h2>
+      <p style="font-size:.88rem;color:#6B7280;font-weight:600;margin-top:8px">You've joined <strong id="wdone-property">—</strong></p>
+      <p style="font-size:.76rem;color:#9CA3AF;margin-top:4px">Your employer will see you on their dashboard</p>
+      <button class="btn btn-o" onclick="completeOnboarding('worker')" style="max-width:360px;margin-top:24px">Go to my Dashboard →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ WORKER LANGUAGE SELECT (kept for language preference) ═══ -->
 <div id="s-worker-lang" class="screen" style="background:#fff">
-  <div class="sb">9:41<span>📶 🔋</span></div>
+  <div class="sb" style="background:#BF360C">9:41<span>📶 🔋</span></div>
   <div style="background:linear-gradient(160deg,#E65100,#BF360C);padding:20px 22px 16px;text-align:center;color:#fff;flex-shrink:0">
     <div style="font-size:2rem;margin-bottom:4px">🌐</div>
     <h2 style="font-size:1.1rem;font-weight:900;margin-bottom:2px;color:#fff">Choose Your Language</h2>
@@ -547,28 +632,6 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
   </div>
   <div style="padding:12px 14px 16px;background:#fff;border-top:1.5px solid #F3F4F6;flex-shrink:0">
     <button class="btn btn-o" id="wl-continue-btn" disabled onclick="workerLangNext()">Continue →</button>
-  </div>
-</div>
-
-<!-- ═══ WORKER TYPE SELECT ═══ -->
-<div id="s-worker-type" class="screen" style="background:#fff">
-  <div class="sb" style="background:#BF360C">9:41<span>📶 🔋</span></div>
-  <div style="background:linear-gradient(160deg,#E65100,#BF360C);padding:20px 22px 16px;text-align:center;color:#fff;flex-shrink:0">
-    <h2 style="font-size:1.1rem;font-weight:900;color:#fff">What's your job?</h2>
-    <p style="font-size:.74rem;opacity:.85">Select your role in the household</p>
-  </div>
-  <div class="sc" style="background:#fff">
-    <div style="padding:12px 14px;display:grid;grid-template-columns:1fr 1fr;gap:10px" id="wt-grid">
-      <div class="prop-item" onclick="pickWorkerType('Driver',this)"><div class="pi-icon">🚗</div><div class="pi-name">Driver</div></div>
-      <div class="prop-item" onclick="pickWorkerType('Cleaner',this)"><div class="pi-icon">🧹</div><div class="pi-name">Cleaner</div></div>
-      <div class="prop-item" onclick="pickWorkerType('Cook',this)"><div class="pi-icon">👨‍🍳</div><div class="pi-name">Cook</div></div>
-      <div class="prop-item" onclick="pickWorkerType('Nanny',this)"><div class="pi-icon">👶</div><div class="pi-name">Nanny</div></div>
-      <div class="prop-item" onclick="pickWorkerType('Gardener',this)"><div class="pi-icon">🌿</div><div class="pi-name">Gardener</div></div>
-      <div class="prop-item" onclick="pickWorkerType('Security',this)"><div class="pi-icon">🛡️</div><div class="pi-name">Security</div></div>
-    </div>
-  </div>
-  <div style="padding:12px 14px 16px;background:#fff;border-top:1.5px solid #F3F4F6;flex-shrink:0">
-    <button class="btn btn-o" id="wt-btn" disabled onclick="workerTypeNext()">Continue →</button>
   </div>
 </div>
 
@@ -1149,7 +1212,7 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
 //  STATE
 // ══════════════════════════════════════
 // App version — change to force all users to re-login
-var APP_VERSION = 'v5-20260422';
+var APP_VERSION = 'v6-20260422';
 if (localStorage.getItem('bt_version') !== APP_VERSION) {
   console.log('[BOOT] Version changed → clearing all local data');
   localStorage.clear();
@@ -1567,8 +1630,8 @@ function selectRole(role) {
     // OWNER NEW: role → owner registration (name + email)
     goScreen('s-owner-reg');
   } else {
-    // WORKER NEW: role → enter invite code first
-    goScreen('s-worker-join');
+    // WORKER NEW: role → enter invite code
+    goScreen('s-worker-reg');
   }
 }
 
@@ -1663,7 +1726,78 @@ function workerLangNext() {
     localStorage.setItem('bt_user', JSON.stringify(me));
   }
   try { applyLang(); } catch(e) {}
-  goScreen('s-worker-type');
+  // Show done screen
+  var propName = (pendingReg && pendingReg.propertyName) || (myProperty && myProperty.name) || 'your household';
+  document.getElementById('wdone-property').textContent = propName;
+  goScreen('s-worker-done');
+}
+
+// ── Worker invite code check ──
+document.getElementById('wr-code').addEventListener('input', function() {
+  this.value = this.value.replace(/[^a-zA-Z0-9]/g,'').toUpperCase().substring(0,6);
+  document.getElementById('wr-code-btn').disabled = this.value.length !== 6;
+});
+
+async function workerCheckCode() {
+  var code = document.getElementById('wr-code').value.trim();
+  showError('wr-code-error','');
+  document.getElementById('wr-code-btn').disabled = true;
+  try {
+    var r = await fetch('/api/check-invite', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({inviteCode:code}) });
+    var d = await r.json();
+    if (!d.ok) { showError('wr-code-error', d.error || 'Invalid code'); document.getElementById('wr-code-btn').disabled = false; return; }
+    if (!pendingReg) pendingReg = {};
+    pendingReg.inviteCode = code;
+    pendingReg.propertyName = d.property.name;
+    pendingReg.ownerName = d.owner.name;
+    pendingReg.propertyId = d.property.id;
+    pendingReg.role = 'worker';
+    // Show accept screen
+    document.getElementById('wa-property').textContent = d.property.name;
+    document.getElementById('wa-owner').textContent = d.owner.name;
+    goScreen('s-worker-accept');
+  } catch(e) { showError('wr-code-error','Network error'); document.getElementById('wr-code-btn').disabled = false; }
+}
+
+function workerAcceptInvite() {
+  goScreen('s-worker-details');
+}
+
+// ── Worker details + job type ──
+var selectedWorkerJob = '';
+function pickWorkerJob(job, el) {
+  document.querySelectorAll('#wd-jobs .prop-item').forEach(function(i) { i.classList.remove('selected'); });
+  el.classList.add('selected');
+  selectedWorkerJob = job;
+  checkWorkerDetails();
+}
+function checkWorkerDetails() {
+  var n = document.getElementById('wd-name').value.trim();
+  var e = document.getElementById('wd-email').value.trim();
+  document.getElementById('wd-btn').disabled = !(n && e.includes('@') && selectedWorkerJob);
+}
+document.getElementById('wd-name').addEventListener('input', checkWorkerDetails);
+document.getElementById('wd-email').addEventListener('input', checkWorkerDetails);
+
+async function workerSubmitDetails() {
+  var name = document.getElementById('wd-name').value.trim();
+  var email = document.getElementById('wd-email').value.trim();
+  showError('wd-error','');
+  document.getElementById('wd-btn').disabled = true;
+  if (!pendingReg) pendingReg = {};
+  pendingReg.name = name;
+  pendingReg.email = email;
+  pendingReg.role = 'worker';
+  pendingReg.jobRole = selectedWorkerJob;
+  startFlowType = 'new';
+  // Send OTP
+  try {
+    var r = await fetch('/api/send-otp', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({contact:email,name:name}) });
+    var d = await r.json();
+    if (!d.ok) { showError('wd-error', d.error); document.getElementById('wd-btn').disabled = false; return; }
+    document.getElementById('otp-subtitle').textContent = d.method === 'console' ? 'Check server logs' : 'Code sent to ' + email;
+    goScreen('s-otp');
+  } catch(e) { showError('wd-error','Network error'); document.getElementById('wd-btn').disabled = false; }
 }
 
 // ══════════════════════════════════════
@@ -1778,6 +1912,14 @@ async function verifyOTP() {
     if (role === 'owner') {
       goScreen('s-property');
     } else {
+      // Worker: join the property now, then pick language
+      if (pendingReg && pendingReg.inviteCode && me.id) {
+        try {
+          var jr = await fetch('/api/worker/join', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({userId:me.id, inviteCode:pendingReg.inviteCode, jobRole:pendingReg.jobRole||selectedWorkerJob||''}) });
+          var jd = await jr.json();
+          if (jd.ok) { me.propertyId = jd.propertyId; localStorage.setItem('bt_user', JSON.stringify(me)); try { await loadPropertyData(String(jd.propertyId)); } catch(e) {} }
+        } catch(e) {}
+      }
       goScreen('s-worker-lang');
     }
   }
@@ -1829,20 +1971,21 @@ function pickPropType(t, el) {
   document.querySelectorAll('.prop-item').forEach(i => i.classList.remove('selected'));
   el.classList.add('selected'); selectedPropType = t; checkPropReady();
 }
-function checkPropReady() { document.getElementById('prop-btn').disabled = !(selectedPropType && document.getElementById('prop-name').value.trim()); }
-['prop-name','prop-location'].forEach(id => document.getElementById(id).addEventListener('input', checkPropReady));
+function checkPropReady() { document.getElementById('prop-btn').disabled = !(selectedPropType && document.getElementById('prop-name').value.trim() && document.getElementById('prop-city').value.trim()); }
+['prop-name','prop-city','prop-address'].forEach(function(id) { var el = document.getElementById(id); if (el) el.addEventListener('input', checkPropReady); });
 
 async function createProperty() {
-  const name = document.getElementById('prop-name').value.trim();
-  const location = document.getElementById('prop-location').value.trim();
+  var name = document.getElementById('prop-name').value.trim();
+  var city = document.getElementById('prop-city').value.trim();
+  var location = city + (document.getElementById('prop-address') ? ', ' + document.getElementById('prop-address').value.trim() : '');
   showError('prop-error','');
   document.getElementById('prop-btn').disabled = true;
   try {
-    const r = await fetch('/api/property/create', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ownerId:me.id,name,type:selectedPropType,location}) });
-    const d = await r.json();
+    var r = await fetch('/api/property/create', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ownerId:me.id,name:name,type:selectedPropType,location:location}) });
+    var d = await r.json();
     if (!d.ok) { showError('prop-error', d.error); document.getElementById('prop-btn').disabled = false; return; }
     myProperty = d.property; me.propertyId = myProperty.id;
-    saveMe();
+    localStorage.setItem('bt_user', JSON.stringify(me));
     document.getElementById('invite-code').textContent = myProperty.inviteCode;
     goScreen('s-invite');
   } catch(e) { showError('prop-error','Network error'); document.getElementById('prop-btn').disabled = false; }
