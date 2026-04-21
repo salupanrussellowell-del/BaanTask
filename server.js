@@ -10,7 +10,7 @@ const { Resend } = require('resend');
 const jwt = require('jsonwebtoken');
 const path = require('path');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'baantask-jwt-v2-20260420';
+const JWT_SECRET = process.env.JWT_SECRET || 'baantask-jwt-v3-20260421';
 
 const app = express();
 const server = http.createServer(app);
@@ -185,9 +185,15 @@ async function connectDB() {
     console.log('[DB] Connected to MongoDB Atlas');
     // Drop stale unique index on name if it exists
     try { await mongoose.connection.db.collection('users').dropIndex('name_1'); console.log('[DB] Dropped stale name_1 index'); } catch (e) { /**/ }
-    // Run repairs in background (don't block server start)
+    // Run repairs + cleanup in background
     setTimeout(async () => {
       try { await repairAllGroupChats(); } catch (e) { console.error('[REPAIR ERR]', e.message); }
+      // One-time: clear all OTPs and PINs
+      try {
+        await OTP.deleteMany({});
+        var pr = await User.updateMany({}, { pinHash: '' });
+        console.log('[CLEANUP] Cleared all OTPs + reset ' + pr.modifiedCount + ' PINs');
+      } catch(e) {}
     }, 2000);
   } catch (e) { console.error('[DB] Connection failed:', e.message); }
 }
