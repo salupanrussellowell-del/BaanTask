@@ -440,20 +440,27 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
 
 <!-- ═══ OTP VERIFY ═══ -->
 <div id="s-otp" class="screen" style="background:#fff">
-  <div class="sb">9:41<span>📶 🔋</span></div>
+  <div class="sb" style="background:#00695C">9:41<span>📶 🔋</span></div>
   <div style="background:linear-gradient(160deg,#00897B,#00695C);padding:16px 22px;color:#fff;flex-shrink:0">
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px"><span class="bk" onclick="goBack()" style="color:#fff">‹</span><span style="font-size:.9rem;font-weight:800" data-i18n="verify_email">Verify Email</span></div>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px"><span class="bk" onclick="goBack()" style="color:#fff">‹</span><span style="font-size:.9rem;font-weight:800">Verify Email</span></div>
   </div>
   <div class="sc" style="background:#fff">
     <div style="padding:32px 16px;display:flex;flex-direction:column;align-items:center;text-align:center">
       <div style="font-size:2.5rem;margin-bottom:12px">📧</div>
-      <h2 style="font-size:1.2rem;font-weight:900;color:#1F2937;margin-bottom:4px" data-i18n="check_email">Check Your Email</h2>
-      <p style="font-size:.82rem;color:#6B7280;margin-bottom:24px;font-weight:600" id="otp-subtitle">Enter the 6-digit code</p>
-      <div class="form-group"><input id="otp-input" type="text" inputmode="numeric" class="otp-input" placeholder="000000" maxlength="6"></div>
+      <h2 style="font-size:1.2rem;font-weight:900;color:#1F2937;margin-bottom:4px">Check Your Email</h2>
+      <p style="font-size:.82rem;color:#6B7280;margin-bottom:20px;font-weight:600" id="otp-subtitle">Enter the 6-digit code</p>
+      <div id="otp-boxes" style="display:flex;gap:8px;justify-content:center;margin-bottom:20px">
+        <input class="otp-box" maxlength="1" type="tel" inputmode="numeric" style="width:45px;height:55px;text-align:center;font-size:1.5rem;font-weight:900;border:2px solid #E5E7EB;border-radius:12px;outline:none;font-family:inherit;-webkit-appearance:none" onfocus="this.select()">
+        <input class="otp-box" maxlength="1" type="tel" inputmode="numeric" style="width:45px;height:55px;text-align:center;font-size:1.5rem;font-weight:900;border:2px solid #E5E7EB;border-radius:12px;outline:none;font-family:inherit;-webkit-appearance:none" onfocus="this.select()">
+        <input class="otp-box" maxlength="1" type="tel" inputmode="numeric" style="width:45px;height:55px;text-align:center;font-size:1.5rem;font-weight:900;border:2px solid #E5E7EB;border-radius:12px;outline:none;font-family:inherit;-webkit-appearance:none" onfocus="this.select()">
+        <input class="otp-box" maxlength="1" type="tel" inputmode="numeric" style="width:45px;height:55px;text-align:center;font-size:1.5rem;font-weight:900;border:2px solid #E5E7EB;border-radius:12px;outline:none;font-family:inherit;-webkit-appearance:none" onfocus="this.select()">
+        <input class="otp-box" maxlength="1" type="tel" inputmode="numeric" style="width:45px;height:55px;text-align:center;font-size:1.5rem;font-weight:900;border:2px solid #E5E7EB;border-radius:12px;outline:none;font-family:inherit;-webkit-appearance:none" onfocus="this.select()">
+        <input class="otp-box" maxlength="1" type="tel" inputmode="numeric" style="width:45px;height:55px;text-align:center;font-size:1.5rem;font-weight:900;border:2px solid #E5E7EB;border-radius:12px;outline:none;font-family:inherit;-webkit-appearance:none" onfocus="this.select()">
+      </div>
       <div id="otp-error" class="error-msg"></div>
       <div id="otp-success" class="success-msg"></div>
       <button class="btn btn-t" id="otp-btn" disabled onclick="doVerifyOTP()" style="max-width:360px">Verify & Continue</button>
-      <button class="btn-link" onclick="resendOTP()" data-i18n="resend_code">Resend code</button>
+      <button class="btn-link" onclick="resendOTP()" style="margin-top:12px">Resend code</button>
     </div>
   </div>
 </div>
@@ -1279,7 +1286,7 @@ function goScreen(id, skipHistory) {
   if (id === 's-chat-list-w') loadChatList();
   if (id === 's-conversation') loadConversation();
   if (id === 's-notif') loadNotifNav();
-  if (id === 's-otp') { document.getElementById('otp-input').value = ''; document.getElementById('otp-btn').disabled = true; showError('otp-error',''); }
+  if (id === 's-otp') { try { clearOtpBoxes(); } catch(e) {} document.getElementById('otp-btn').disabled = true; showError('otp-error',''); }
   if (typeof applyLang === 'function') applyLang();
 }
 function goBack() { const prev = screenHistory.pop(); if (prev) goScreen(prev, true); }
@@ -1486,7 +1493,7 @@ async function startEmailCheck() {
     const d = await r.json();
     if (!d.ok) { showError('st-error', d.error || 'Failed to send code'); return; }
     document.getElementById('otp-subtitle').textContent = d.method === 'console' ? 'Check server logs for the code' : 'Code sent to ' + email;
-    window.currentEmail = email || (pendingReg && pendingReg.email) || ''; goScreen('s-otp');
+    window.currentEmail = email || (pendingReg && pendingReg.email) || ''; localStorage.setItem('bt_pending_email', window.currentEmail); goScreen('s-otp');
   } catch(e) {
     showError('st-error', 'Could not connect to server — please try again');
     console.error('[START]', e.message || e);
@@ -1688,7 +1695,7 @@ async function ownerRegister() {
     var d = await r.json();
     if (!d.ok) { showError('or-error', d.error); return; }
     document.getElementById('otp-subtitle').textContent = d.method === 'console' ? 'Check server logs' : 'Code sent to ' + email;
-    window.currentEmail = email || (pendingReg && pendingReg.email) || ''; goScreen('s-otp');
+    window.currentEmail = email || (pendingReg && pendingReg.email) || ''; localStorage.setItem('bt_pending_email', window.currentEmail); goScreen('s-otp');
   } catch(e) { showError('or-error','Network error'); }
   finally { document.getElementById('or-btn').disabled = false; document.getElementById('or-btn').textContent = 'Continue →'; }
 }
@@ -1820,7 +1827,7 @@ async function workerSubmitDetails() {
     var d = await r.json();
     if (!d.ok) { showError('wd-error', d.error); document.getElementById('wd-btn').disabled = false; return; }
     document.getElementById('otp-subtitle').textContent = d.method === 'console' ? 'Check server logs' : 'Code sent to ' + email;
-    window.currentEmail = email || (pendingReg && pendingReg.email) || ''; goScreen('s-otp');
+    window.currentEmail = email || (pendingReg && pendingReg.email) || ''; localStorage.setItem('bt_pending_email', window.currentEmail); goScreen('s-otp');
   } catch(e) { showError('wd-error','Network error'); document.getElementById('wd-btn').disabled = false; }
 }
 
@@ -1847,28 +1854,58 @@ async function workerRegister() {
     const d = await r.json();
     if (!d.ok) { showError('wr-error', d.error); return; }
     document.getElementById('otp-subtitle').textContent = d.method === 'console' ? 'Check server logs for the code' : `Code sent to ${email}`;
-    window.currentEmail = email || (pendingReg && pendingReg.email) || ''; goScreen('s-otp');
+    window.currentEmail = email || (pendingReg && pendingReg.email) || ''; localStorage.setItem('bt_pending_email', window.currentEmail); goScreen('s-otp');
   } catch(e) { showError('wr-error','Network error'); }
   finally { document.getElementById('wr-btn').disabled = false; }
 }
 
 // ══════════════════════════════════════
-//  OTP VERIFICATION
+//  OTP VERIFICATION (6 separate boxes)
 // ══════════════════════════════════════
-document.getElementById('otp-input').addEventListener('input', function() {
-  this.value = this.value.replace(/\D/g,'').substring(0,6);
-  document.getElementById('otp-btn').disabled = this.value.length !== 6;
-});
+(function initOtpBoxes() {
+  var boxes = document.querySelectorAll('.otp-box');
+  boxes.forEach(function(box, i) {
+    box.addEventListener('input', function() {
+      this.value = this.value.replace(/\D/g, '').substring(0, 1);
+      if (this.value && i < 5) boxes[i + 1].focus();
+      // Enable button when all 6 filled
+      var otp = Array.from(boxes).map(function(b) { return b.value; }).join('');
+      document.getElementById('otp-btn').disabled = otp.length !== 6;
+    });
+    box.addEventListener('keydown', function(e) {
+      if (e.key === 'Backspace' && !this.value && i > 0) {
+        boxes[i - 1].focus();
+        boxes[i - 1].value = '';
+      }
+    });
+    box.addEventListener('paste', function(e) {
+      e.preventDefault();
+      var paste = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '').substring(0, 6);
+      for (var j = 0; j < paste.length && j < 6; j++) boxes[j].value = paste[j];
+      if (paste.length >= 6) { boxes[5].focus(); document.getElementById('otp-btn').disabled = false; }
+    });
+  });
+})();
+
+function getOtpCode() {
+  return Array.from(document.querySelectorAll('.otp-box')).map(function(b) { return b.value; }).join('');
+}
+
+function clearOtpBoxes() {
+  document.querySelectorAll('.otp-box').forEach(function(b) { b.value = ''; });
+  document.querySelectorAll('.otp-box')[0].focus();
+  document.getElementById('otp-btn').disabled = true;
+}
 
 async function doVerifyOTP() {
   var btn = document.getElementById('otp-btn');
-  var otp = document.getElementById('otp-input').value.trim();
-  var email = window.currentEmail || '';
+  var otp = getOtpCode();
+  var email = window.currentEmail || localStorage.getItem('bt_pending_email') || '';
 
   console.log('=== doVerifyOTP ===');
   console.log('email:', email, 'otp:', otp, 'flow:', startFlowType);
 
-  if (!otp || otp.length < 6) { showError('otp-error', 'Please enter the 6-digit code'); return; }
+  if (!otp || otp.length < 6) { showError('otp-error', 'Please enter all 6 digits'); return; }
   if (!email) { showError('otp-error', 'Email not found. Please go back.'); return; }
 
   btn.disabled = true;
@@ -1899,6 +1936,7 @@ async function doVerifyOTP() {
   if (!data.ok) {
     showError('otp-error', data.error || 'Invalid code');
     btn.disabled = false; btn.textContent = 'Verify & Continue';
+    clearOtpBoxes();
     return;
   }
 
