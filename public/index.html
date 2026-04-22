@@ -1863,16 +1863,36 @@ document.getElementById('otp-input').addEventListener('input', function() {
 async function verifyOTP() {
   var btn = document.getElementById('otp-btn');
   var code = document.getElementById('otp-input').value.trim();
-  var email = (pendingReg && pendingReg.email) || (me && me.email) || '';
+
+  // Get email from ALL possible sources
+  var email = '';
+  if (pendingReg && pendingReg.email) email = pendingReg.email;
+  if (!email && me && me.email) email = me.email;
+  if (!email && startFlowEmail) email = startFlowEmail;
+  if (!email) { var stEl = document.getElementById('st-email'); if (stEl && stEl.value.trim()) email = stEl.value.trim(); }
+  if (!email) { var orEl = document.getElementById('or-email'); if (orEl && orEl.value.trim()) email = orEl.value.trim(); }
+  if (!email) { var wdEl = document.getElementById('wd-email'); if (wdEl && wdEl.value.trim()) email = wdEl.value.trim(); }
+
   var role = (pendingReg && pendingReg.role) || selectedRole || localStorage.getItem('bt_role') || 'owner';
   var name = (pendingReg && pendingReg.name) || (me && me.name) || email.split('@')[0];
   btn.disabled = true;
   btn.textContent = 'Verifying...';
   showError('otp-error', '');
-  console.log('[OTP] START email=' + email + ' flow=' + startFlowType + ' role=' + role);
 
-  if (!email || !code) {
-    showError('otp-error', 'Email or code missing');
+  console.log('=== VERIFY OTP ===');
+  console.log('email:', email);
+  console.log('code:', code);
+  console.log('flow:', startFlowType);
+  console.log('role:', role);
+  console.log('pendingReg:', JSON.stringify(pendingReg));
+
+  if (!email) {
+    showError('otp-error', 'Email not found. Please go back and enter your email.');
+    btn.disabled = false; btn.textContent = 'Verify & Continue';
+    return;
+  }
+  if (!code || code.length < 6) {
+    showError('otp-error', 'Please enter the 6-digit code');
     btn.disabled = false; btn.textContent = 'Verify & Continue';
     return;
   }
@@ -1884,11 +1904,14 @@ async function verifyOTP() {
     var payload = (startFlowType === 'returning')
       ? { contact: email, otp: code }
       : { contact: email, otp: code, name: name, pin: '0000', lang: selectedLang || 'English', role: role };
+    console.log('Calling:', url, JSON.stringify(payload));
     var resp = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    console.log('Response status:', resp.status);
     data = await resp.json();
-    console.log('[OTP] Response:', data.ok ? 'SUCCESS' : data.error);
+    console.log('Response:', JSON.stringify(data).substring(0, 300));
   } catch (err) {
-    showError('otp-error', 'Could not connect to server');
+    console.error('Fetch error:', err);
+    showError('otp-error', 'Could not connect to server: ' + (err.message || ''));
     btn.disabled = false; btn.textContent = 'Verify & Continue';
     return;
   }
