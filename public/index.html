@@ -452,7 +452,7 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
       <div class="form-group"><input id="otp-input" type="text" inputmode="numeric" class="otp-input" placeholder="000000" maxlength="6"></div>
       <div id="otp-error" class="error-msg"></div>
       <div id="otp-success" class="success-msg"></div>
-      <button class="btn btn-t" id="otp-btn" disabled onclick="verifyOTP()" style="max-width:360px" data-i18n="verify_continue">Verify & Continue</button>
+      <button class="btn btn-t" id="otp-btn" disabled onclick="doVerifyOTP()" style="max-width:360px">Verify & Continue</button>
       <button class="btn-link" onclick="resendOTP()" data-i18n="resend_code">Resend code</button>
     </div>
   </div>
@@ -1486,7 +1486,7 @@ async function startEmailCheck() {
     const d = await r.json();
     if (!d.ok) { showError('st-error', d.error || 'Failed to send code'); return; }
     document.getElementById('otp-subtitle').textContent = d.method === 'console' ? 'Check server logs for the code' : 'Code sent to ' + email;
-    goScreen('s-otp');
+    window.currentEmail = email || (pendingReg && pendingReg.email) || ''; goScreen('s-otp');
   } catch(e) {
     showError('st-error', 'Could not connect to server — please try again');
     console.error('[START]', e.message || e);
@@ -1688,7 +1688,7 @@ async function ownerRegister() {
     var d = await r.json();
     if (!d.ok) { showError('or-error', d.error); return; }
     document.getElementById('otp-subtitle').textContent = d.method === 'console' ? 'Check server logs' : 'Code sent to ' + email;
-    goScreen('s-otp');
+    window.currentEmail = email || (pendingReg && pendingReg.email) || ''; goScreen('s-otp');
   } catch(e) { showError('or-error','Network error'); }
   finally { document.getElementById('or-btn').disabled = false; document.getElementById('or-btn').textContent = 'Continue →'; }
 }
@@ -1820,7 +1820,7 @@ async function workerSubmitDetails() {
     var d = await r.json();
     if (!d.ok) { showError('wd-error', d.error); document.getElementById('wd-btn').disabled = false; return; }
     document.getElementById('otp-subtitle').textContent = d.method === 'console' ? 'Check server logs' : 'Code sent to ' + email;
-    goScreen('s-otp');
+    window.currentEmail = email || (pendingReg && pendingReg.email) || ''; goScreen('s-otp');
   } catch(e) { showError('wd-error','Network error'); document.getElementById('wd-btn').disabled = false; }
 }
 
@@ -1847,7 +1847,7 @@ async function workerRegister() {
     const d = await r.json();
     if (!d.ok) { showError('wr-error', d.error); return; }
     document.getElementById('otp-subtitle').textContent = d.method === 'console' ? 'Check server logs for the code' : `Code sent to ${email}`;
-    goScreen('s-otp');
+    window.currentEmail = email || (pendingReg && pendingReg.email) || ''; goScreen('s-otp');
   } catch(e) { showError('wr-error','Network error'); }
   finally { document.getElementById('wr-btn').disabled = false; }
 }
@@ -1860,58 +1860,38 @@ document.getElementById('otp-input').addEventListener('input', function() {
   document.getElementById('otp-btn').disabled = this.value.length !== 6;
 });
 
-async function verifyOTP() {
+async function doVerifyOTP() {
   var btn = document.getElementById('otp-btn');
-  var code = document.getElementById('otp-input').value.trim();
+  var otp = document.getElementById('otp-input').value.trim();
+  var email = window.currentEmail || '';
 
-  // Get email from ALL possible sources
-  var email = '';
-  if (pendingReg && pendingReg.email) email = pendingReg.email;
-  if (!email && me && me.email) email = me.email;
-  if (!email && startFlowEmail) email = startFlowEmail;
-  if (!email) { var stEl = document.getElementById('st-email'); if (stEl && stEl.value.trim()) email = stEl.value.trim(); }
-  if (!email) { var orEl = document.getElementById('or-email'); if (orEl && orEl.value.trim()) email = orEl.value.trim(); }
-  if (!email) { var wdEl = document.getElementById('wd-email'); if (wdEl && wdEl.value.trim()) email = wdEl.value.trim(); }
+  console.log('=== doVerifyOTP ===');
+  console.log('email:', email, 'otp:', otp, 'flow:', startFlowType);
 
-  var role = (pendingReg && pendingReg.role) || selectedRole || localStorage.getItem('bt_role') || 'owner';
-  var name = (pendingReg && pendingReg.name) || (me && me.name) || email.split('@')[0];
+  if (!otp || otp.length < 6) { showError('otp-error', 'Please enter the 6-digit code'); return; }
+  if (!email) { showError('otp-error', 'Email not found. Please go back.'); return; }
+
   btn.disabled = true;
   btn.textContent = 'Verifying...';
   showError('otp-error', '');
 
-  console.log('=== VERIFY OTP ===');
-  console.log('email:', email);
-  console.log('code:', code);
-  console.log('flow:', startFlowType);
-  console.log('role:', role);
-  console.log('pendingReg:', JSON.stringify(pendingReg));
+  var role = (pendingReg && pendingReg.role) || selectedRole || localStorage.getItem('bt_role') || 'owner';
+  var name = (pendingReg && pendingReg.name) || email.split('@')[0];
 
-  if (!email) {
-    showError('otp-error', 'Email not found. Please go back and enter your email.');
-    btn.disabled = false; btn.textContent = 'Verify & Continue';
-    return;
-  }
-  if (!code || code.length < 6) {
-    showError('otp-error', 'Please enter the 6-digit code');
-    btn.disabled = false; btn.textContent = 'Verify & Continue';
-    return;
-  }
-
-  // 1. Call API
+  // 1. CALL API
   var data;
   try {
     var url = (startFlowType === 'returning') ? '/api/verify-otp-only' : '/api/verify-otp';
-    var payload = (startFlowType === 'returning')
-      ? { contact: email, otp: code }
-      : { contact: email, otp: code, name: name, pin: '0000', lang: selectedLang || 'English', role: role };
-    console.log('Calling:', url, JSON.stringify(payload));
-    var resp = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-    console.log('Response status:', resp.status);
+    var body = (startFlowType === 'returning')
+      ? { contact: email, otp: otp }
+      : { contact: email, otp: otp, name: name, pin: '0000', lang: selectedLang || 'English', role: role };
+    console.log('Calling:', url);
+    var resp = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     data = await resp.json();
-    console.log('Response:', JSON.stringify(data).substring(0, 300));
+    console.log('Response:', data.ok ? 'OK' : data.error);
   } catch (err) {
-    console.error('Fetch error:', err);
-    showError('otp-error', 'Could not connect to server: ' + (err.message || ''));
+    console.error('Network error:', err);
+    showError('otp-error', 'Connection error. Please try again.');
     btn.disabled = false; btn.textContent = 'Verify & Continue';
     return;
   }
@@ -1922,61 +1902,49 @@ async function verifyOTP() {
     return;
   }
 
-  // 2. Save token + user
+  // 2. SAVE TOKEN + USER
   me = data.user;
   me.email = email;
   selectedLang = me.lang || selectedLang || 'English';
   if (me.token) localStorage.setItem('bt_token', me.token);
   localStorage.setItem('bt_user', JSON.stringify(me));
+  console.log('Saved user:', me.name, me.role);
   btn.disabled = false; btn.textContent = 'Verify & Continue';
   try { connectSocket(); } catch(e) {}
   try { applyLang(); } catch(e) {}
 
-  // Save extra profile fields if present (phone, gender, dob)
+  // Save profile fields (phone, gender, dob) if set during registration
   if (pendingReg && me.id && (pendingReg.phone || pendingReg.gender || pendingReg.dob)) {
-    try { await fetch('/api/user/update', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({userId:me.id, phone:pendingReg.phone||'', gender:pendingReg.gender||'', dob:pendingReg.dob||''}) }); } catch(e) {}
+    try { fetch('/api/user/update', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({userId:me.id, phone:pendingReg.phone||'', gender:pendingReg.gender||'', dob:pendingReg.dob||''}) }); } catch(e) {}
   }
 
-  // 3. Navigate based on flow
-  console.log('[OTP] Navigate: flow=' + startFlowType + ' role=' + me.role + ' propertyId=' + me.propertyId + ' onboarding=' + me.onboardingComplete);
-
+  // 3. NAVIGATE
   if (startFlowType === 'returning' && me.propertyId) {
-    // RETURNING USER with property → straight to dashboard
+    // Returning user → dashboard
     localStorage.setItem('bt_onboarded', 'true');
     try { await loadPropertyData(String(me.propertyId)); } catch(e) {}
     goScreen(me.role === 'owner' ? 's-owner-home' : 's-worker-home');
-    // Prompt PIN setup if they don't have one
-    if (data.hasPin === false) {
-      setTimeout(function() { goScreen('s-pin-setup'); }, 800);
-    }
   } else if (startFlowType === 'returning') {
-    // RETURNING USER but setup incomplete → finish what's missing
-    if (me.propertyId) {
-      try { await loadPropertyData(String(me.propertyId)); } catch(e) {}
-      goScreen(me.role === 'owner' ? 's-owner-home' : 's-worker-home');
-    } else if (me.role === 'owner') {
-      goScreen('s-property');
-    } else {
-      goScreen('s-worker-join');
-    }
+    // Returning user, no property yet
+    goScreen(me.role === 'owner' ? 's-property' : 's-worker-reg');
+  } else if (role === 'owner') {
+    // New owner → property setup
+    goScreen('s-property');
   } else {
-    // NEW USER — continue onboarding
-    if (role === 'owner') {
-      goScreen('s-property');
-    } else {
-      // Worker: join the property now, then pick language
-      if (pendingReg && pendingReg.inviteCode && me.id) {
-        try {
-          var jr = await fetch('/api/worker/join', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({userId:me.id, inviteCode:pendingReg.inviteCode, jobRole:pendingReg.jobRole||selectedWorkerJob||''}) });
-          var jd = await jr.json();
-          if (jd.ok) { me.propertyId = jd.propertyId; localStorage.setItem('bt_user', JSON.stringify(me)); try { await loadPropertyData(String(jd.propertyId)); } catch(e) {} }
-        } catch(e) {}
-      }
-      goScreen('s-worker-lang');
+    // New worker → join property, then language
+    if (pendingReg && pendingReg.inviteCode && me.id) {
+      try {
+        var jr = await fetch('/api/worker/join', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({userId:me.id, inviteCode:pendingReg.inviteCode, jobRole:pendingReg.jobRole||''}) });
+        var jd = await jr.json();
+        if (jd.ok) { me.propertyId = jd.propertyId; localStorage.setItem('bt_user', JSON.stringify(me)); }
+      } catch(e) {}
     }
+    goScreen('s-worker-lang');
   }
-  console.log('[OTP] DONE');
+  console.log('=== VERIFY DONE ===');
 }
+// Keep old name as alias in case anything still references it
+var verifyOTP = doVerifyOTP;
 
 async function resendOTP() {
   showError('otp-error','');
