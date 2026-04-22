@@ -402,14 +402,35 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
 <!-- ═══ OWNER REGISTER (Step 1/3) ═══ -->
 <div id="s-owner-reg" class="screen" style="background:#fff">
   <div class="sb" style="background:#00695C">9:41<span>📶 🔋</span></div>
-  <div style="background:linear-gradient(160deg,#00897B,#00695C);padding:16px 22px;color:#fff;flex-shrink:0">
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px"><span class="bk" onclick="goBack()" style="color:#fff">‹</span><span style="font-size:.9rem;font-weight:800">Your Details</span></div>
-    <p style="font-size:.72rem;opacity:.85">Step 1 of 3 — Owner setup</p>
+  <div style="background:linear-gradient(160deg,#00897B,#00695C);padding:14px 22px;color:#fff;flex-shrink:0">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px"><span class="bk" onclick="goBack()" style="color:#fff">‹</span><span style="font-size:.72rem;opacity:.8">Step 1 of 3 — Owner setup</span></div>
+    <div style="display:flex;gap:4px;margin-bottom:10px"><div style="flex:1;height:3px;background:#fff;border-radius:2px"></div><div style="flex:1;height:3px;background:rgba(255,255,255,.3);border-radius:2px"></div><div style="flex:1;height:3px;background:rgba(255,255,255,.3);border-radius:2px"></div></div>
+    <h2 style="font-size:1.1rem;font-weight:900;color:#fff">Your Details</h2>
+    <p style="font-size:.74rem;opacity:.8;margin-top:2px">This is how workers will see you</p>
   </div>
   <div class="sc" style="background:#fff">
     <div style="padding:20px 16px;display:flex;flex-direction:column;align-items:center">
+      <!-- Profile Photo -->
+      <div onclick="document.getElementById('or-photo-input').click()" style="width:80px;height:80px;background:#F3F4F6;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:2rem;cursor:pointer;margin-bottom:16px;border:2.5px dashed #D1D5DB;position:relative;overflow:hidden">
+        <span id="or-photo-icon">📷</span>
+        <img id="or-photo-preview" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none">
+      </div>
+      <input type="file" id="or-photo-input" accept="image/*" style="display:none" onchange="previewOwnerPhoto(this)">
+
       <div class="form-group"><label>Full Name *</label><input id="or-name" type="text" placeholder="Your full name" maxlength="40"></div>
       <div class="form-group"><label>Email *</label><input id="or-email" type="email" placeholder="your@email.com"></div>
+      <div class="form-group"><label>Phone Number</label><input id="or-phone" type="tel" placeholder="+66 XX XXX XXXX"></div>
+
+      <!-- Gender -->
+      <label style="font-size:.78rem;color:#6B7280;margin-bottom:6px;width:100%;max-width:360px;font-weight:700">Gender *</label>
+      <div class="gender-row">
+        <div class="gender-btn" onclick="pickGender('male',this)">👨 Male</div>
+        <div class="gender-btn" onclick="pickGender('female',this)">👩 Female</div>
+      </div>
+
+      <!-- Date of Birth -->
+      <div class="form-group"><label>Date of Birth *</label><input id="or-dob" type="date" class="finput"></div>
+
       <div id="or-error" class="error-msg"></div>
       <button class="btn btn-t" id="or-btn" disabled onclick="ownerRegister()" style="max-width:360px">Continue →</button>
       <button class="btn-link" onclick="goScreen('s-start')" style="margin-top:12px">Already have an account? Sign in →</button>
@@ -1628,23 +1649,39 @@ function selectRole(role) {
 //  OWNER REGISTRATION
 // ══════════════════════════════════════
 function pickGender(g, el) {
-  document.querySelectorAll('.gender-btn').forEach(b => b.classList.remove('selected'));
+  document.querySelectorAll('.gender-btn').forEach(function(b) { b.classList.remove('selected'); });
   el.classList.add('selected'); selectedGender = g; checkOwnerReg();
 }
-function checkOwnerReg() {
-  const n = document.getElementById('or-name').value.trim();
-  const e = document.getElementById('or-email').value.trim();
-  document.getElementById('or-btn').disabled = !(n && e.includes('@'));
+function previewOwnerPhoto(input) {
+  if (input.files && input.files[0]) {
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      var img = document.getElementById('or-photo-preview');
+      img.src = e.target.result; img.style.display = 'block';
+      document.getElementById('or-photo-icon').style.display = 'none';
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
 }
-['or-name','or-email'].forEach(function(id) { document.getElementById(id).addEventListener('input', checkOwnerReg); });
+function checkOwnerReg() {
+  var n = document.getElementById('or-name').value.trim();
+  var e = document.getElementById('or-email').value.trim();
+  var g = selectedGender;
+  var d = document.getElementById('or-dob').value;
+  document.getElementById('or-btn').disabled = !(n && e.includes('@') && g && d);
+}
+['or-name','or-email','or-phone','or-dob'].forEach(function(id) { var el = document.getElementById(id); if (el) el.addEventListener('input', checkOwnerReg); });
+document.getElementById('or-dob').addEventListener('change', checkOwnerReg);
 
 async function ownerRegister() {
   var name = document.getElementById('or-name').value.trim();
   var email = document.getElementById('or-email').value.trim();
+  var phone = document.getElementById('or-phone').value.trim();
+  var dob = document.getElementById('or-dob').value;
   showError('or-error','');
   document.getElementById('or-btn').disabled = true;
   document.getElementById('or-btn').textContent = 'Sending code...';
-  pendingReg = { name: name, email: email, role: 'owner' };
+  pendingReg = { name: name, email: email, phone: phone, gender: selectedGender, dob: dob, role: 'owner' };
   startFlowType = 'new';
   try {
     var r = await fetch('/api/send-otp', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({contact:email,name:name}) });
@@ -1871,6 +1908,11 @@ async function verifyOTP() {
   btn.disabled = false; btn.textContent = 'Verify & Continue';
   try { connectSocket(); } catch(e) {}
   try { applyLang(); } catch(e) {}
+
+  // Save extra profile fields if present (phone, gender, dob)
+  if (pendingReg && me.id && (pendingReg.phone || pendingReg.gender || pendingReg.dob)) {
+    try { await fetch('/api/user/update', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({userId:me.id, phone:pendingReg.phone||'', gender:pendingReg.gender||'', dob:pendingReg.dob||''}) }); } catch(e) {}
+  }
 
   // 3. Navigate based on flow
   console.log('[OTP] Navigate: flow=' + startFlowType + ' role=' + me.role + ' propertyId=' + me.propertyId + ' onboarding=' + me.onboardingComplete);
