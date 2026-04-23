@@ -439,10 +439,6 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
 </div>
 
 <!-- ═══ OTP VERIFY ═══ -->
-<style>
-.otp-box{width:48px;height:56px;text-align:center;font-size:1.4rem;font-weight:900;border:2px solid #E5E7EB;border-radius:12px;outline:none;-webkit-appearance:none;background:#fff;color:#1F2937;font-family:inherit}
-.otp-box:focus{border-color:#00897B}
-</style>
 <div id="s-otp" class="screen" style="background:#fff">
   <div class="sb" style="background:#00695C">9:41<span>📶 🔋</span></div>
   <div style="background:linear-gradient(160deg,#00897B,#00695C);padding:16px 22px;color:#fff;flex-shrink:0">
@@ -453,13 +449,8 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
       <div style="font-size:2.5rem;margin-bottom:12px">📧</div>
       <h2 style="font-size:1.2rem;font-weight:900;color:#1F2937;margin-bottom:4px">Check Your Email</h2>
       <p style="font-size:.82rem;color:#6B7280;margin-bottom:20px;font-weight:600" id="otp-subtitle">Enter the 6-digit code</p>
-      <div style="display:flex;gap:10px;justify-content:center;margin-bottom:24px">
-        <input id="otp0" class="otp-box" type="tel" maxlength="1" inputmode="numeric" pattern="[0-9]">
-        <input id="otp1" class="otp-box" type="tel" maxlength="1" inputmode="numeric" pattern="[0-9]">
-        <input id="otp2" class="otp-box" type="tel" maxlength="1" inputmode="numeric" pattern="[0-9]">
-        <input id="otp3" class="otp-box" type="tel" maxlength="1" inputmode="numeric" pattern="[0-9]">
-        <input id="otp4" class="otp-box" type="tel" maxlength="1" inputmode="numeric" pattern="[0-9]">
-        <input id="otp5" class="otp-box" type="tel" maxlength="1" inputmode="numeric" pattern="[0-9]">
+      <div style="margin:0 16px 24px;width:100%;max-width:320px">
+        <input id="otp-single-input" type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="000000" autocomplete="one-time-code" style="width:100%;box-sizing:border-box;height:60px;text-align:center;font-size:2rem;font-weight:900;letter-spacing:.5rem;border:2px solid #00897B;border-radius:14px;outline:none;color:#1F2937;background:#fff;-webkit-appearance:none;appearance:none;font-family:inherit">
       </div>
       <div id="otp-error" class="error-msg"></div>
       <div id="otp-success" class="success-msg"></div>
@@ -1290,7 +1281,7 @@ function goScreen(id, skipHistory) {
   if (id === 's-chat-list-w') loadChatList();
   if (id === 's-conversation') loadConversation();
   if (id === 's-notif') loadNotifNav();
-  if (id === 's-otp') { try { clearOtpBoxes(); } catch(e) {} document.getElementById('otp-btn').disabled = true; showError('otp-error',''); setTimeout(function() { try { document.getElementById('otp0').focus(); } catch(e) {} }, 300); }
+  if (id === 's-otp') { try { clearOtpBoxes(); } catch(e) {} document.getElementById('otp-btn').disabled = true; showError('otp-error',''); setTimeout(function() { try { document.getElementById('otp-single-input').focus(); } catch(e) {} }, 300); }
   if (typeof applyLang === 'function') applyLang();
 }
 function goBack() { const prev = screenHistory.pop(); if (prev) goScreen(prev, true); }
@@ -1864,40 +1855,24 @@ async function workerRegister() {
 }
 
 // ══════════════════════════════════════
-//  OTP — 6 individual input boxes
+//  OTP — single input field
 // ══════════════════════════════════════
-var otpBoxes = [
-  document.getElementById('otp0'), document.getElementById('otp1'),
-  document.getElementById('otp2'), document.getElementById('otp3'),
-  document.getElementById('otp4'), document.getElementById('otp5')
-];
-
-otpBoxes.forEach(function(box, i) {
-  box.addEventListener('input', function() {
-    this.value = this.value.replace(/\D/g, '').slice(-1);
-    if (this.value && i < 5) otpBoxes[i + 1].focus();
-    var code = otpBoxes.map(function(b) { return b.value; }).join('');
-    document.getElementById('otp-btn').disabled = code.length !== 6;
-    if (code.length === 6) { console.log('[OTP] All 6 entered:', code); doVerifyOTP(); }
-  });
-  box.addEventListener('keydown', function(e) {
-    if (e.key === 'Backspace' && !this.value && i > 0) otpBoxes[i - 1].focus();
-  });
-  box.addEventListener('paste', function(e) {
-    e.preventDefault();
-    var paste = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '').slice(0, 6);
-    for (var j = 0; j < 6; j++) otpBoxes[j].value = paste[j] || '';
-    if (paste.length >= 6) doVerifyOTP();
-    else if (paste.length > 0) otpBoxes[Math.min(paste.length, 5)].focus();
-  });
+var otpSingleInput = document.getElementById('otp-single-input');
+otpSingleInput.addEventListener('input', function() {
+  this.value = this.value.replace(/\D/g, '').slice(0, 6);
+  document.getElementById('otp-btn').disabled = this.value.length !== 6;
+  if (this.value.length === 6) {
+    console.log('[OTP] 6 digits entered:', this.value);
+    doVerifyOTP();
+  }
 });
 
-function getOtpCode() { return otpBoxes.map(function(b) { return b.value; }).join(''); }
+function getOtpCode() { return (otpSingleInput.value || '').replace(/\D/g, ''); }
 
 function clearOtpBoxes() {
-  otpBoxes.forEach(function(b) { b.value = ''; });
+  otpSingleInput.value = '';
   document.getElementById('otp-btn').disabled = true;
-  otpBoxes[0].focus();
+  otpSingleInput.focus();
 }
 
 async function doVerifyOTP() {
