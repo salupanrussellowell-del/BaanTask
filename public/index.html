@@ -439,6 +439,11 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
 </div>
 
 <!-- ═══ OTP VERIFY ═══ -->
+<style>
+.otp-visual{width:45px;height:55px;border:2px solid #E5E7EB;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;font-weight:900;color:#1F2937;transition:border-color .2s,background .2s}
+.otp-visual.active{border-color:#00897B}
+.otp-visual.filled{border-color:#00897B;background:#E0F2F1}
+</style>
 <div id="s-otp" class="screen" style="background:#fff">
   <div class="sb" style="background:#00695C">9:41<span>📶 🔋</span></div>
   <div style="background:linear-gradient(160deg,#00897B,#00695C);padding:16px 22px;color:#fff;flex-shrink:0">
@@ -449,13 +454,14 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
       <div style="font-size:2.5rem;margin-bottom:12px">📧</div>
       <h2 style="font-size:1.2rem;font-weight:900;color:#1F2937;margin-bottom:4px">Check Your Email</h2>
       <p style="font-size:.82rem;color:#6B7280;margin-bottom:20px;font-weight:600" id="otp-subtitle">Enter the 6-digit code</p>
-      <div id="otp-boxes" style="display:flex;gap:8px;justify-content:center;margin-bottom:20px">
-        <input class="otp-box" maxlength="1" type="tel" inputmode="numeric" style="width:45px;height:55px;text-align:center;font-size:1.5rem;font-weight:900;border:2px solid #E5E7EB;border-radius:12px;outline:none;font-family:inherit;-webkit-appearance:none" onfocus="this.select()">
-        <input class="otp-box" maxlength="1" type="tel" inputmode="numeric" style="width:45px;height:55px;text-align:center;font-size:1.5rem;font-weight:900;border:2px solid #E5E7EB;border-radius:12px;outline:none;font-family:inherit;-webkit-appearance:none" onfocus="this.select()">
-        <input class="otp-box" maxlength="1" type="tel" inputmode="numeric" style="width:45px;height:55px;text-align:center;font-size:1.5rem;font-weight:900;border:2px solid #E5E7EB;border-radius:12px;outline:none;font-family:inherit;-webkit-appearance:none" onfocus="this.select()">
-        <input class="otp-box" maxlength="1" type="tel" inputmode="numeric" style="width:45px;height:55px;text-align:center;font-size:1.5rem;font-weight:900;border:2px solid #E5E7EB;border-radius:12px;outline:none;font-family:inherit;-webkit-appearance:none" onfocus="this.select()">
-        <input class="otp-box" maxlength="1" type="tel" inputmode="numeric" style="width:45px;height:55px;text-align:center;font-size:1.5rem;font-weight:900;border:2px solid #E5E7EB;border-radius:12px;outline:none;font-family:inherit;-webkit-appearance:none" onfocus="this.select()">
-        <input class="otp-box" maxlength="1" type="tel" inputmode="numeric" style="width:45px;height:55px;text-align:center;font-size:1.5rem;font-weight:900;border:2px solid #E5E7EB;border-radius:12px;outline:none;font-family:inherit;-webkit-appearance:none" onfocus="this.select()">
+      <div style="position:relative;display:flex;gap:8px;justify-content:center;margin-bottom:20px" id="otp-wrap">
+        <div class="otp-visual" id="ov0"></div>
+        <div class="otp-visual" id="ov1"></div>
+        <div class="otp-visual" id="ov2"></div>
+        <div class="otp-visual" id="ov3"></div>
+        <div class="otp-visual" id="ov4"></div>
+        <div class="otp-visual" id="ov5"></div>
+        <input id="otp-real-input" type="tel" maxlength="6" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" style="position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:text;font-size:16px;border:none;background:transparent">
       </div>
       <div id="otp-error" class="error-msg"></div>
       <div id="otp-success" class="success-msg"></div>
@@ -1286,7 +1292,7 @@ function goScreen(id, skipHistory) {
   if (id === 's-chat-list-w') loadChatList();
   if (id === 's-conversation') loadConversation();
   if (id === 's-notif') loadNotifNav();
-  if (id === 's-otp') { try { clearOtpBoxes(); } catch(e) {} document.getElementById('otp-btn').disabled = true; showError('otp-error',''); }
+  if (id === 's-otp') { try { clearOtpBoxes(); } catch(e) {} document.getElementById('otp-btn').disabled = true; showError('otp-error',''); setTimeout(function() { try { document.getElementById('otp-real-input').focus(); } catch(e) {} }, 300); }
   if (typeof applyLang === 'function') applyLang();
 }
 function goBack() { const prev = screenHistory.pop(); if (prev) goScreen(prev, true); }
@@ -1860,61 +1866,33 @@ async function workerRegister() {
 }
 
 // ══════════════════════════════════════
-//  OTP VERIFICATION (6 separate boxes)
+//  OTP — single hidden input + 6 visual boxes
 // ══════════════════════════════════════
-// Set up OTP boxes
-var otpBoxes = document.querySelectorAll('.otp-box');
-otpBoxes.forEach(function(box, i) {
-  box.addEventListener('input', function() {
-    // Keep only last digit
-    this.value = this.value.replace(/\D/g, '').slice(-1);
-    // Auto-advance to next box
-    if (this.value && i < otpBoxes.length - 1) {
-      otpBoxes[i + 1].focus();
-    }
-    // Check if all filled → auto-submit
-    var allFilled = true;
-    otpBoxes.forEach(function(b) { if (!b.value) allFilled = false; });
-    document.getElementById('otp-btn').disabled = !allFilled;
-    if (allFilled) {
-      console.log('[OTP] All 6 digits entered, auto-verifying...');
-      setTimeout(doVerifyOTP, 200);
-    }
-  });
-  box.addEventListener('keydown', function(e) {
-    if (e.key === 'Backspace' && !this.value && i > 0) {
-      otpBoxes[i - 1].focus();
-      otpBoxes[i - 1].value = '';
-    }
-  });
-  box.addEventListener('paste', function(e) {
-    e.preventDefault();
-    var paste = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '');
-    otpBoxes.forEach(function(b, j) { b.value = paste[j] || ''; });
-    if (paste.length >= 6) {
-      otpBoxes[5].focus();
-      document.getElementById('otp-btn').disabled = false;
-      setTimeout(doVerifyOTP, 200);
-    } else {
-      otpBoxes[Math.min(paste.length, 5)].focus();
-    }
-  });
-  // Highlight on focus
-  box.addEventListener('focus', function() { this.style.borderColor = '#00897B'; });
-  box.addEventListener('blur', function() { this.style.borderColor = '#E5E7EB'; });
-});
+var otpInput = document.getElementById('otp-real-input');
 
-function getOtpCode() {
-  var code = '';
-  otpBoxes.forEach(function(b) { code += b.value; });
-  return code;
+function otpUpdate(val) {
+  val = (val || '').replace(/\D/g, '').slice(0, 6);
+  otpInput.value = val;
+  for (var i = 0; i < 6; i++) {
+    var box = document.getElementById('ov' + i);
+    box.textContent = val[i] || '';
+    box.className = 'otp-visual' + (val[i] ? ' filled' : '') + (val.length === i ? ' active' : '');
+  }
+  document.getElementById('otp-btn').disabled = val.length !== 6;
+  if (val.length === 6) setTimeout(doVerifyOTP, 300);
 }
+
+document.getElementById('otp-wrap').addEventListener('click', function() { otpInput.focus(); });
+otpInput.addEventListener('input', function() { otpUpdate(this.value); });
+otpInput.addEventListener('keyup', function() { otpUpdate(this.value); });
 
 function clearOtpBoxes() {
-  otpBoxes.forEach(function(b) { b.value = ''; });
-  if (otpBoxes[0]) otpBoxes[0].focus();
-  document.getElementById('otp-btn').disabled = true;
+  otpInput.value = '';
+  otpUpdate('');
+  otpInput.focus();
 }
+
+function getOtpCode() { return otpInput.value.replace(/\D/g, ''); }
 
 async function doVerifyOTP() {
   var btn = document.getElementById('otp-btn');
@@ -1926,7 +1904,7 @@ async function doVerifyOTP() {
   console.log('OTP being sent:', otp);
   console.log('Flow type:', startFlowType);
 
-  if (!otp || otp.length < 6) { showError('otp-error', 'Please enter all 6 digits'); return; }
+  if (!otp || otp.length !== 6) { showError('otp-error', 'Please enter all 6 digits'); return; }
   if (!email) { showError('otp-error', 'Email not found. Please go back.'); return; }
 
   btn.disabled = true;
@@ -1936,18 +1914,16 @@ async function doVerifyOTP() {
   var role = (pendingReg && pendingReg.role) || selectedRole || localStorage.getItem('bt_role') || 'owner';
   var name = (pendingReg && pendingReg.name) || email.split('@')[0];
 
-  // 1. CALL API
   var data;
   try {
     var url = (startFlowType === 'returning') ? '/api/verify-otp-only' : '/api/verify-otp';
-    var body = (startFlowType === 'returning')
+    var payload = (startFlowType === 'returning')
       ? { contact: email, otp: otp }
       : { contact: email, otp: otp, name: name, pin: '0000', lang: selectedLang || 'English', role: role };
-    console.log('Calling:', url, 'with body:', JSON.stringify(body));
-    var resp = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    console.log('Calling:', url);
+    var resp = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
     data = await resp.json();
     console.log('Server response:', data);
-    console.log('Response:', data.ok ? 'OK' : data.error);
   } catch (err) {
     console.error('Network error:', err);
     showError('otp-error', 'Connection error. Please try again.');
@@ -1962,7 +1938,7 @@ async function doVerifyOTP() {
     return;
   }
 
-  // 2. SAVE TOKEN + USER
+  // Save token + user
   me = data.user;
   me.email = email;
   selectedLang = me.lang || selectedLang || 'English';
@@ -1973,25 +1949,21 @@ async function doVerifyOTP() {
   try { connectSocket(); } catch(e) {}
   try { applyLang(); } catch(e) {}
 
-  // Save profile fields (phone, gender, dob) if set during registration
+  // Save profile fields if present
   if (pendingReg && me.id && (pendingReg.phone || pendingReg.gender || pendingReg.dob)) {
     try { fetch('/api/user/update', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({userId:me.id, phone:pendingReg.phone||'', gender:pendingReg.gender||'', dob:pendingReg.dob||''}) }); } catch(e) {}
   }
 
-  // 3. NAVIGATE
+  // Navigate
   if (startFlowType === 'returning' && me.propertyId) {
-    // Returning user → dashboard
     localStorage.setItem('bt_onboarded', 'true');
     try { await loadPropertyData(String(me.propertyId)); } catch(e) {}
     goScreen(me.role === 'owner' ? 's-owner-home' : 's-worker-home');
   } else if (startFlowType === 'returning') {
-    // Returning user, no property yet
     goScreen(me.role === 'owner' ? 's-property' : 's-worker-reg');
   } else if (role === 'owner') {
-    // New owner → property setup
     goScreen('s-property');
   } else {
-    // New worker → join property, then language
     if (pendingReg && pendingReg.inviteCode && me.id) {
       try {
         var jr = await fetch('/api/worker/join', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({userId:me.id, inviteCode:pendingReg.inviteCode, jobRole:pendingReg.jobRole||''}) });
@@ -2003,7 +1975,6 @@ async function doVerifyOTP() {
   }
   console.log('=== VERIFY DONE ===');
 }
-// Keep old name as alias in case anything still references it
 var verifyOTP = doVerifyOTP;
 
 async function resendOTP() {
