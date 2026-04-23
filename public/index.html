@@ -501,6 +501,24 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
         <div class="form-group" style="flex:.6"><label>Postal</label><input id="prop-postal" type="text" placeholder="83110"></div>
       </div>
       <div class="form-group"><label>Address</label><input id="prop-address" type="text" placeholder="e.g. 123/4 Soi Saiyuan"></div>
+
+      <!-- Location preview (auto-detect) -->
+      <div id="loc-preview" style="display:none;background:#E8F5E9;border-radius:14px;padding:16px;margin-bottom:16px;position:relative;width:100%;max-width:360px;box-sizing:border-box">
+        <div style="position:absolute;top:10px;left:10px;background:#00897B;color:#fff;border-radius:20px;padding:3px 10px;font-size:.72rem;font-weight:800">✓ Auto-placed</div>
+        <div style="text-align:center;padding:20px 0">
+          <div style="font-size:2rem">📍</div>
+          <div id="loc-prop-label" style="background:#00695C;color:#fff;border-radius:20px;padding:4px 14px;display:inline-block;font-size:.82rem;font-weight:800;margin-top:8px">Property</div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
+          <span id="loc-coords" style="font-size:.76rem;font-weight:700;color:#1F2937">Detecting...</span>
+          <span onclick="detectLocation()" style="color:#00897B;font-size:.76rem;font-weight:800;cursor:pointer">Refresh ↻</span>
+        </div>
+      </div>
+
+      <div style="width:100%;max-width:360px;margin-bottom:14px">
+        <button type="button" onclick="detectLocation()" style="width:100%;padding:12px;background:#E0F2F1;color:#00695C;border:2px solid #00897B;border-radius:12px;font-size:.85rem;font-weight:800;cursor:pointer;font-family:inherit">📍 Detect My Location</button>
+      </div>
+
       <div id="prop-error" class="error-msg"></div>
       <button class="btn btn-t" id="prop-btn" disabled onclick="createProperty()" style="max-width:360px">Continue →</button>
     </div>
@@ -1975,14 +1993,65 @@ function pickPropType(t, el) {
 function checkPropReady() { document.getElementById('prop-btn').disabled = !(selectedPropType && document.getElementById('prop-name').value.trim() && document.getElementById('prop-city').value.trim()); }
 ['prop-name','prop-city','prop-address'].forEach(function(id) { var el = document.getElementById(id); if (el) el.addEventListener('input', checkPropReady); });
 
+// Location detection
+var detectedLat = null, detectedLng = null;
+
+function detectLocation() {
+  var coordsEl = document.getElementById('loc-coords');
+  var preview = document.getElementById('loc-preview');
+  var propName = document.getElementById('prop-name').value.trim() || 'Property';
+  document.getElementById('loc-prop-label').textContent = propName;
+
+  if (!navigator.geolocation) {
+    if (coordsEl) coordsEl.textContent = 'Geolocation not supported';
+    return;
+  }
+  if (coordsEl) coordsEl.textContent = 'Detecting...';
+  if (preview) preview.style.display = 'block';
+
+  navigator.geolocation.getCurrentPosition(
+    function(pos) {
+      detectedLat = pos.coords.latitude;
+      detectedLng = pos.coords.longitude;
+      var latStr = detectedLat.toFixed(4) + '° ' + (detectedLat >= 0 ? 'N' : 'S');
+      var lngStr = detectedLng.toFixed(4) + '° ' + (detectedLng >= 0 ? 'E' : 'W');
+      var city = document.getElementById('prop-city').value.trim();
+      if (coordsEl) coordsEl.textContent = latStr + ', ' + lngStr + (city ? ' · ' + city : '');
+      console.log('[LOC] Detected:', detectedLat, detectedLng);
+    },
+    function(err) {
+      console.log('[LOC] Error:', err.message);
+      if (coordsEl) coordsEl.textContent = 'Could not detect — enter address manually';
+    },
+    { enableHighAccuracy: true, timeout: 10000 }
+  );
+}
+
+// Auto-detect location when address field changes (debounced)
+var locDebounce = null;
+var propAddressEl = document.getElementById('prop-address');
+if (propAddressEl) {
+  propAddressEl.addEventListener('input', function() {
+    clearTimeout(locDebounce);
+    locDebounce = setTimeout(function() {
+      if (!detectedLat) detectLocation();
+      // Update label
+      var propName = document.getElementById('prop-name').value.trim() || 'Property';
+      var label = document.getElementById('loc-prop-label');
+      if (label) label.textContent = propName;
+    }, 800);
+  });
+}
+
 async function createProperty() {
   var name = document.getElementById('prop-name').value.trim();
   var city = document.getElementById('prop-city').value.trim();
-  var location = city + (document.getElementById('prop-address') ? ', ' + document.getElementById('prop-address').value.trim() : '');
+  var addr = document.getElementById('prop-address') ? document.getElementById('prop-address').value.trim() : '';
+  var location = city + (addr ? ', ' + addr : '');
   showError('prop-error','');
   document.getElementById('prop-btn').disabled = true;
   try {
-    var r = await fetch('/api/property/create', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ownerId:me.id,name:name,type:selectedPropType,location:location}) });
+    var r = await fetch('/api/property/create', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ownerId:me.id, name:name, type:selectedPropType, location:location, lat:detectedLat, lng:detectedLng}) });
     var d = await r.json();
     if (!d.ok) { showError('prop-error', d.error); document.getElementById('prop-btn').disabled = false; return; }
     myProperty = d.property; me.propertyId = myProperty.id;

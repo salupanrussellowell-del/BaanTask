@@ -80,6 +80,8 @@ const propertySchema = new mongoose.Schema({
   name: { type: String, required: true },
   type: { type: String, enum: ['house', 'condo', 'villa', 'other'], default: 'house' },
   location: { type: String, default: '' },
+  lat: { type: Number, default: null },
+  lng: { type: Number, default: null },
   ownerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   inviteCode: { type: String, unique: true },
   createdAt: { type: Date, default: Date.now }
@@ -529,11 +531,11 @@ app.post('/api/user/update', async (req, res) => {
 
 // Create property
 app.post('/api/property/create', async (req, res) => {
-  const { ownerId, name, type, location } = req.body;
+  const { ownerId, name, type, location, lat, lng } = req.body;
   if (!ownerId || !name) return res.status(400).json({ ok: false, error: 'Owner ID and property name required' });
   try {
     const code = genCode();
-    const prop = await Property.create({ name, type: type || 'house', location: location || '', ownerId, inviteCode: code });
+    const prop = await Property.create({ name, type: type || 'house', location: location || '', lat: lat || null, lng: lng || null, ownerId, inviteCode: code });
     // Link property to owner
     await User.findByIdAndUpdate(ownerId, { propertyId: prop._id });
     // Create group chat for the property
