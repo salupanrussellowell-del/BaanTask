@@ -349,20 +349,24 @@ app.post('/api/send-otp', async (req, res) => {
   if (!contact) return res.status(400).json({ ok: false, error: 'Email required' });
   const nc = contact.trim().toLowerCase();
   const code = genOTP();
-  try { await OTP.create({ contact: nc, otp: code, expiresAt: new Date(Date.now() + 10 * 60000) }); } catch (e) { /**/ }
+  console.log(`[OTP] Generating code for ${nc}, resend configured: ${!!resend}`);
+  try { await OTP.create({ contact: nc, otp: code, expiresAt: new Date(Date.now() + 10 * 60000) }); } catch (e) { console.error('[OTP] DB save error:', e.message); }
 
   if (resend) {
     try {
-      const { error } = await resend.emails.send({
+      console.log(`[OTP] Sending email via Resend to ${nc}...`);
+      const { data: emailData, error } = await resend.emails.send({
         from: 'BaanTask <noreply@baantask.app>', to: [nc],
         subject: 'Your BaanTask verification code',
         html: `<div style="font-family:sans-serif;max-width:400px;margin:0 auto;padding:24px;"><h2 style="color:#1B5E20;">BaanTask</h2><p>Hi ${name || 'there'},</p><p>Your verification code:</p><div style="background:#f0f4f0;border-radius:12px;padding:24px;text-align:center;margin:16px 0;"><span style="font-size:36px;font-weight:800;letter-spacing:8px;color:#1B5E20;">${code}</span></div><p style="color:#999;font-size:13px;">Expires in 10 minutes.</p></div>`
       });
-      if (!error) { console.log(`[OTP] Sent to ${nc}`); return res.json({ ok: true, method: 'email' }); }
-      console.error('[OTP] Resend error:', error);
-    } catch (e) { console.error('[OTP] Send failed:', e.message); }
+      if (!error) { console.log(`[OTP] Email sent OK to ${nc} (id: ${emailData?.id})`); return res.json({ ok: true, method: 'email' }); }
+      console.error('[OTP] Resend API error:', JSON.stringify(error));
+    } catch (e) { console.error('[OTP] Resend exception:', e.message); }
+  } else {
+    console.log('[OTP] Resend not configured - RESEND_API_KEY missing');
   }
-  console.log(`[OTP CODE] ====> ${code} <==== for ${nc}`);
+  console.log(`[OTP] FALLBACK - code: ${code} for ${nc}`);
   res.json({ ok: true, method: 'console' });
 });
 
