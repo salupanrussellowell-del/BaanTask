@@ -450,11 +450,11 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
       <h2 style="font-size:1.2rem;font-weight:900;color:#1F2937;margin-bottom:4px">Check Your Email</h2>
       <p style="font-size:.82rem;color:#6B7280;margin-bottom:20px;font-weight:600" id="otp-subtitle">Enter the 6-digit code</p>
       <div style="margin:0 16px 24px;width:100%;max-width:320px">
-        <input id="otp-single-input" type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="000000" autocomplete="one-time-code" style="width:100%;box-sizing:border-box;height:60px;text-align:center;font-size:2rem;font-weight:900;letter-spacing:.5rem;border:2px solid #00897B;border-radius:14px;outline:none;color:#1F2937;background:#fff;-webkit-appearance:none;appearance:none;font-family:inherit">
+        <input id="otp-single-input" type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="000000" autocomplete="one-time-code" style="width:100%;box-sizing:border-box;height:60px;text-align:center;font-size:2rem;font-weight:900;letter-spacing:.5rem;border:2px solid #00897B;border-radius:14px;outline:none;color:#1F2937;background:#fff;-webkit-appearance:none;appearance:none;font-family:inherit" oninput="this.value=this.value.replace(/\D/g,'').slice(0,6);if(this.value.length===6)window.doVerifyOTP();">
       </div>
       <div id="otp-error" class="error-msg"></div>
       <div id="otp-success" class="success-msg"></div>
-      <button class="btn btn-t" id="otp-btn" disabled onclick="doVerifyOTP()" style="max-width:360px">Verify & Continue</button>
+      <button id="verify-btn" onclick="window.doVerifyOTP()" style="width:100%;max-width:360px;padding:16px;background:#00897B;color:#fff;border:none;border-radius:14px;font-size:1rem;font-weight:900;cursor:pointer;font-family:inherit">Verify & Continue</button>
       <button class="btn-link" onclick="resendOTP()" style="margin-top:12px">Resend code</button>
     </div>
   </div>
@@ -1855,41 +1855,32 @@ async function workerRegister() {
 }
 
 // ══════════════════════════════════════
-//  OTP — single input field
+//  OTP — single input, global verify function
 // ══════════════════════════════════════
-var otpSingleInput = document.getElementById('otp-single-input');
-otpSingleInput.addEventListener('input', function() {
-  this.value = this.value.replace(/\D/g, '').slice(0, 6);
-  document.getElementById('otp-btn').disabled = this.value.length !== 6;
-  if (this.value.length === 6) {
-    console.log('[OTP] 6 digits entered:', this.value);
-    doVerifyOTP();
-  }
-});
-
-function getOtpCode() { return (otpSingleInput.value || '').replace(/\D/g, ''); }
-
-function clearOtpBoxes() {
-  otpSingleInput.value = '';
-  document.getElementById('otp-btn').disabled = true;
-  otpSingleInput.focus();
+function getOtpCode() {
+  var el = document.getElementById('otp-single-input');
+  return el ? el.value.replace(/\D/g, '') : '';
 }
 
-async function doVerifyOTP() {
-  var btn = document.getElementById('otp-btn');
-  var otp = getOtpCode();
-  var email = window.currentEmail || localStorage.getItem('bt_pending_email') || '';
+function clearOtpBoxes() {
+  var el = document.getElementById('otp-single-input');
+  if (el) { el.value = ''; el.focus(); }
+}
 
-  console.log('=== doVerifyOTP ===');
-  console.log('Email being used:', email);
-  console.log('OTP being sent:', otp);
-  console.log('Flow type:', startFlowType);
+window.doVerifyOTP = async function() {
+  var input = document.getElementById('otp-single-input');
+  var otp = input ? input.value.replace(/\D/g, '') : '';
+  var email = window.currentEmail || localStorage.getItem('bt_pending_email') || '';
+  var btn = document.getElementById('verify-btn');
+
+  console.log('doVerifyOTP called');
+  console.log('OTP:', otp);
+  console.log('Email:', email);
 
   if (!otp || otp.length !== 6) { showError('otp-error', 'Please enter all 6 digits'); return; }
   if (!email) { showError('otp-error', 'Email not found. Please go back.'); return; }
 
-  btn.disabled = true;
-  btn.textContent = 'Verifying...';
+  if (btn) { btn.disabled = true; btn.textContent = 'Verifying...'; }
   showError('otp-error', '');
 
   var role = (pendingReg && pendingReg.role) || selectedRole || localStorage.getItem('bt_role') || 'owner';
@@ -1908,13 +1899,13 @@ async function doVerifyOTP() {
   } catch (err) {
     console.error('Network error:', err);
     showError('otp-error', 'Connection error. Please try again.');
-    btn.disabled = false; btn.textContent = 'Verify & Continue';
+    if (btn) { btn.disabled = false; btn.textContent = 'Verify & Continue'; }
     return;
   }
 
   if (!data.ok) {
     showError('otp-error', data.error || 'Invalid code');
-    btn.disabled = false; btn.textContent = 'Verify & Continue';
+    if (btn) { btn.disabled = false; btn.textContent = 'Verify & Continue'; }
     clearOtpBoxes();
     return;
   }
@@ -1926,7 +1917,7 @@ async function doVerifyOTP() {
   if (me.token) localStorage.setItem('bt_token', me.token);
   localStorage.setItem('bt_user', JSON.stringify(me));
   console.log('Saved user:', me.name, me.role);
-  btn.disabled = false; btn.textContent = 'Verify & Continue';
+  if (btn) { btn.disabled = false; btn.textContent = 'Verify & Continue'; }
   try { connectSocket(); } catch(e) {}
   try { applyLang(); } catch(e) {}
 
@@ -1956,7 +1947,7 @@ async function doVerifyOTP() {
   }
   console.log('=== VERIFY DONE ===');
 }
-var verifyOTP = doVerifyOTP;
+var verifyOTP = window.doVerifyOTP;
 
 async function resendOTP() {
   showError('otp-error','');
