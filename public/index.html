@@ -440,9 +440,8 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
 
 <!-- ═══ OTP VERIFY ═══ -->
 <style>
-.otp-visual{width:45px;height:55px;border:2px solid #E5E7EB;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;font-weight:900;color:#1F2937;transition:border-color .2s,background .2s}
-.otp-visual.active{border-color:#00897B}
-.otp-visual.filled{border-color:#00897B;background:#E0F2F1}
+.otp-box{width:48px;height:56px;text-align:center;font-size:1.4rem;font-weight:900;border:2px solid #E5E7EB;border-radius:12px;outline:none;-webkit-appearance:none;background:#fff;color:#1F2937;font-family:inherit}
+.otp-box:focus{border-color:#00897B}
 </style>
 <div id="s-otp" class="screen" style="background:#fff">
   <div class="sb" style="background:#00695C">9:41<span>📶 🔋</span></div>
@@ -454,14 +453,13 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
       <div style="font-size:2.5rem;margin-bottom:12px">📧</div>
       <h2 style="font-size:1.2rem;font-weight:900;color:#1F2937;margin-bottom:4px">Check Your Email</h2>
       <p style="font-size:.82rem;color:#6B7280;margin-bottom:20px;font-weight:600" id="otp-subtitle">Enter the 6-digit code</p>
-      <div style="position:relative;display:flex;gap:8px;justify-content:center;margin-bottom:20px" id="otp-wrap">
-        <div class="otp-visual" id="ov0"></div>
-        <div class="otp-visual" id="ov1"></div>
-        <div class="otp-visual" id="ov2"></div>
-        <div class="otp-visual" id="ov3"></div>
-        <div class="otp-visual" id="ov4"></div>
-        <div class="otp-visual" id="ov5"></div>
-        <input id="otp-real-input" type="tel" maxlength="6" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" style="position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:text;font-size:16px;border:none;background:transparent">
+      <div style="display:flex;gap:10px;justify-content:center;margin-bottom:24px">
+        <input id="otp0" class="otp-box" type="tel" maxlength="1" inputmode="numeric" pattern="[0-9]">
+        <input id="otp1" class="otp-box" type="tel" maxlength="1" inputmode="numeric" pattern="[0-9]">
+        <input id="otp2" class="otp-box" type="tel" maxlength="1" inputmode="numeric" pattern="[0-9]">
+        <input id="otp3" class="otp-box" type="tel" maxlength="1" inputmode="numeric" pattern="[0-9]">
+        <input id="otp4" class="otp-box" type="tel" maxlength="1" inputmode="numeric" pattern="[0-9]">
+        <input id="otp5" class="otp-box" type="tel" maxlength="1" inputmode="numeric" pattern="[0-9]">
       </div>
       <div id="otp-error" class="error-msg"></div>
       <div id="otp-success" class="success-msg"></div>
@@ -1292,7 +1290,7 @@ function goScreen(id, skipHistory) {
   if (id === 's-chat-list-w') loadChatList();
   if (id === 's-conversation') loadConversation();
   if (id === 's-notif') loadNotifNav();
-  if (id === 's-otp') { try { clearOtpBoxes(); } catch(e) {} document.getElementById('otp-btn').disabled = true; showError('otp-error',''); setTimeout(function() { try { document.getElementById('otp-real-input').focus(); } catch(e) {} }, 300); }
+  if (id === 's-otp') { try { clearOtpBoxes(); } catch(e) {} document.getElementById('otp-btn').disabled = true; showError('otp-error',''); setTimeout(function() { try { document.getElementById('otp0').focus(); } catch(e) {} }, 300); }
   if (typeof applyLang === 'function') applyLang();
 }
 function goBack() { const prev = screenHistory.pop(); if (prev) goScreen(prev, true); }
@@ -1866,33 +1864,41 @@ async function workerRegister() {
 }
 
 // ══════════════════════════════════════
-//  OTP — single hidden input + 6 visual boxes
+//  OTP — 6 individual input boxes
 // ══════════════════════════════════════
-var otpInput = document.getElementById('otp-real-input');
+var otpBoxes = [
+  document.getElementById('otp0'), document.getElementById('otp1'),
+  document.getElementById('otp2'), document.getElementById('otp3'),
+  document.getElementById('otp4'), document.getElementById('otp5')
+];
 
-function otpUpdate(val) {
-  val = (val || '').replace(/\D/g, '').slice(0, 6);
-  otpInput.value = val;
-  for (var i = 0; i < 6; i++) {
-    var box = document.getElementById('ov' + i);
-    box.textContent = val[i] || '';
-    box.className = 'otp-visual' + (val[i] ? ' filled' : '') + (val.length === i ? ' active' : '');
-  }
-  document.getElementById('otp-btn').disabled = val.length !== 6;
-  if (val.length === 6) setTimeout(doVerifyOTP, 300);
-}
+otpBoxes.forEach(function(box, i) {
+  box.addEventListener('input', function() {
+    this.value = this.value.replace(/\D/g, '').slice(-1);
+    if (this.value && i < 5) otpBoxes[i + 1].focus();
+    var code = otpBoxes.map(function(b) { return b.value; }).join('');
+    document.getElementById('otp-btn').disabled = code.length !== 6;
+    if (code.length === 6) { console.log('[OTP] All 6 entered:', code); doVerifyOTP(); }
+  });
+  box.addEventListener('keydown', function(e) {
+    if (e.key === 'Backspace' && !this.value && i > 0) otpBoxes[i - 1].focus();
+  });
+  box.addEventListener('paste', function(e) {
+    e.preventDefault();
+    var paste = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '').slice(0, 6);
+    for (var j = 0; j < 6; j++) otpBoxes[j].value = paste[j] || '';
+    if (paste.length >= 6) doVerifyOTP();
+    else if (paste.length > 0) otpBoxes[Math.min(paste.length, 5)].focus();
+  });
+});
 
-document.getElementById('otp-wrap').addEventListener('click', function() { otpInput.focus(); });
-otpInput.addEventListener('input', function() { otpUpdate(this.value); });
-otpInput.addEventListener('keyup', function() { otpUpdate(this.value); });
+function getOtpCode() { return otpBoxes.map(function(b) { return b.value; }).join(''); }
 
 function clearOtpBoxes() {
-  otpInput.value = '';
-  otpUpdate('');
-  otpInput.focus();
+  otpBoxes.forEach(function(b) { b.value = ''; });
+  document.getElementById('otp-btn').disabled = true;
+  otpBoxes[0].focus();
 }
-
-function getOtpCode() { return otpInput.value.replace(/\D/g, ''); }
 
 async function doVerifyOTP() {
   var btn = document.getElementById('otp-btn');
