@@ -1862,38 +1862,57 @@ async function workerRegister() {
 // ══════════════════════════════════════
 //  OTP VERIFICATION (6 separate boxes)
 // ══════════════════════════════════════
-(function initOtpBoxes() {
-  var boxes = document.querySelectorAll('.otp-box');
-  boxes.forEach(function(box, i) {
-    box.addEventListener('input', function() {
-      this.value = this.value.replace(/\D/g, '').substring(0, 1);
-      if (this.value && i < 5) boxes[i + 1].focus();
-      // Enable button when all 6 filled
-      var otp = Array.from(boxes).map(function(b) { return b.value; }).join('');
-      document.getElementById('otp-btn').disabled = otp.length !== 6;
-    });
-    box.addEventListener('keydown', function(e) {
-      if (e.key === 'Backspace' && !this.value && i > 0) {
-        boxes[i - 1].focus();
-        boxes[i - 1].value = '';
-      }
-    });
-    box.addEventListener('paste', function(e) {
-      e.preventDefault();
-      var paste = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '').substring(0, 6);
-      for (var j = 0; j < paste.length && j < 6; j++) boxes[j].value = paste[j];
-      if (paste.length >= 6) { boxes[5].focus(); document.getElementById('otp-btn').disabled = false; }
-    });
+// Set up OTP boxes
+var otpBoxes = document.querySelectorAll('.otp-box');
+otpBoxes.forEach(function(box, i) {
+  box.addEventListener('input', function() {
+    // Keep only last digit
+    this.value = this.value.replace(/\D/g, '').slice(-1);
+    // Auto-advance to next box
+    if (this.value && i < otpBoxes.length - 1) {
+      otpBoxes[i + 1].focus();
+    }
+    // Check if all filled → auto-submit
+    var allFilled = true;
+    otpBoxes.forEach(function(b) { if (!b.value) allFilled = false; });
+    document.getElementById('otp-btn').disabled = !allFilled;
+    if (allFilled) {
+      console.log('[OTP] All 6 digits entered, auto-verifying...');
+      setTimeout(doVerifyOTP, 200);
+    }
   });
-})();
+  box.addEventListener('keydown', function(e) {
+    if (e.key === 'Backspace' && !this.value && i > 0) {
+      otpBoxes[i - 1].focus();
+      otpBoxes[i - 1].value = '';
+    }
+  });
+  box.addEventListener('paste', function(e) {
+    e.preventDefault();
+    var paste = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '');
+    otpBoxes.forEach(function(b, j) { b.value = paste[j] || ''; });
+    if (paste.length >= 6) {
+      otpBoxes[5].focus();
+      document.getElementById('otp-btn').disabled = false;
+      setTimeout(doVerifyOTP, 200);
+    } else {
+      otpBoxes[Math.min(paste.length, 5)].focus();
+    }
+  });
+  // Highlight on focus
+  box.addEventListener('focus', function() { this.style.borderColor = '#00897B'; });
+  box.addEventListener('blur', function() { this.style.borderColor = '#E5E7EB'; });
+});
 
 function getOtpCode() {
-  return Array.from(document.querySelectorAll('.otp-box')).map(function(b) { return b.value; }).join('');
+  var code = '';
+  otpBoxes.forEach(function(b) { code += b.value; });
+  return code;
 }
 
 function clearOtpBoxes() {
-  document.querySelectorAll('.otp-box').forEach(function(b) { b.value = ''; });
-  document.querySelectorAll('.otp-box')[0].focus();
+  otpBoxes.forEach(function(b) { b.value = ''; });
+  if (otpBoxes[0]) otpBoxes[0].focus();
   document.getElementById('otp-btn').disabled = true;
 }
 
@@ -1903,7 +1922,9 @@ async function doVerifyOTP() {
   var email = window.currentEmail || localStorage.getItem('bt_pending_email') || '';
 
   console.log('=== doVerifyOTP ===');
-  console.log('email:', email, 'otp:', otp, 'flow:', startFlowType);
+  console.log('Email being used:', email);
+  console.log('OTP being sent:', otp);
+  console.log('Flow type:', startFlowType);
 
   if (!otp || otp.length < 6) { showError('otp-error', 'Please enter all 6 digits'); return; }
   if (!email) { showError('otp-error', 'Email not found. Please go back.'); return; }
@@ -1922,9 +1943,10 @@ async function doVerifyOTP() {
     var body = (startFlowType === 'returning')
       ? { contact: email, otp: otp }
       : { contact: email, otp: otp, name: name, pin: '0000', lang: selectedLang || 'English', role: role };
-    console.log('Calling:', url);
+    console.log('Calling:', url, 'with body:', JSON.stringify(body));
     var resp = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     data = await resp.json();
+    console.log('Server response:', data);
     console.log('Response:', data.ok ? 'OK' : data.error);
   } catch (err) {
     console.error('Network error:', err);
