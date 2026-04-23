@@ -1827,32 +1827,10 @@ async function workerSubmitDetails() {
 }
 
 // ══════════════════════════════════════
-//  WORKER REGISTRATION
+//  WORKER REGISTRATION (legacy — removed, kept as stubs)
 // ══════════════════════════════════════
-function checkWorkerReg() {
-  const n = document.getElementById('wr-name').value.trim();
-  const e = document.getElementById('wr-email').value.trim();
-  document.getElementById('wr-btn').disabled = !(n && e.includes('@'));
-}
-['wr-name','wr-email'].forEach(id => document.getElementById(id).addEventListener('input', checkWorkerReg));
-document.getElementById('wr-pin').addEventListener('input', function() { this.value = this.value.replace(/\D/g,'').substring(0,4); checkWorkerReg(); });
-
-async function workerRegister() {
-  const name = document.getElementById('wr-name').value.trim();
-  const email = document.getElementById('wr-email').value.trim();
-  const pin = document.getElementById('wr-pin').value;
-  showError('wr-error','');
-  document.getElementById('wr-btn').disabled = true;
-  pendingReg = { name, email, pin, role: 'worker' };
-  try {
-    const r = await fetch('/api/send-otp', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({contact:email,name}) });
-    const d = await r.json();
-    if (!d.ok) { showError('wr-error', d.error); return; }
-    document.getElementById('otp-subtitle').textContent = d.method === 'console' ? 'Check server logs for the code' : `Code sent to ${email}`;
-    window.currentEmail = email || (pendingReg && pendingReg.email) || ''; localStorage.setItem('bt_pending_email', window.currentEmail); goScreen('s-otp');
-  } catch(e) { showError('wr-error','Network error'); }
-  finally { document.getElementById('wr-btn').disabled = false; }
-}
+function checkWorkerReg() {}
+function workerRegister() {}
 
 // ══════════════════════════════════════
 //  OTP — single input, global verify function
@@ -2089,6 +2067,7 @@ function populateDateDropdowns(dayId, monthId, yearId, yearStart, yearEnd) {
   const dayEl = document.getElementById(dayId);
   const monthEl = document.getElementById(monthId);
   const yearEl = document.getElementById(yearId);
+  if (!dayEl || !monthEl || !yearEl) return; // elements may not exist
   // Days 1-31
   for (let d = 1; d <= 31; d++) dayEl.innerHTML += '<option value="' + d + '">' + d + '</option>';
   // Months
