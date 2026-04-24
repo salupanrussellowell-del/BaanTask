@@ -945,10 +945,32 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
       <p style="text-align:center;color:#9CA3AF;font-size:.78rem;font-weight:600;padding:30px">💬 Send a message to start chatting<br><span style="font-size:.68rem">Messages auto-translate to each person's language</span></p>
     </div>
   </div>
-  <div class="chat-input-bar">
-    <input id="conv-input" type="text" class="finput" style="flex:1;padding:10px 14px;font-size:.88rem" placeholder="Type a message...">
-    <button onclick="sendMessage()" class="chat-send-btn">➤</button>
+  <!-- Chat input bar (Telegram/WhatsApp style) -->
+  <div style="display:flex;align-items:flex-end;gap:6px;padding:8px 10px;background:#fff;border-top:1px solid #E5E7EB;flex-shrink:0">
+    <button onclick="toggleAttachMenu()" style="width:40px;height:40px;border:none;background:transparent;cursor:pointer;font-size:1.4rem;color:#6B7280;flex-shrink:0;-webkit-tap-highlight-color:transparent">📎</button>
+    <div style="flex:1;background:#F3F4F6;border-radius:22px;padding:0 12px;display:flex;align-items:center;gap:4px;min-height:40px">
+      <input id="conv-input" type="text" placeholder="Message..." oninput="toggleSendBtn()" style="flex:1;border:none;background:transparent;outline:none;font-size:.92rem;padding:10px 0;font-family:inherit;color:#1F2937">
+      <button onclick="toggleEmojiPicker()" style="border:none;background:transparent;cursor:pointer;font-size:1.2rem;padding:4px;flex-shrink:0">😊</button>
+    </div>
+    <button id="send-mic-btn" onclick="handleSendOrMic()" style="width:42px;height:42px;border:none;border-radius:50%;background:#00897B;color:#fff;cursor:pointer;font-size:1.1rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;-webkit-tap-highlight-color:transparent">🎤</button>
   </div>
+  <!-- Attachment menu (slides up) -->
+  <div id="attach-menu" style="display:none;background:#fff;border-top:1px solid #E5E7EB;padding:12px;flex-shrink:0">
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;text-align:center">
+      <div onclick="openCamera()" style="cursor:pointer;padding:8px"><div style="width:48px;height:48px;background:#E3F2FD;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.3rem;margin:0 auto">📷</div><div style="font-size:.68rem;font-weight:700;color:#6B7280;margin-top:4px">Camera</div></div>
+      <div onclick="openGallery()" style="cursor:pointer;padding:8px"><div style="width:48px;height:48px;background:#F3E5F5;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.3rem;margin:0 auto">🖼️</div><div style="font-size:.68rem;font-weight:700;color:#6B7280;margin-top:4px">Gallery</div></div>
+      <div onclick="openReceipt()" style="cursor:pointer;padding:8px"><div style="width:48px;height:48px;background:#FBE9E7;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.3rem;margin:0 auto">🧾</div><div style="font-size:.68rem;font-weight:700;color:#6B7280;margin-top:4px">Receipt</div></div>
+      <div onclick="shareLocation()" style="cursor:pointer;padding:8px"><div style="width:48px;height:48px;background:#E8F5E9;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.3rem;margin:0 auto">📍</div><div style="font-size:.68rem;font-weight:700;color:#6B7280;margin-top:4px">Location</div></div>
+    </div>
+  </div>
+  <!-- Emoji picker area -->
+  <div id="emoji-picker-area" style="display:none;background:#fff;border-top:1px solid #E5E7EB;padding:8px;flex-shrink:0">
+    <div style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center;max-height:120px;overflow-y:auto" id="emoji-grid"></div>
+  </div>
+  <!-- Hidden file inputs -->
+  <input type="file" accept="image/*" capture="environment" id="camera-input" style="display:none" onchange="handleMediaUpload(this,'camera')">
+  <input type="file" accept="image/*" id="gallery-input" style="display:none" onchange="handleMediaUpload(this,'gallery')">
+  <input type="file" accept="image/*" capture="environment" id="receipt-input" style="display:none" onchange="handleMediaUpload(this,'receipt')">
 </div>
 
 <!-- ═══ NOTIFICATIONS ═══ -->
@@ -3132,8 +3154,153 @@ async function sendMessage() {
 }
 
 document.getElementById('conv-input').addEventListener('keydown', function(e) {
-  if (e.key === 'Enter') { e.preventDefault(); sendMessage(); }
+  if (e.key === 'Enter') { e.preventDefault(); handleSendOrMic(); }
 });
+
+// ══════════════════════════════════════
+//  CHAT INPUT BAR — Attachment, Camera, Emoji, Voice
+// ══════════════════════════════════════
+function toggleSendBtn() {
+  var input = document.getElementById('conv-input');
+  var btn = document.getElementById('send-mic-btn');
+  if (input && btn) btn.innerHTML = input.value.trim() ? '➤' : '🎤';
+}
+
+function handleSendOrMic() {
+  var input = document.getElementById('conv-input');
+  if (input && input.value.trim()) {
+    sendMessage();
+    toggleSendBtn();
+  } else {
+    startVoiceRecord();
+  }
+}
+
+// Attachment menu
+function toggleAttachMenu() {
+  var menu = document.getElementById('attach-menu');
+  var emoji = document.getElementById('emoji-picker-area');
+  if (emoji) emoji.style.display = 'none';
+  if (menu) menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+}
+
+function openCamera() { document.getElementById('camera-input').click(); toggleAttachMenu(); }
+function openGallery() { document.getElementById('gallery-input').click(); toggleAttachMenu(); }
+function openReceipt() { document.getElementById('receipt-input').click(); toggleAttachMenu(); }
+
+function shareLocation() {
+  toggleAttachMenu();
+  if (!navigator.geolocation) { alert('Location not available'); return; }
+  navigator.geolocation.getCurrentPosition(function(pos) {
+    var lat = pos.coords.latitude.toFixed(4);
+    var lng = pos.coords.longitude.toFixed(4);
+    var input = document.getElementById('conv-input');
+    if (input) { input.value = '📍 Location: ' + lat + ', ' + lng; toggleSendBtn(); }
+  }, function() { alert('Could not get location'); });
+}
+
+// Handle photo/receipt upload
+async function handleMediaUpload(input, type) {
+  if (!input.files || !input.files[0]) return;
+  var file = input.files[0];
+  var reader = new FileReader();
+  reader.onload = async function(e) {
+    var base64 = e.target.result.split(',')[1];
+    var preview = e.target.result;
+
+    if (type === 'receipt') {
+      // Send to AI receipt scanner
+      var msgInput = document.getElementById('conv-input');
+      if (msgInput) { msgInput.value = '🧾 Scanning receipt...'; toggleSendBtn(); }
+      try {
+        var r = await fetch('/api/expenses/scan-receipt', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({imageBase64:base64}) });
+        var d = await r.json();
+        if (d.ok && d.receipt) {
+          var text = '🧾 Receipt: ' + (d.receipt.store || 'Unknown') + '\n';
+          if (d.receipt.items) d.receipt.items.forEach(function(item) { text += '  • ' + item.name + ' ฿' + item.price + '\n'; });
+          text += 'Total: ฿' + (d.receipt.total || 0) + ' (' + (d.receipt.category || 'Other') + ')';
+          if (msgInput) { msgInput.value = text; toggleSendBtn(); }
+          // Auto-create expense
+          if (me && me.propertyId) {
+            fetch('/api/expenses/create', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({propertyId:me.propertyId, workerId:me.id, amount:d.receipt.total||0, category:d.receipt.category||'', store:d.receipt.store||'', items:d.receipt.items||[]}) });
+          }
+        } else {
+          if (msgInput) { msgInput.value = '🧾 Could not read receipt'; toggleSendBtn(); }
+        }
+      } catch(err) { if (msgInput) { msgInput.value = '🧾 Receipt scan failed'; toggleSendBtn(); } }
+    } else {
+      // Photo — send as message with image indicator
+      var msgInput = document.getElementById('conv-input');
+      if (msgInput) { msgInput.value = '📷 [Photo sent]'; toggleSendBtn(); sendMessage(); }
+    }
+  };
+  reader.readAsDataURL(file);
+  input.value = ''; // reset
+}
+
+// Emoji picker
+var EMOJI_LIST = ['😊','😂','❤️','👍','🙏','✅','🔥','💪','😍','🎉','👋','🙌','💯','🏠','🧹','🍳','🚗','🌿','💰','🧾','📋','⏰','☀️','🌙','🔑','📱','📍','🎄','🎂','⭐','😅','😢','😡','🤔','👌','✨','🙂','😎','🥳','💬'];
+(function buildEmojiGrid() {
+  var grid = document.getElementById('emoji-grid');
+  if (!grid) return;
+  EMOJI_LIST.forEach(function(em) {
+    var btn = document.createElement('button');
+    btn.textContent = em;
+    btn.style.cssText = 'font-size:1.5rem;border:none;background:transparent;cursor:pointer;padding:6px;border-radius:8px;-webkit-tap-highlight-color:transparent';
+    btn.onclick = function() {
+      var input = document.getElementById('conv-input');
+      if (input) { input.value += em; input.focus(); toggleSendBtn(); }
+      toggleEmojiPicker();
+    };
+    grid.appendChild(btn);
+  });
+})();
+
+function toggleEmojiPicker() {
+  var picker = document.getElementById('emoji-picker-area');
+  var menu = document.getElementById('attach-menu');
+  if (menu) menu.style.display = 'none';
+  if (picker) picker.style.display = picker.style.display === 'none' ? 'block' : 'none';
+}
+
+// Voice recording
+var mediaRecorder = null;
+var audioChunks = [];
+var isRecording = false;
+
+async function startVoiceRecord() {
+  if (isRecording) { stopVoiceRecord(); return; }
+  try {
+    var stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaRecorder = new MediaRecorder(stream);
+    audioChunks = [];
+    mediaRecorder.ondataavailable = function(e) { audioChunks.push(e.data); };
+    mediaRecorder.onstop = function() {
+      stream.getTracks().forEach(function(t) { t.stop(); });
+      isRecording = false;
+      var btn = document.getElementById('send-mic-btn');
+      if (btn) { btn.innerHTML = '🎤'; btn.style.background = '#00897B'; }
+      if (audioChunks.length) {
+        var input = document.getElementById('conv-input');
+        if (input) { input.value = '🎙️ [Voice message]'; toggleSendBtn(); sendMessage(); }
+      }
+    };
+    mediaRecorder.start();
+    isRecording = true;
+    var btn = document.getElementById('send-mic-btn');
+    if (btn) { btn.innerHTML = '⏹'; btn.style.background = '#E53935'; }
+    // Auto-stop after 60 seconds
+    setTimeout(function() { if (isRecording) stopVoiceRecord(); }, 60000);
+  } catch(e) {
+    alert('Microphone access required for voice messages');
+  }
+}
+
+function stopVoiceRecord() {
+  if (mediaRecorder && mediaRecorder.state === 'recording') {
+    mediaRecorder.stop();
+  }
+}
 
 // ══════════════════════════════════════
 //  REMOVE WORKER
