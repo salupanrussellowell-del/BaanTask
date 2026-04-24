@@ -1242,11 +1242,29 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
 var APP_VERSION = 'v8-20260423';
 if (localStorage.getItem('bt_version') !== APP_VERSION) {
   var savedLang = localStorage.getItem('bt_lang');
+  var savedInvite = localStorage.getItem('bt_pending_invite');
   localStorage.clear();
   if (savedLang) localStorage.setItem('bt_lang', savedLang);
+  if (savedInvite) localStorage.setItem('bt_pending_invite', savedInvite);
   localStorage.setItem('bt_version', APP_VERSION);
-  console.log('[BOOT] Version changed → cleared localStorage, kept lang=' + savedLang);
 }
+
+// Check URL for ?invite= parameter (from QR code scan)
+(function checkInviteUrl() {
+  try {
+    var params = new URLSearchParams(window.location.search);
+    var inviteFromUrl = params.get('invite');
+    if (inviteFromUrl) {
+      localStorage.setItem('bt_pending_invite', inviteFromUrl);
+      localStorage.setItem('bt_role', 'worker');
+      console.log('[INVITE] Found invite code in URL:', inviteFromUrl);
+      // Clean URL without reloading
+      if (window.history && window.history.replaceState) {
+        window.history.replaceState({}, '', window.location.pathname);
+      }
+    }
+  } catch(e) {}
+})();
 
 const LANG_DATA = [
   {code:'English',flag:'🇬🇧',name:'English',sub:'Choose your language',cont:'Continue →'},
@@ -1344,6 +1362,17 @@ const splashInterval = setInterval(() => {
             selectedLang = me.lang || 'English';
             try { applyLang(); } catch(e) {}
             try { connectSocket(); } catch(e) {}
+            // Check if logged-in user scanned a new invite QR
+            var pendingInv = localStorage.getItem('bt_pending_invite');
+            if (pendingInv) {
+              console.log('[BOOT] Logged-in user has pending invite:', pendingInv);
+              localStorage.removeItem('bt_pending_invite');
+              if (!pendingReg) pendingReg = {};
+              pendingReg.inviteCode = pendingInv;
+              pendingReg.role = 'worker';
+              lookupAndAcceptInvite(pendingInv);
+              return;
+            }
             if (me.propertyId) {
               try { await loadPropertyData(String(me.propertyId)); } catch(e) {}
               goScreen(me.role === 'owner' ? 's-owner-home' : 's-worker-home');
@@ -1598,6 +1627,7 @@ async function workerTypeNext() {
 // ── Complete onboarding ──
 async function completeOnboarding(role) {
   localStorage.setItem('bt_onboarded', 'true');
+  localStorage.removeItem('bt_pending_invite');
   if (me && me.id) {
     me.onboardingComplete = true;
     localStorage.setItem('bt_user', JSON.stringify(me));
@@ -1645,6 +1675,17 @@ async function completeOnboarding(role) {
 function langNext() {
   if (!selectedLang) return;
   localStorage.setItem('bt_lang', selectedLang);
+  // If there's a pending invite from QR scan, skip role selection
+  var pendingInvite = localStorage.getItem('bt_pending_invite');
+  if (pendingInvite) {
+    console.log('[INVITE] Pending invite found after lang select:', pendingInvite);
+    selectedRole = 'worker';
+    if (!pendingReg) pendingReg = {};
+    pendingReg.role = 'worker';
+    pendingReg.inviteCode = pendingInvite;
+    lookupAndAcceptInvite(pendingInvite);
+    return;
+  }
   goScreen('s-role');
 }
 
@@ -1661,6 +1702,37 @@ function selectRole(role) {
   } else {
     // WORKER NEW: role → enter invite code
     goScreen('s-worker-reg');
+  }
+}
+
+// ── Auto-join via QR invite code ──
+async function lookupAndAcceptInvite(code) {
+  console.log('[INVITE] Looking up code:', code);
+  try {
+    var r = await fetch('/api/check-invite', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({inviteCode:code}) });
+    var d = await r.json();
+    if (!d.ok) {
+      console.log('[INVITE] Invalid code:', d.error);
+      alert('Invite code "' + code + '" is not valid. Please check with your employer.');
+      localStorage.removeItem('bt_pending_invite');
+      goScreen('s-role');
+      return;
+    }
+    if (!pendingReg) pendingReg = {};
+    pendingReg.inviteCode = code;
+    pendingReg.propertyName = d.property.name;
+    pendingReg.ownerName = d.owner.name;
+    pendingReg.propertyId = d.property.id;
+    pendingReg.role = 'worker';
+    // Show accept screen
+    document.getElementById('wa-property').textContent = d.property.name;
+    document.getElementById('wa-owner').textContent = d.owner.name;
+    console.log('[INVITE] Property found:', d.property.name, 'by', d.owner.name);
+    goScreen('s-worker-accept');
+  } catch(e) {
+    console.error('[INVITE] Lookup error:', e);
+    alert('Could not look up invite code. Please try again.');
+    goScreen('s-role');
   }
 }
 
