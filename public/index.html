@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <title>BaanTask</title>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -1051,23 +1052,23 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
 <!-- ═══ QR CODE DISPLAY ═══ -->
 <div id="s-qr-display" class="screen">
   <div class="sb" style="background:#00695C">9:41<span>📶 🔋</span></div>
-  <div class="tn owner-tn"><span class="bk" onclick="goBack()" style="color:#1F2937">‹</span><h2 data-i18n="show_qr">QR Code</h2></div>
+  <div style="background:linear-gradient(160deg,#00897B,#00695C);padding:14px 22px;color:#fff;flex-shrink:0">
+    <div style="display:flex;align-items:center;gap:10px"><span class="bk" onclick="goBack()" style="color:#fff">‹</span><span style="font-size:.9rem;font-weight:800">Show QR Code</span></div>
+  </div>
   <div class="sc" style="background:#fff">
-    <div style="padding:32px 16px;display:flex;flex-direction:column;align-items:center;text-align:center">
-      <div style="font-size:1.6rem;margin-bottom:12px">📱</div>
+    <div style="padding:28px 16px;display:flex;flex-direction:column;align-items:center;text-align:center">
       <h3 style="font-size:1.1rem;font-weight:900;color:#1F2937;margin-bottom:4px">Scan to Join</h3>
-      <p style="font-size:.78rem;color:#9CA3AF;font-weight:600;margin-bottom:20px">Worker scans this QR with their phone camera</p>
-      <div style="width:200px;height:200px;background:#fff;border:3px solid #00897B;border-radius:20px;display:flex;align-items:center;justify-content:center;margin-bottom:16px;box-shadow:0 4px 20px rgba(0,0,0,.1)">
-        <div style="text-align:center">
-          <div style="font-size:3rem;margin-bottom:8px">🏠</div>
-          <div id="qr-code-text" style="font-size:1.8rem;font-weight:900;letter-spacing:6px;color:#00695C;font-family:'DM Sans',monospace">——</div>
-          <div style="font-size:.68rem;color:#9CA3AF;font-weight:700;margin-top:6px">baantask.app</div>
-        </div>
+      <p style="font-size:.78rem;color:#9CA3AF;font-weight:600;margin-bottom:20px">Show this to your worker — they scan with their phone camera</p>
+      <div id="qr-container" style="display:flex;justify-content:center;padding:20px;background:#fff;border-radius:16px;border:2px solid #E0F2F1;margin-bottom:16px;box-shadow:0 4px 20px rgba(0,0,0,.08)"></div>
+      <p style="font-size:.76rem;color:#6B7280;font-weight:600;margin-bottom:8px">Or tell them to visit <strong>baantask.app</strong> and enter code:</p>
+      <div style="background:#E0F2F1;border-radius:12px;padding:10px 24px;margin-bottom:12px">
+        <span id="qr-invite-code" style="font-size:1.5rem;font-weight:900;letter-spacing:6px;color:#00695C;font-family:'DM Sans',monospace">——</span>
       </div>
-      <p style="font-size:.72rem;color:#6B7280;font-weight:600;margin-bottom:16px">Or tell them to visit the link and enter this code</p>
-      <div style="background:#E0F2F1;border-radius:12px;padding:10px 20px">
-        <span id="qr-invite-link" style="font-size:.78rem;font-weight:800;color:#00695C;word-break:break-all"></span>
+      <div style="display:flex;gap:8px;width:100%;max-width:300px">
+        <button onclick="copyInviteLink()" style="flex:1;padding:10px;background:#F3F4F6;border:none;border-radius:10px;font-size:.82rem;font-weight:800;cursor:pointer;font-family:inherit" id="qr-copy-btn">📋 Copy Link</button>
+        <button onclick="shareInvite('whatsapp')" style="flex:1;padding:10px;background:#25D366;color:#fff;border:none;border-radius:10px;font-size:.82rem;font-weight:800;cursor:pointer;font-family:inherit">💬 WhatsApp</button>
       </div>
+      <p style="font-size:.68rem;color:#9CA3AF;margin-top:16px">Invite code doesn't expire</p>
     </div>
   </div>
   <div class="bn">
@@ -2473,10 +2474,34 @@ function getInviteLink() {
 }
 
 function showQRCode() {
-  const code = myProperty ? myProperty.inviteCode : '——';
-  document.getElementById('qr-code-text').textContent = code;
-  document.getElementById('qr-invite-link').textContent = getInviteLink();
+  var code = myProperty ? myProperty.inviteCode : '——';
+  var url = getInviteLink();
+  document.getElementById('qr-invite-code').textContent = code;
+  // Generate real QR code
+  var container = document.getElementById('qr-container');
+  container.innerHTML = '';
+  try {
+    new QRCode(container, {
+      text: url,
+      width: 200,
+      height: 200,
+      colorDark: '#004D40',
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.H
+    });
+  } catch(e) {
+    container.innerHTML = '<div style="text-align:center;padding:20px;font-size:.9rem;color:#9CA3AF">QR library loading...</div>';
+    console.error('[QR]', e);
+  }
   goScreen('s-qr-display');
+}
+
+function copyInviteLink() {
+  var link = getInviteLink();
+  var btn = document.getElementById('qr-copy-btn');
+  navigator.clipboard.writeText(link).then(function() {
+    if (btn) { btn.textContent = '✓ Copied!'; setTimeout(function() { btn.textContent = '📋 Copy Link'; }, 2000); }
+  }).catch(function() { prompt('Copy this link:', link); });
 }
 
 // ══════════════════════════════════════
