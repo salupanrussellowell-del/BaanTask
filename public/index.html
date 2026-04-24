@@ -3,6 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <title>BaanTask</title>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -502,16 +504,12 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
       </div>
       <div class="form-group"><label>Address</label><input id="prop-address" type="text" placeholder="e.g. 123/4 Soi Saiyuan"></div>
 
-      <!-- Location preview (auto-detect) -->
-      <div id="loc-preview" style="display:none;background:#E8F5E9;border-radius:14px;padding:16px;margin-bottom:16px;position:relative;width:100%;max-width:360px;box-sizing:border-box">
-        <div style="position:absolute;top:10px;left:10px;background:#00897B;color:#fff;border-radius:20px;padding:3px 10px;font-size:.72rem;font-weight:800">✓ Auto-placed</div>
-        <div style="text-align:center;padding:20px 0">
-          <div style="font-size:2rem">📍</div>
-          <div id="loc-prop-label" style="background:#00695C;color:#fff;border-radius:20px;padding:4px 14px;display:inline-block;font-size:.82rem;font-weight:800;margin-top:8px">Property</div>
-        </div>
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
-          <span id="loc-coords" style="font-size:.76rem;font-weight:700;color:#1F2937">Detecting...</span>
-          <span onclick="detectLocation()" style="color:#00897B;font-size:.76rem;font-weight:800;cursor:pointer">Refresh ↻</span>
+      <!-- Real map -->
+      <div id="loc-preview" style="display:none;width:100%;max-width:360px;margin-bottom:16px;box-sizing:border-box">
+        <div id="property-map" style="width:100%;height:200px;border-radius:14px;overflow:hidden;border:2px solid #E5E7EB"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">
+          <span id="loc-coords" style="font-size:.72rem;font-weight:700;color:#6B7280">📍 Drag pin to adjust</span>
+          <span style="background:#00897B;color:#fff;border-radius:20px;padding:3px 10px;font-size:.68rem;font-weight:800">✓ Located</span>
         </div>
       </div>
 
@@ -1994,52 +1992,85 @@ function checkPropReady() { document.getElementById('prop-btn').disabled = !(sel
 ['prop-name','prop-city','prop-address'].forEach(function(id) { var el = document.getElementById(id); if (el) el.addEventListener('input', checkPropReady); });
 
 // Location detection
+// Location detection with Leaflet map
 var detectedLat = null, detectedLng = null;
+var propertyMap = null, propertyMarker = null;
+
+function showMap(lat, lng) {
+  var mapEl = document.getElementById('property-map');
+  var preview = document.getElementById('loc-preview');
+  var coordsEl = document.getElementById('loc-coords');
+  if (!mapEl || !preview) return;
+  preview.style.display = 'block';
+
+  if (!propertyMap) {
+    propertyMap = L.map('property-map', { zoomControl: false }).setView([lat, lng], 16);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap'
+    }).addTo(propertyMap);
+    propertyMarker = L.marker([lat, lng], { draggable: true }).addTo(propertyMap);
+    // Update coords when marker is dragged
+    propertyMarker.on('dragend', function() {
+      var pos = propertyMarker.getLatLng();
+      detectedLat = pos.lat;
+      detectedLng = pos.lng;
+      updateCoordsLabel();
+      console.log('[MAP] Marker moved:', detectedLat, detectedLng);
+    });
+    // Fix map tiles not loading when container was hidden
+    setTimeout(function() { propertyMap.invalidateSize(); }, 200);
+  } else {
+    propertyMap.setView([lat, lng], 16);
+    propertyMarker.setLatLng([lat, lng]);
+    propertyMap.invalidateSize();
+  }
+  updateCoordsLabel();
+}
+
+function updateCoordsLabel() {
+  var coordsEl = document.getElementById('loc-coords');
+  if (!coordsEl || !detectedLat) return;
+  var latStr = Math.abs(detectedLat).toFixed(4) + '° ' + (detectedLat >= 0 ? 'N' : 'S');
+  var lngStr = Math.abs(detectedLng).toFixed(4) + '° ' + (detectedLng >= 0 ? 'E' : 'W');
+  var city = document.getElementById('prop-city');
+  coordsEl.textContent = '📍 ' + latStr + ', ' + lngStr + (city && city.value.trim() ? ' · ' + city.value.trim() : '');
+}
 
 function detectLocation() {
   var coordsEl = document.getElementById('loc-coords');
   var preview = document.getElementById('loc-preview');
-  var propName = document.getElementById('prop-name').value.trim() || 'Property';
-  document.getElementById('loc-prop-label').textContent = propName;
-
   if (!navigator.geolocation) {
     if (coordsEl) coordsEl.textContent = 'Geolocation not supported';
     return;
   }
-  if (coordsEl) coordsEl.textContent = 'Detecting...';
   if (preview) preview.style.display = 'block';
+  if (coordsEl) coordsEl.textContent = '📍 Detecting location...';
 
   navigator.geolocation.getCurrentPosition(
     function(pos) {
       detectedLat = pos.coords.latitude;
       detectedLng = pos.coords.longitude;
-      var latStr = detectedLat.toFixed(4) + '° ' + (detectedLat >= 0 ? 'N' : 'S');
-      var lngStr = detectedLng.toFixed(4) + '° ' + (detectedLng >= 0 ? 'E' : 'W');
-      var city = document.getElementById('prop-city').value.trim();
-      if (coordsEl) coordsEl.textContent = latStr + ', ' + lngStr + (city ? ' · ' + city : '');
       console.log('[LOC] Detected:', detectedLat, detectedLng);
+      showMap(detectedLat, detectedLng);
     },
     function(err) {
       console.log('[LOC] Error:', err.message);
-      if (coordsEl) coordsEl.textContent = 'Could not detect — enter address manually';
+      if (coordsEl) coordsEl.textContent = '📍 Could not detect — enter address manually';
+      // Show default map (Phuket)
+      detectedLat = 7.8804; detectedLng = 98.3923;
+      showMap(detectedLat, detectedLng);
     },
     { enableHighAccuracy: true, timeout: 10000 }
   );
 }
 
-// Auto-detect location when address field changes (debounced)
+// Auto-detect on address change
 var locDebounce = null;
 var propAddressEl = document.getElementById('prop-address');
 if (propAddressEl) {
   propAddressEl.addEventListener('input', function() {
     clearTimeout(locDebounce);
-    locDebounce = setTimeout(function() {
-      if (!detectedLat) detectLocation();
-      // Update label
-      var propName = document.getElementById('prop-name').value.trim() || 'Property';
-      var label = document.getElementById('loc-prop-label');
-      if (label) label.textContent = propName;
-    }, 800);
+    locDebounce = setTimeout(function() { if (!detectedLat) detectLocation(); }, 800);
   });
 }
 

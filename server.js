@@ -92,11 +92,13 @@ const workerProfileSchema = new mongoose.Schema({
   propertyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Property', required: true },
   jobRole: { type: String, default: '' }, // cleaner, cook, driver, nanny, gardener, other
   salary: { type: Number, default: 0 },
-  contractType: { type: String, enum: ['live-in', 'live-out', 'other'], default: 'live-in' },
+  contractType: { type: String, enum: ['full-time', 'part-time', 'live-in', 'temporary', 'other'], default: 'full-time' },
   skills: [{ type: String }],
   bio: { type: String, default: '' },
   status: { type: String, enum: ['active', 'inactive'], default: 'active' },
-  joinDate: { type: Date, default: Date.now }
+  startDate: { type: Date, default: Date.now },
+  joinDate: { type: Date, default: Date.now },
+  expectedStartTime: { type: String, default: '09:00' } // HH:mm
 });
 
 const taskSchema = new mongoose.Schema({
@@ -120,7 +122,12 @@ const attendanceSchema = new mongoose.Schema({
   date: { type: String, required: true }, // YYYY-MM-DD
   status: { type: String, enum: ['present', 'late', 'absent', 'off'], default: 'present' },
   checkInTime: { type: Date, default: null },
-  reason: { type: String, default: '' }
+  checkOutTime: { type: Date, default: null },
+  checkInLat: { type: Number, default: null },
+  checkInLng: { type: Number, default: null },
+  hoursWorked: { type: Number, default: 0 },
+  reason: { type: String, default: '' },
+  overriddenBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null }
 });
 
 const expenseSchema = new mongoose.Schema({
@@ -129,9 +136,10 @@ const expenseSchema = new mongoose.Schema({
   amount: { type: Number, required: true },
   category: { type: String, default: '' },
   store: { type: String, default: '' },
+  items: [{ name: String, price: Number }],
   date: { type: Date, default: Date.now },
   receiptImage: { type: String, default: '' },
-  status: { type: String, enum: ['pending', 'approved', 'reimbursed'], default: 'pending' }
+  status: { type: String, enum: ['pending', 'approved', 'reimbursed', 'rejected'], default: 'pending' }
 });
 
 const chatSchema = new mongoose.Schema({
@@ -670,28 +678,77 @@ app.post('/api/worker/remove', async (req, res) => {
 //  ATTENDANCE ROUTES
 // ══════════════════════════════════════
 
-app.post('/api/attendance/log', async (req, res) => {
-  const { propertyId, workerId, date, status, checkInTime, reason } = req.body;
-  if (!propertyId || !workerId || !date) return res.status(400).json({ ok: false, error: 'Missing fields' });
+// Worker check-in with GPS
+app.post('/api/attendance/checkin', async (req, res) => {
+  const { propertyId, workerId, lat, lng } = req.body;
+  if (!propertyId || !workerId) return res.json({ ok: false, error: 'Missing fields' });
   try {
-    // Upsert — one record per worker per day
+    const now = new Date();
+    const date = now.toISOString().split('T')[0];
+    const existing = await Attendance.findOne({ propertyId, workerId, date });
+    if (existing && existing.checkInTime) return res.json({ ok: false, error: 'Already checked in today' });
+
+    // Determine if late
+    const wp = await WorkerProfile.findOne({ userId: workerId, propertyId });
+    const expected = wp && wp.expectedStartTime ? wp.expectedStartTime : '09:00';
+    const [eh, em] = expected.split(':').map(Number);
+    const isLate = now.getHours() > eh || (now.getHours() === eh && now.getMinutes() > em + 5);
+
     const record = await Attendance.findOneAndUpdate(
       { propertyId, workerId, date },
-      { status: status || 'present', checkInTime: checkInTime || new Date(), reason: reason || '' },
+      { status: isLate ? 'late' : 'present', checkInTime: now, checkInLat: lat || null, checkInLng: lng || null },
       { upsert: true, new: true }
     );
-    res.json({ ok: true, attendance: record });
-  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+    const timeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    console.log(`[ATTENDANCE] ${workerId} checked in at ${timeStr} (${isLate ? 'LATE' : 'on time'})`);
+    res.json({ ok: true, attendance: record, isLate, time: timeStr, expected });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
+// Worker check-out
+app.post('/api/attendance/checkout', async (req, res) => {
+  const { propertyId, workerId } = req.body;
+  if (!propertyId || !workerId) return res.json({ ok: false, error: 'Missing fields' });
+  try {
+    const date = new Date().toISOString().split('T')[0];
+    const record = await Attendance.findOne({ propertyId, workerId, date });
+    if (!record || !record.checkInTime) return res.json({ ok: false, error: 'Not checked in' });
+    record.checkOutTime = new Date();
+    record.hoursWorked = Math.round((record.checkOutTime - record.checkInTime) / 3600000 * 10) / 10;
+    await record.save();
+    res.json({ ok: true, attendance: record });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
+});
+
+// Get today's attendance for a worker
+app.get('/api/attendance/today/:propertyId/:workerId', async (req, res) => {
+  try {
+    const date = new Date().toISOString().split('T')[0];
+    const record = await Attendance.findOne({ propertyId: req.params.propertyId, workerId: req.params.workerId, date });
+    res.json({ ok: true, attendance: record });
+  } catch (e) { res.json({ ok: true, attendance: null }); }
+});
+
+// Get monthly attendance (for calendar)
 app.get('/api/attendance/:propertyId', async (req, res) => {
-  const { month } = req.query; // YYYY-MM
+  const { month, workerId } = req.query;
   try {
     const query = { propertyId: req.params.propertyId };
-    if (month) { query.date = { $regex: '^' + month }; }
+    if (month) query.date = { $regex: '^' + month };
+    if (workerId) query.workerId = workerId;
     const records = await Attendance.find(query).populate('workerId', 'name').sort({ date: -1 });
     res.json({ ok: true, attendance: records });
   } catch (e) { res.json({ ok: true, attendance: [] }); }
+});
+
+// Owner override attendance
+app.post('/api/attendance/override', async (req, res) => {
+  const { attendanceId, status, ownerId } = req.body;
+  if (!attendanceId || !status) return res.json({ ok: false, error: 'Missing fields' });
+  try {
+    const record = await Attendance.findByIdAndUpdate(attendanceId, { status, overriddenBy: ownerId }, { new: true });
+    res.json({ ok: true, attendance: record });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
 // ══════════════════════════════════════
@@ -699,17 +756,20 @@ app.get('/api/attendance/:propertyId', async (req, res) => {
 // ══════════════════════════════════════
 
 app.post('/api/expenses/create', async (req, res) => {
-  const { propertyId, workerId, amount, category, store, receiptImage } = req.body;
-  if (!propertyId || !amount) return res.status(400).json({ ok: false, error: 'Missing fields' });
+  const { propertyId, workerId, amount, category, store, items, receiptImage } = req.body;
+  if (!propertyId || !amount) return res.json({ ok: false, error: 'Missing fields' });
   try {
-    const expense = await Expense.create({ propertyId, workerId, amount, category, store, receiptImage });
+    const expense = await Expense.create({ propertyId, workerId, amount, category, store, items: items || [], receiptImage });
     res.json({ ok: true, expense });
-  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+  } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
 app.get('/api/expenses/:propertyId', async (req, res) => {
+  const { workerId } = req.query;
   try {
-    const expenses = await Expense.find({ propertyId: req.params.propertyId }).populate('workerId', 'name').sort({ date: -1 });
+    const query = { propertyId: req.params.propertyId };
+    if (workerId) query.workerId = workerId;
+    const expenses = await Expense.find(query).populate('workerId', 'name').sort({ date: -1 });
     const total = expenses.reduce((sum, e) => sum + e.amount, 0);
     res.json({ ok: true, expenses, total });
   } catch (e) { res.json({ ok: true, expenses: [], total: 0 }); }
@@ -717,12 +777,79 @@ app.get('/api/expenses/:propertyId', async (req, res) => {
 
 app.post('/api/expenses/update', async (req, res) => {
   const { expenseId, status } = req.body;
-  if (!expenseId || !status) return res.status(400).json({ ok: false, error: 'Missing fields' });
+  if (!expenseId || !status) return res.json({ ok: false, error: 'Missing fields' });
   try {
     const expense = await Expense.findByIdAndUpdate(expenseId, { status }, { new: true });
-    if (!expense) return res.status(404).json({ ok: false, error: 'Not found' });
     res.json({ ok: true, expense });
-  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+  } catch (e) { res.json({ ok: false, error: e.message }); }
+});
+
+// AI Receipt scanning
+app.post('/api/expenses/scan-receipt', async (req, res) => {
+  const { imageBase64 } = req.body;
+  if (!imageBase64 || !process.env.ANTHROPIC_API_KEY) return res.json({ ok: false, error: 'Image or API key missing' });
+  try {
+    const r = await client.messages.create({
+      model: 'claude-haiku-4-5-20251001', max_tokens: 1000,
+      messages: [{ role: 'user', content: [
+        { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: imageBase64 } },
+        { type: 'text', text: 'Read this receipt. Return ONLY valid JSON: {"store":"store name","items":[{"name":"item","price":123}],"total":456,"category":"Groceries|Cleaning|Transport|Food|Utilities|Other"}. Prices in Thai Baht. If unreadable, return {"error":"Cannot read receipt"}.' }
+      ] }]
+    });
+    let raw = r.content[0].text.trim();
+    if (raw.startsWith('```')) raw = raw.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim();
+    const parsed = JSON.parse(raw);
+    console.log('[RECEIPT] Scanned:', parsed.store, '฿' + parsed.total);
+    res.json({ ok: true, receipt: parsed });
+  } catch (e) {
+    console.error('[RECEIPT ERROR]', e.message);
+    res.json({ ok: false, error: 'Could not read receipt' });
+  }
+});
+
+// Update worker profile (salary, contract, start date)
+app.post('/api/worker/profile-update', async (req, res) => {
+  const { profileId, salary, contractType, expectedStartTime, startDate } = req.body;
+  if (!profileId) return res.json({ ok: false, error: 'Missing profileId' });
+  try {
+    const update = {};
+    if (salary !== undefined) update.salary = salary;
+    if (contractType) update.contractType = contractType;
+    if (expectedStartTime) update.expectedStartTime = expectedStartTime;
+    if (startDate) update.startDate = startDate;
+    const wp = await WorkerProfile.findByIdAndUpdate(profileId, update, { new: true });
+    res.json({ ok: true, profile: wp });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
+});
+
+// Payroll summary
+app.get('/api/payroll/:propertyId', async (req, res) => {
+  const { month } = req.query; // YYYY-MM
+  const m = month || new Date().toISOString().slice(0, 7);
+  try {
+    const workers = await WorkerProfile.find({ propertyId: req.params.propertyId, status: 'active' }).populate('userId', 'name lang');
+    const payroll = [];
+    let grandTotal = 0;
+    for (const w of workers) {
+      const att = await Attendance.find({ propertyId: req.params.propertyId, workerId: w.userId._id, date: { $regex: '^' + m } });
+      const daysPresent = att.filter(a => a.status === 'present').length;
+      const daysLate = att.filter(a => a.status === 'late').length;
+      const daysAbsent = att.filter(a => a.status === 'absent').length;
+      const totalDays = daysPresent + daysLate;
+      const baseSalary = w.salary || 0;
+      const dailyRate = baseSalary / 30;
+      const lateDeduction = Math.round(daysLate * dailyRate * 0.25);
+      const absentDeduction = Math.round(daysAbsent * dailyRate);
+      const netSalary = Math.round(baseSalary - lateDeduction - absentDeduction);
+      grandTotal += netSalary;
+      payroll.push({
+        workerId: w.userId._id, name: w.userId.name, jobRole: w.jobRole,
+        baseSalary, daysWorked: totalDays, daysLate, daysAbsent,
+        lateDeduction, absentDeduction, netSalary, profileId: w._id
+      });
+    }
+    res.json({ ok: true, payroll, grandTotal, month: m });
+  } catch (e) { res.json({ ok: true, payroll: [], grandTotal: 0 }); }
 });
 
 // ══════════════════════════════════════
