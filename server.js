@@ -274,69 +274,110 @@ function userPayload(user, token) {
 const LANG_ALIASES = { Tagalog:'Filipino', 'Filipino/Tagalog':'Filipino', Burmese:'Myanmar', Mandarin:'Chinese', 'Mandarin Chinese':'Chinese', 'Simplified Chinese':'Chinese', 'Traditional Chinese':'Chinese' };
 function normLang(lang) { return LANG_ALIASES[lang] || lang; }
 
-const TRANSLATION_SYSTEM = `You are an expert professional translator specializing in household employer-employee communication in Asia.
+// ── Translation system (Sonnet for quality) ──
+function buildTranslationPrompt(fromLang, toLang) {
+  return `You are a professional translator for BaanTask, a household staff management app in Thailand.
 
-CONTEXT: This is a conversation between a property owner and their household staff (driver, cleaner, cook, nanny, gardener, security guard). Messages are about daily tasks, schedules, house matters, and general communication.
+CRITICAL RULES:
+1. Translate naturally like a native speaker — NOT word-for-word literal.
+2. Preserve tone: casual stays casual, formal stays formal.
+3. Keep emojis, numbers, times, dates, and proper nouns unchanged.
+4. Household/villa context: pool=สระว่ายน้ำ, laundry=ซักผ้า, garden=สวน, guest=แขก, maid=แม่บ้าน.
+5. Thai: Add ครับ (male)/ค่ะ (female) ONLY if original is polite. Don't add for casual/direct messages.
+6. Filipino/Tagalog: Use natural Taglish when appropriate. Add po/opo only for respectful tone.
+7. If message is a command/instruction, translate as command (not question).
+8. DO NOT add explanations, notes, or alternatives. Output ONLY the translation.
+9. DO NOT translate brand names, app names, or person names.
+10. If message is only emoji/numbers/stickers → return it unchanged.
 
-TRANSLATION RULES:
-- Translate the MEANING and INTENT, not word-for-word
-- Use natural conversational tone, not robotic or overly formal
-- Understand context: 'leave' in travel = depart/go NOT abandon; 'take care' = look after; 'follow up' = check on progress
-- Filipino: 'we will leave/go' = 'aalis kami' NOT 'iiwan natin'; 'we' exclusive = 'kami', inclusive = 'tayo'; use 'po'/'opo' appropriately
-- Thai: polite particles ครับ/ค่ะ; 'leave/depart' = ออกเดินทาง NOT ทิ้ง
-- Burmese: polite natural Burmese with appropriate honorifics
-- Indonesian: 'pergi' for leave/depart NOT 'tinggalkan'
-- Russian: natural conversational Russian
-- Chinese: simplified characters, conversational tone
-- Arabic: Modern Standard Arabic, respectful employer context
-- Japanese: polite form 丁寧語 for work setting
-- Korean: 존댓말 for worker-to-owner, polite casual for owner-to-worker
-- Hindi: natural Hindi, 'जाना' for leave/depart
-- Spanish: 'salir' for leave/depart NOT 'dejar'
-- French: 'partir' for leave/depart NOT 'laisser'
-- German: 'abreisen/abfahren' for leave/depart
-- "Filipino" means Tagalog/Filipino language; "Myanmar" means Burmese language`;
+GOOD examples (EN→TH):
+"Can you clean the pool today?" → "วันนี้ช่วยทำความสะอาดสระให้หน่อยได้ไหมครับ"
+"Pool is almost done ✅" → "สระเกือบเสร็จแล้วนะ ✅"
+"ok 👍" → "โอเค 👍"
 
-async function detectAndTranslate(text, targetLangs) {
-  if (!process.env.ANTHROPIC_API_KEY || !targetLangs.length) return { detectedLang: 'English', translations: {} };
+GOOD examples (TH→EN):
+"ได้เลยครับ เดี๋ยวไปทำ 🏊" → "Got it, I'll do it now 🏊"
+"อาหารเย็นพร้อมแล้วค่ะ" → "Dinner is ready"
+
+GOOD examples (EN→Filipino):
+"Please buy groceries" → "Paki-bili ng groceries"
+"We're leaving at 3pm" → "Aalis kami ng 3pm"`;
+}
+
+// Skip translation for trivial messages
+function shouldSkipTranslation(text) {
+  if (!text || !text.trim()) return true;
+  var t = text.trim();
+  if (/^[\p{Emoji}\s\d.,!?]+$/u.test(t)) return true; // only emoji/numbers
+  if (t.length <= 2) return true; // "ok", "no" etc are universal
+  return false;
+}
+
+// Detect language from script (fast, no API call)
+function detectLangFromScript(text) {
+  if (/[\u0E00-\u0E7F]/.test(text)) return 'Thai';
+  if (/[\u0400-\u04FF]/.test(text)) return 'Russian';
+  if (/[\u4E00-\u9FFF]/.test(text)) return 'Chinese';
+  if (/[\u3040-\u309F\u30A0-\u30FF]/.test(text)) return 'Japanese';
+  if (/[\uAC00-\uD7AF]/.test(text)) return 'Korean';
+  if (/[\u0900-\u097F]/.test(text)) return 'Hindi';
+  if (/[\u0600-\u06FF]/.test(text)) return 'Arabic';
+  if (/[\u1000-\u109F]/.test(text)) return 'Myanmar';
+  if (/[\u1780-\u17FF]/.test(text)) return 'Khmer';
+  return null; // can't detect from script alone
+}
+
+// Main translation function — uses Sonnet for quality
+async function translateOne(text, fromLang, toLang, contextMessages) {
+  if (!process.env.ANTHROPIC_API_KEY || fromLang === toLang) return null;
+  if (shouldSkipTranslation(text)) return text;
+
+  var messages = [];
+  // Add conversation context (last 3 messages)
+  if (contextMessages && contextMessages.length) {
+    var ctx = contextMessages.slice(-3).map(function(m) {
+      return '[' + (m.senderLang || 'Unknown') + ']: ' + m.text;
+    }).join('\n');
+    messages.push({ role: 'user', content: 'Recent conversation context:\n' + ctx });
+    messages.push({ role: 'assistant', content: 'I understand the conversation context. I will use it for accurate translation.' });
+  }
+  messages.push({ role: 'user', content: 'Translate from ' + fromLang + ' to ' + toLang + '. Output ONLY the translation, nothing else.\n\n' + text });
+
   try {
-    const r = await client.messages.create({
-      model: 'claude-haiku-4-5-20251001', max_tokens: 2000,
-      system: TRANSLATION_SYSTEM,
-      messages: [{ role: 'user', content: `Detect the language of this message and translate it to each target language.
-
-Message: ${JSON.stringify(text)}
-
-Target languages: ${targetLangs.join(', ')}
-
-Respond with ONLY valid JSON, no markdown fences, no explanation:
-{"detectedLang":"<language name>","translations":{${targetLangs.map(l => `"${l}":"<translation>"`).join(',')}}}
-
-If already in a target language, copy original text as that translation.` }]
+    var r = await client.messages.create({
+      model: 'claude-sonnet-4-20250514', max_tokens: 500,
+      system: buildTranslationPrompt(fromLang, toLang),
+      messages: messages
     });
-    let raw = r.content[0].text.trim();
-    if (raw.startsWith('```')) { raw = raw.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim(); }
-    const parsed = JSON.parse(raw);
-    parsed.detectedLang = normLang(parsed.detectedLang || 'English');
-    console.log(`[TRANSLATE] Detected: ${parsed.detectedLang}, targets: ${targetLangs.join(', ')}`);
-    return parsed;
+    var result = r.content[0].text.trim();
+    console.log('[TRANSLATE] ' + fromLang + '→' + toLang + ': "' + text.substring(0, 30) + '" → "' + result.substring(0, 30) + '"');
+    return result;
   } catch (e) {
-    console.error('[TRANSLATE ERROR]', e.message);
-    return { detectedLang: 'English', translations: {} };
+    console.error('[TRANSLATE ERR]', e.message);
+    // Retry once with Haiku as fallback
+    try {
+      var r2 = await client.messages.create({
+        model: 'claude-haiku-4-5-20251001', max_tokens: 500,
+        messages: [{ role: 'user', content: 'Translate from ' + fromLang + ' to ' + toLang + '. Output ONLY the translation.\n\n' + text }]
+      });
+      return r2.content[0].text.trim();
+    } catch (e2) { return null; }
   }
 }
 
-// Fallback single translation
-async function translateOne(text, fromLang, toLang) {
-  if (!process.env.ANTHROPIC_API_KEY || fromLang === toLang) return null;
+// Detect language (script-based first, then API)
+async function detectLanguage(text) {
+  var fromScript = detectLangFromScript(text);
+  if (fromScript) return fromScript;
+  // Fallback: ask Haiku (cheap + fast)
+  if (!process.env.ANTHROPIC_API_KEY) return 'English';
   try {
-    const r = await client.messages.create({
-      model: 'claude-haiku-4-5-20251001', max_tokens: 500,
-      system: TRANSLATION_SYSTEM,
-      messages: [{ role: 'user', content: `Translate from ${fromLang} to ${toLang}. Output ONLY the translated text, nothing else.\n\n${text}` }]
+    var r = await client.messages.create({
+      model: 'claude-haiku-4-5-20251001', max_tokens: 20,
+      messages: [{ role: 'user', content: 'What language? Reply with ONLY the language name. Message: "' + text.substring(0, 100) + '"' }]
     });
-    return r.content[0].text.trim();
-  } catch (e) { return null; }
+    return normLang(r.content[0].text.trim().replace(/[".]/g, ''));
+  } catch(e) { return 'English'; }
 }
 
 // ══════════════════════════════════════
@@ -975,20 +1016,23 @@ app.get('/api/messages/:chatId', async (req, res) => {
 
       // Only translate if viewer's language differs from sender's
       let translation = null;
-      if (sLang !== viewerLang) {
+      if (sLang !== viewerLang && !shouldSkipTranslation(m.text)) {
         // Check cache first
         translation = t[viewerLang] || null;
         if (!translation) {
-          // Case-insensitive fallback
           const key = Object.keys(t).find(k => normLang(k) === viewerLang);
           if (key) translation = t[key];
         }
-        // Not cached → translate on-the-fly and save to DB
+        // Not cached → translate with context
         if (!translation) {
-          const tr = await translateOne(m.text, sLang, viewerLang);
-          if (tr) {
+          // Get last 3 messages before this one for context
+          const idx = msgs.indexOf(m);
+          const context = msgs.slice(Math.max(0, idx - 3), idx).map(cm => ({
+            text: cm.text, senderLang: cm.senderLang
+          }));
+          const tr = await translateOne(m.text, sLang, viewerLang, context);
+          if (tr && tr !== m.text) {
             translation = tr;
-            // Cache it in the message document for next time
             await Message.updateOne({ _id: m._id }, { $set: { [`translations.${viewerLang}`]: tr } });
           }
         }
@@ -1015,17 +1059,8 @@ app.post('/api/messages/send', async (req, res) => {
     const chat = await Chat.findById(chatId);
     if (!chat) return res.status(404).json({ ok: false, error: 'Chat not found' });
 
-    // Auto-detect the sender's language
-    let detectedLang = 'English';
-    if (process.env.ANTHROPIC_API_KEY) {
-      try {
-        const dr = await client.messages.create({
-          model: 'claude-haiku-4-5-20251001', max_tokens: 50,
-          messages: [{ role: 'user', content: `What language is this message written in? Reply with ONLY the language name in English (e.g. "English", "Filipino", "Thai", "Russian"). Message: "${text}"` }]
-        });
-        detectedLang = normLang(dr.content[0].text.trim().replace(/[".]/g, ''));
-      } catch(e) {}
-    }
+    // Auto-detect the sender's language (script-based first, then API)
+    let detectedLang = await detectLanguage(text);
     console.log(`[MSG] Detected language: ${detectedLang}`);
 
     const msg = await Message.create({
