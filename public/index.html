@@ -542,7 +542,7 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
           4. You set their salary on their profile
         </div>
       </div>
-      <div onclick="goScreen('s-qr-display')" style="background:#fff;border:2px solid #E5E7EB;border-radius:16px;padding:16px;display:flex;align-items:center;gap:14px;cursor:pointer">
+      <div onclick="showQRCode()" style="background:#fff;border:2px solid #E5E7EB;border-radius:16px;padding:16px;display:flex;align-items:center;gap:14px;cursor:pointer">
         <div style="width:48px;height:48px;background:#E0F2F1;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.6rem">📱</div>
         <div><div style="font-size:.92rem;font-weight:800;color:#1F2937">Show QR Code</div><div style="font-size:.72rem;color:#9CA3AF;margin-top:2px">Worker scans with their phone camera</div></div>
         <span style="font-size:1.1rem;color:#9CA3AF;margin-left:auto">›</span>
@@ -2473,13 +2473,54 @@ function getInviteLink() {
   return `https://baantask.app?invite=${code}`;
 }
 
-function showQRCode() {
-  var code = myProperty ? myProperty.inviteCode : '——';
-  var url = getInviteLink();
+async function showQRCode() {
+  console.log('[QR] showQRCode called');
+  goScreen('s-qr-display');
+
+  // Ensure we have property data with invite code
+  if (!myProperty && me && me.propertyId) {
+    console.log('[QR] Loading property data...');
+    try { await loadPropertyData(String(me.propertyId)); } catch(e) {}
+  }
+
+  var code = myProperty ? myProperty.inviteCode : null;
+  console.log('[QR] Invite code:', code, 'myProperty:', myProperty ? myProperty.name : 'null');
+
+  if (!code && me && me.propertyId) {
+    // Fetch directly from API
+    console.log('[QR] Fetching from API...');
+    try {
+      var r = await fetch('/api/property/' + me.propertyId);
+      var d = await r.json();
+      if (d.ok && d.property) {
+        myProperty = d.property;
+        code = d.property.inviteCode;
+        console.log('[QR] Got code from API:', code);
+      }
+    } catch(e) { console.error('[QR] API error:', e); }
+  }
+
+  if (!code) {
+    console.log('[QR] No invite code available');
+    document.getElementById('qr-invite-code').textContent = 'No code';
+    document.getElementById('qr-container').innerHTML = '<p style="padding:20px;color:#9CA3AF">No property found. Please set up your property first.</p>';
+    return;
+  }
+
+  var url = 'https://baantask.app?invite=' + code;
   document.getElementById('qr-invite-code').textContent = code;
-  // Generate real QR code
+  console.log('[QR] Generating QR for:', url);
+  console.log('[QR] QRCode library loaded:', typeof QRCode);
+
   var container = document.getElementById('qr-container');
   container.innerHTML = '';
+
+  if (typeof QRCode === 'undefined') {
+    container.innerHTML = '<p style="padding:20px;color:#E53935;font-weight:700">QR library not loaded. Check internet connection.</p>';
+    console.error('[QR] QRCode.js not loaded');
+    return;
+  }
+
   try {
     new QRCode(container, {
       text: url,
@@ -2489,15 +2530,16 @@ function showQRCode() {
       colorLight: '#ffffff',
       correctLevel: QRCode.CorrectLevel.H
     });
+    console.log('[QR] QR code generated successfully');
   } catch(e) {
-    container.innerHTML = '<div style="text-align:center;padding:20px;font-size:.9rem;color:#9CA3AF">QR library loading...</div>';
-    console.error('[QR]', e);
+    container.innerHTML = '<p style="padding:20px;color:#E53935">Error generating QR: ' + e.message + '</p>';
+    console.error('[QR] Generation error:', e);
   }
-  goScreen('s-qr-display');
 }
 
 function copyInviteLink() {
-  var link = getInviteLink();
+  var code = myProperty ? myProperty.inviteCode : '';
+  var link = 'https://baantask.app?invite=' + code;
   var btn = document.getElementById('qr-copy-btn');
   navigator.clipboard.writeText(link).then(function() {
     if (btn) { btn.textContent = '✓ Copied!'; setTimeout(function() { btn.textContent = '📋 Copy Link'; }, 2000); }
