@@ -2088,6 +2088,7 @@ function showMap(lat, lng) {
       detectedLat = pos.lat;
       detectedLng = pos.lng;
       updateCoordsLabel();
+      fillAddressFromGPS(detectedLat, detectedLng);
       console.log('[MAP] Marker moved:', detectedLat, detectedLng);
     });
     // Fix map tiles not loading when container was hidden
@@ -2109,6 +2110,58 @@ function updateCoordsLabel() {
   coordsEl.textContent = '📍 ' + latStr + ', ' + lngStr + (city && city.value.trim() ? ' · ' + city.value.trim() : '');
 }
 
+// Reverse geocoding via Nominatim (free OpenStreetMap)
+async function reverseGeocode(lat, lng) {
+  try {
+    console.log('[GEO] Reverse geocoding:', lat, lng);
+    var r = await fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat=' + lat + '&lon=' + lng + '&accept-language=en&zoom=18&addressdetails=1', { headers: { 'User-Agent': 'BaanTask/1.0' } });
+    var data = await r.json();
+    console.log('[GEO] Result:', data.display_name);
+    return data;
+  } catch(e) { console.log('[GEO] Failed:', e.message); return null; }
+}
+
+async function fillAddressFromGPS(lat, lng) {
+  var data = await reverseGeocode(lat, lng);
+  if (!data || !data.address) return;
+  var addr = data.address;
+
+  // Auto-fill address (only if empty)
+  var addressEl = document.getElementById('prop-address');
+  if (addressEl && !addressEl.value.trim()) {
+    var street = [addr.house_number, addr.road].filter(Boolean).join(' ');
+    if (street) addressEl.value = street;
+  }
+
+  // Auto-fill city (only if empty)
+  var cityEl = document.getElementById('prop-city');
+  if (cityEl && !cityEl.value.trim()) {
+    cityEl.value = addr.city || addr.town || addr.village || addr.county || '';
+  }
+
+  // Auto-fill postal (only if empty)
+  var postalEl = document.getElementById('prop-postal');
+  if (postalEl && !postalEl.value.trim()) {
+    if (addr.postcode) postalEl.value = addr.postcode;
+  }
+
+  // Update coords label with area name
+  updateCoordsLabel();
+  if (data.address) {
+    var area = addr.suburb || addr.neighbourhood || addr.village || addr.town || '';
+    var coordsEl = document.getElementById('loc-coords');
+    if (coordsEl && area) {
+      var latStr = Math.abs(lat).toFixed(4) + '° ' + (lat >= 0 ? 'N' : 'S');
+      var lngStr = Math.abs(lng).toFixed(4) + '° ' + (lng >= 0 ? 'E' : 'W');
+      coordsEl.textContent = '📍 ' + latStr + ', ' + lngStr + ' · ' + area;
+    }
+  }
+
+  // Trigger validation check
+  try { checkPropReady(); } catch(e) {}
+  console.log('[GEO] Fields auto-filled');
+}
+
 function detectLocation() {
   var coordsEl = document.getElementById('loc-coords');
   var preview = document.getElementById('loc-preview');
@@ -2125,11 +2178,11 @@ function detectLocation() {
       detectedLng = pos.coords.longitude;
       console.log('[LOC] Detected:', detectedLat, detectedLng);
       showMap(detectedLat, detectedLng);
+      fillAddressFromGPS(detectedLat, detectedLng);
     },
     function(err) {
       console.log('[LOC] Error:', err.message);
       if (coordsEl) coordsEl.textContent = '📍 Could not detect — enter address manually';
-      // Show default map (Phuket)
       detectedLat = 7.8804; detectedLng = 98.3923;
       showMap(detectedLat, detectedLng);
     },
