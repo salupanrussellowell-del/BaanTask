@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BaanTask Design System v1.0</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Thai:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/design-system.css">
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+/* Doc-specific styles */
+.ds-page{display:flex;min-height:100vh}
+.ds-sidebar{width:240px;background:var(--color-gray-900);color:var(--color-white);padding:var(--space-6) 0;position:fixed;top:0;left:0;bottom:0;overflow-y:auto;z-index:50}
+.ds-sidebar a{display:block;padding:var(--space-2) var(--space-6);color:var(--color-gray-300);text-decoration:none;font-size:var(--text-sm);font-weight:var(--font-medium);transition:all var(--transition-fast)}
+.ds-sidebar a:hover,.ds-sidebar a.active{color:var(--color-white);background:rgba(255,255,255,.08)}
+.ds-sidebar h3{padding:var(--space-4) var(--space-6) var(--space-2);font-size:var(--text-xs);text-transform:uppercase;letter-spacing:.08em;color:var(--color-gray-500);font-weight:var(--font-extrabold)}
+.ds-main{flex:1;margin-left:240px;padding:var(--space-8) var(--space-10)}
+.ds-section{margin-bottom:var(--space-16);max-width:900px}
+.ds-section h2{font-size:var(--text-3xl);font-weight:var(--font-extrabold);color:var(--color-gray-900);margin-bottom:var(--space-2)}
+.ds-section p.desc{font-size:var(--text-base);color:var(--color-gray-500);margin-bottom:var(--space-6);line-height:var(--leading-loose)}
+.ds-demo{background:var(--color-gray-50);border:1.5px solid var(--color-gray-200);border-radius:var(--radius-lg);padding:var(--space-6);margin-bottom:var(--space-4)}
+.ds-code{background:var(--color-gray-900);color:#A5F3FC;padding:var(--space-4);border-radius:var(--radius-md);font-family:'Fira Code',monospace;font-size:var(--text-sm);overflow-x:auto;position:relative;margin-bottom:var(--space-4);white-space:pre;line-height:1.6}
+.ds-code-copy{position:absolute;top:var(--space-2);right:var(--space-2);background:rgba(255,255,255,.1);border:none;color:var(--color-gray-300);padding:var(--space-1) var(--space-2);border-radius:var(--radius-sm);font-size:var(--text-xs);cursor:pointer}
+.ds-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:var(--space-3)}
+.ds-swatch{border-radius:var(--radius-md);padding:var(--space-8) var(--space-3) var(--space-3);cursor:pointer;transition:transform var(--transition-fast);position:relative}
+.ds-swatch:hover{transform:scale(1.05)}
+.ds-swatch span{font-size:var(--text-xs);font-weight:var(--font-bold);display:block}
+.ds-row{display:flex;gap:var(--space-3);flex-wrap:wrap;align-items:center}
+@media(max-width:768px){.ds-sidebar{display:none}.ds-main{margin-left:0;padding:var(--space-4)}}
+</style>
+</head>
+<body>
+<div class="ds-page">
+
+<!-- Sidebar -->
+<nav class="ds-sidebar">
+  <div style="padding:0 var(--space-6) var(--space-6)">
+    <div style="font-size:var(--text-xl);font-weight:var(--font-extrabold)">BaanTask</div>
+    <div style="font-size:var(--text-xs);color:var(--color-gray-500);margin-top:2px">Design System v1.0</div>
+  </div>
+  <h3>Foundation</h3>
+  <a href="#colors">Colors</a>
+  <a href="#typography">Typography</a>
+  <a href="#spacing">Spacing</a>
+  <a href="#shadows">Shadows & Radius</a>
+  <h3>Components</h3>
+  <a href="#buttons">Buttons</a>
+  <a href="#inputs">Inputs</a>
+  <a href="#cards">Cards</a>
+  <a href="#navigation">Navigation</a>
+  <a href="#lists">List Items</a>
+  <a href="#badges">Badges & Tags</a>
+  <a href="#avatars">Avatars</a>
+  <a href="#modals">Modals & Sheets</a>
+  <a href="#loading">Loading States</a>
+  <a href="#chat">Chat Bubbles</a>
+  <h3>Resources</h3>
+  <a href="#icons">Icons (Lucide)</a>
+  <a href="#usage">Usage Guidelines</a>
+</nav>
+
+<!-- Main Content -->
+<main class="ds-main">
+
+<!-- Cover -->
+<section class="ds-section" style="padding:var(--space-12) 0 var(--space-8)">
+  <div style="display:inline-block;background:var(--color-primary-50);color:var(--color-primary-700);padding:var(--space-1) var(--space-3);border-radius:var(--radius-full);font-size:var(--text-sm);font-weight:var(--font-bold);margin-bottom:var(--space-4)">v1.0</div>
+  <h1 style="font-size:var(--text-4xl);font-weight:var(--font-extrabold);line-height:var(--leading-tight)">BaanTask<br>Design System</h1>
+  <p style="font-size:var(--text-lg);color:var(--color-gray-500);margin-top:var(--space-4);max-width:600px;line-height:var(--leading-loose)">The complete design language for BaanTask. Friendly, warm, multilingual. Built for household staff management across Thailand and Southeast Asia.</p>
+</section>
+
+<!-- ═══ COLORS ═══ -->
+<section class="ds-section" id="colors">
+  <h2>Colors</h2>
+  <p class="desc">Our palette balances trust (teal) with warmth (orange). Teal is the primary brand color used for navigation, headers, and confirmations. Orange is the accent used for CTAs and worker-facing elements.</p>
+
+  <h3 style="font-size:var(--text-lg);font-weight:var(--font-bold);margin-bottom:var(--space-3)">Primary (Teal)</h3>
+  <div class="ds-demo">
+    <div class="ds-grid">
+      <div class="ds-swatch" style="background:var(--color-primary-50);color:var(--color-primary-900)" onclick="copyColor('#E0F2F1')"><span>50</span><span>#E0F2F1</span></div>
+      <div class="ds-swatch" style="background:var(--color-primary-100);color:var(--color-primary-900)" onclick="copyColor('#B2DFDB')"><span>100</span><span>#B2DFDB</span></div>
+      <div class="ds-swatch" style="background:var(--color-primary-300);color:var(--color-white)" onclick="copyColor('#4DB6AC')"><span>300</span><span>#4DB6AC</span></div>
+      <div class="ds-swatch" style="background:var(--color-primary-500);color:var(--color-white)" onclick="copyColor('#00897B')"><span>500 Main</span><span>#00897B</span></div>
+      <div class="ds-swatch" style="background:var(--color-primary-700);color:var(--color-white)" onclick="copyColor('#00695C')"><span>700</span><span>#00695C</span></div>
+      <div class="ds-swatch" style="background:var(--color-primary-900);color:var(--color-white)" onclick="copyColor('#004D40')"><span>900</span><span>#004D40</span></div>
+    </div>
+  </div>
+
+  <h3 style="font-size:var(--text-lg);font-weight:var(--font-bold);margin:var(--space-6) 0 var(--space-3)">Accent (Orange)</h3>
+  <div class="ds-demo">
+    <div class="ds-grid">
+      <div class="ds-swatch" style="background:var(--color-accent-50);color:var(--color-accent-700)" onclick="copyColor('#FFF3E0')"><span>50</span><span>#FFF3E0</span></div>
+      <div class="ds-swatch" style="background:var(--color-accent-300);color:var(--color-gray-900)" onclick="copyColor('#FFB74D')"><span>300</span><span>#FFB74D</span></div>
+      <div class="ds-swatch" style="background:var(--color-accent-500);color:var(--color-white)" onclick="copyColor('#E65100')"><span>500 Main</span><span>#E65100</span></div>
+      <div class="ds-swatch" style="background:var(--color-accent-700);color:var(--color-white)" onclick="copyColor('#BF360C')"><span>700</span><span>#BF360C</span></div>
+    </div>
+  </div>
+
+  <h3 style="font-size:var(--text-lg);font-weight:var(--font-bold);margin:var(--space-6) 0 var(--space-3)">Semantic</h3>
+  <div class="ds-demo">
+    <div class="ds-grid">
+      <div class="ds-swatch" style="background:var(--color-success);color:var(--color-white)" onclick="copyColor('#10B981')"><span>Success</span><span>#10B981</span></div>
+      <div class="ds-swatch" style="background:var(--color-warning);color:var(--color-white)" onclick="copyColor('#F59E0B')"><span>Warning</span><span>#F59E0B</span></div>
+      <div class="ds-swatch" style="background:var(--color-danger);color:var(--color-white)" onclick="copyColor('#EF4444')"><span>Danger</span><span>#EF4444</span></div>
+      <div class="ds-swatch" style="background:var(--color-info);color:var(--color-white)" onclick="copyColor('#3B82F6')"><span>Info</span><span>#3B82F6</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ TYPOGRAPHY ═══ -->
+<section class="ds-section" id="typography">
+  <h2>Typography</h2>
+  <p class="desc">Inter is our primary font — clean, modern, excellent multilingual support. Noto Sans Thai for Thai script.</p>
+  <div class="ds-demo">
+    <div style="font-size:var(--text-4xl);font-weight:var(--font-extrabold);margin-bottom:var(--space-2)">Heading 1 (2.25rem / 36px)</div>
+    <div style="font-size:var(--text-3xl);font-weight:var(--font-bold);margin-bottom:var(--space-2)">Heading 2 (1.875rem / 30px)</div>
+    <div style="font-size:var(--text-2xl);font-weight:var(--font-bold);margin-bottom:var(--space-2)">Heading 3 (1.5rem / 24px)</div>
+    <div style="font-size:var(--text-xl);font-weight:var(--font-semibold);margin-bottom:var(--space-2)">Heading 4 (1.25rem / 20px)</div>
+    <div style="font-size:var(--text-lg);margin-bottom:var(--space-2)">Body Large (1.125rem / 18px)</div>
+    <div style="font-size:var(--text-base);margin-bottom:var(--space-2)">Body Default (1rem / 16px) — The quick brown fox jumps over the lazy dog</div>
+    <div style="font-size:var(--text-sm);color:var(--color-gray-500);margin-bottom:var(--space-2)">Body Small (0.875rem / 14px)</div>
+    <div style="font-size:var(--text-xs);color:var(--color-gray-500)">Caption (0.75rem / 12px)</div>
+  </div>
+</section>
+
+<!-- ═══ SPACING ═══ -->
+<section class="ds-section" id="spacing">
+  <h2>Spacing</h2>
+  <p class="desc">4px base grid. Use multiples for consistent spacing.</p>
+  <div class="ds-demo">
+    <div style="display:flex;flex-direction:column;gap:var(--space-2)">
+      <div style="display:flex;align-items:center;gap:var(--space-4)"><div style="width:4px;height:20px;background:var(--color-primary-500);border-radius:2px"></div><span class="text-sm">space-1: 4px</span></div>
+      <div style="display:flex;align-items:center;gap:var(--space-4)"><div style="width:8px;height:20px;background:var(--color-primary-500);border-radius:2px"></div><span class="text-sm">space-2: 8px</span></div>
+      <div style="display:flex;align-items:center;gap:var(--space-4)"><div style="width:16px;height:20px;background:var(--color-primary-500);border-radius:2px"></div><span class="text-sm">space-4: 16px (default)</span></div>
+      <div style="display:flex;align-items:center;gap:var(--space-4)"><div style="width:24px;height:20px;background:var(--color-primary-500);border-radius:2px"></div><span class="text-sm">space-6: 24px</span></div>
+      <div style="display:flex;align-items:center;gap:var(--space-4)"><div style="width:32px;height:20px;background:var(--color-primary-500);border-radius:2px"></div><span class="text-sm">space-8: 32px</span></div>
+      <div style="display:flex;align-items:center;gap:var(--space-4)"><div style="width:48px;height:20px;background:var(--color-primary-500);border-radius:2px"></div><span class="text-sm">space-12: 48px</span></div>
+      <div style="display:flex;align-items:center;gap:var(--space-4)"><div style="width:64px;height:20px;background:var(--color-primary-500);border-radius:2px"></div><span class="text-sm">space-16: 64px</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SHADOWS ═══ -->
+<section class="ds-section" id="shadows">
+  <h2>Shadows & Radius</h2>
+  <div class="ds-demo">
+    <div style="display:flex;gap:var(--space-6);flex-wrap:wrap">
+      <div style="width:100px;height:80px;background:white;border-radius:var(--radius-md);box-shadow:var(--shadow-sm);display:flex;align-items:center;justify-content:center" class="text-sm font-bold">sm</div>
+      <div style="width:100px;height:80px;background:white;border-radius:var(--radius-md);box-shadow:var(--shadow-md);display:flex;align-items:center;justify-content:center" class="text-sm font-bold">md</div>
+      <div style="width:100px;height:80px;background:white;border-radius:var(--radius-md);box-shadow:var(--shadow-lg);display:flex;align-items:center;justify-content:center" class="text-sm font-bold">lg</div>
+      <div style="width:100px;height:80px;background:white;border-radius:var(--radius-md);box-shadow:var(--shadow-xl);display:flex;align-items:center;justify-content:center" class="text-sm font-bold">xl</div>
+    </div>
+  </div>
+  <div class="ds-demo" style="margin-top:var(--space-4)">
+    <div style="display:flex;gap:var(--space-6);flex-wrap:wrap">
+      <div style="width:80px;height:60px;background:var(--color-primary-100);border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center" class="text-xs font-bold">6px</div>
+      <div style="width:80px;height:60px;background:var(--color-primary-100);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center" class="text-xs font-bold">12px</div>
+      <div style="width:80px;height:60px;background:var(--color-primary-100);border-radius:var(--radius-lg);display:flex;align-items:center;justify-content:center" class="text-xs font-bold">16px</div>
+      <div style="width:80px;height:60px;background:var(--color-primary-100);border-radius:var(--radius-xl);display:flex;align-items:center;justify-content:center" class="text-xs font-bold">24px</div>
+      <div style="width:60px;height:60px;background:var(--color-primary-100);border-radius:var(--radius-full);display:flex;align-items:center;justify-content:center" class="text-xs font-bold">full</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ BUTTONS ═══ -->
+<section class="ds-section" id="buttons">
+  <h2>Buttons</h2>
+  <p class="desc">Primary for main actions, accent for CTAs, secondary for alternatives, ghost for subtle actions.</p>
+  <div class="ds-demo">
+    <div class="ds-row" style="margin-bottom:var(--space-4)">
+      <button class="btn btn-primary">Primary</button>
+      <button class="btn btn-accent">Accent</button>
+      <button class="btn btn-secondary">Secondary</button>
+      <button class="btn btn-ghost">Ghost</button>
+      <button class="btn btn-danger">Danger</button>
+    </div>
+    <div class="ds-row" style="margin-bottom:var(--space-4)">
+      <button class="btn btn-primary btn-sm">Small</button>
+      <button class="btn btn-primary btn-md">Medium</button>
+      <button class="btn btn-primary btn-lg">Large</button>
+    </div>
+    <div class="ds-row">
+      <button class="btn btn-primary" disabled>Disabled</button>
+      <button class="btn btn-primary btn-loading">Loading</button>
+      <button class="btn btn-primary btn-block" style="max-width:300px">Block Button</button>
+    </div>
+  </div>
+  <div class="ds-code">&lt;button class="btn btn-primary"&gt;Primary&lt;/button&gt;
+&lt;button class="btn btn-accent btn-lg"&gt;Large Accent&lt;/button&gt;
+&lt;button class="btn btn-secondary btn-sm"&gt;Small Secondary&lt;/button&gt;
+&lt;button class="btn btn-primary btn-loading"&gt;Loading&lt;/button&gt;</div>
+</section>
+
+<!-- ═══ INPUTS ═══ -->
+<section class="ds-section" id="inputs">
+  <h2>Inputs</h2>
+  <div class="ds-demo">
+    <div style="display:flex;flex-direction:column;gap:var(--space-4);max-width:360px">
+      <div class="input-wrap">
+        <label class="input-label">Full Name *</label>
+        <input class="input-text" type="text" placeholder="Your full name">
+      </div>
+      <div class="input-wrap">
+        <label class="input-label">Search</label>
+        <input class="input-search" type="text" placeholder="Search workers...">
+      </div>
+      <div class="input-wrap">
+        <label class="input-label">Email *</label>
+        <input class="input-text input-error" type="email" value="bad-email">
+        <span class="input-error-msg">Please enter a valid email</span>
+      </div>
+      <div class="input-wrap">
+        <label class="input-label">Notes</label>
+        <textarea class="input-textarea" placeholder="Additional notes..."></textarea>
+        <span class="input-helper">Optional — max 500 characters</span>
+      </div>
+      <div class="input-wrap">
+        <label class="input-label">Country</label>
+        <select class="input-select"><option>Thailand</option><option>Philippines</option><option>Indonesia</option></select>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ CARDS ═══ -->
+<section class="ds-section" id="cards">
+  <h2>Cards</h2>
+  <div class="ds-demo">
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:var(--space-4)">
+      <div class="card card-with-border">
+        <div class="card-body">
+          <div class="font-bold mb-2">Basic Card</div>
+          <div class="text-sm text-muted">Simple content container with border.</div>
+        </div>
+      </div>
+      <div class="card card-clickable shadow-md">
+        <div class="card-body">
+          <div class="font-bold mb-2">Clickable Card</div>
+          <div class="text-sm text-muted">Hover to see shadow effect. Tap for action.</div>
+        </div>
+      </div>
+      <div class="card shadow-md">
+        <div style="height:80px;background:linear-gradient(135deg,var(--color-primary-500),var(--color-primary-700))"></div>
+        <div class="card-body">
+          <div class="font-bold mb-2">Card with Image</div>
+          <div class="text-sm text-muted">Header image or gradient.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ NAVIGATION ═══ -->
+<section class="ds-section" id="navigation">
+  <h2>Navigation</h2>
+  <div class="ds-demo">
+    <div class="top-bar" style="border-radius:var(--radius-md);margin-bottom:var(--space-4)">
+      <button class="top-bar-back">&#8249;</button>
+      <span class="top-bar-title">Screen Title</span>
+      <button class="btn btn-ghost btn-sm">Action</button>
+    </div>
+    <div class="bottom-nav" style="border-radius:var(--radius-md)">
+      <div class="bottom-nav-item active"><span class="nav-icon">&#x1F3E0;</span>Home</div>
+      <div class="bottom-nav-item"><span class="nav-icon">&#x1F4BC;</span>Payroll</div>
+      <div class="bottom-nav-item"><span class="nav-icon">&#x2705;</span>Tasks</div>
+      <div class="bottom-nav-item"><span class="nav-icon">&#x1F4AC;</span>Chat</div>
+      <div class="bottom-nav-item"><span class="nav-icon">&#x1F464;</span>Me</div>
+    </div>
+    <div class="tabs" style="margin-top:var(--space-4);border-radius:var(--radius-md)">
+      <div class="tab active">All</div>
+      <div class="tab">Pending</div>
+      <div class="tab">In Progress</div>
+      <div class="tab">Done</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ LIST ITEMS ═══ -->
+<section class="ds-section" id="lists">
+  <h2>List Items</h2>
+  <div class="ds-demo" style="padding:0;border-radius:var(--radius-lg);overflow:hidden">
+    <div class="list-item">
+      <div class="avatar avatar-md" style="background:linear-gradient(135deg,#00897B,#00695C)">RL</div>
+      <div class="list-item-content">
+        <div class="list-item-title">Russel Lowell</div>
+        <div class="list-item-subtitle">Owner - Deva Moon Villa</div>
+      </div>
+      <span class="list-item-action">&#x203A;</span>
+    </div>
+    <div class="list-item">
+      <div class="avatar avatar-md" style="background:linear-gradient(135deg,#E65100,#BF360C)">NL</div>
+      <div class="list-item-content">
+        <div class="list-item-title">Nastya Lukina</div>
+        <div class="list-item-subtitle">Cleaner - checked in 8:32 AM</div>
+      </div>
+      <span class="badge badge-success">Active</span>
+    </div>
+    <div class="list-item">
+      <div class="avatar avatar-md" style="background:linear-gradient(135deg,#1976D2,#1565C0)">DM</div>
+      <div class="list-item-content">
+        <div class="list-item-title">Daria M.</div>
+        <div class="list-item-subtitle">Cook - off today</div>
+      </div>
+      <span class="badge badge-warning">Off</span>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ BADGES ═══ -->
+<section class="ds-section" id="badges">
+  <h2>Badges & Tags</h2>
+  <div class="ds-demo">
+    <div class="ds-row" style="margin-bottom:var(--space-4)">
+      <span class="badge badge-primary">Primary</span>
+      <span class="badge badge-success">Active</span>
+      <span class="badge badge-warning">Late</span>
+      <span class="badge badge-danger">Absent</span>
+      <span class="badge badge-info">New</span>
+    </div>
+    <div class="ds-row">
+      <span class="tag">Cleaner</span>
+      <span class="tag">Cook</span>
+      <span class="tag">Driver</span>
+      <span class="tag">Gardener</span>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ AVATARS ═══ -->
+<section class="ds-section" id="avatars">
+  <h2>Avatars</h2>
+  <div class="ds-demo">
+    <div class="ds-row">
+      <div class="avatar avatar-sm" style="background:var(--color-primary-500)">R</div>
+      <div class="avatar avatar-md" style="background:var(--color-accent-500)">NL</div>
+      <div class="avatar avatar-lg" style="background:var(--color-info)">DM</div>
+      <div class="avatar avatar-lg" style="background:var(--color-gray-300);font-size:1.5rem">&#x1F464;</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ MODALS ═══ -->
+<section class="ds-section" id="modals">
+  <h2>Modals & Sheets</h2>
+  <div class="ds-demo">
+    <div class="ds-row">
+      <button class="btn btn-primary" onclick="document.getElementById('demo-modal').style.display='flex'">Open Modal</button>
+      <button class="btn btn-accent" onclick="document.getElementById('demo-sheet').style.display='block';document.getElementById('demo-sheet-bg').style.display='block'">Open Bottom Sheet</button>
+      <button class="btn btn-secondary" onclick="showDemoToast()">Show Toast</button>
+    </div>
+  </div>
+  <!-- Demo modal -->
+  <div id="demo-modal" class="modal-overlay" style="display:none" onclick="this.style.display='none'">
+    <div class="modal" onclick="event.stopPropagation()">
+      <div class="card-body" style="text-align:center;padding:var(--space-8)">
+        <div style="font-size:2.5rem;margin-bottom:var(--space-3)">&#x2705;</div>
+        <h3 style="font-size:var(--text-xl);font-weight:var(--font-bold);margin-bottom:var(--space-2)">Task Complete!</h3>
+        <p class="text-muted text-sm" style="margin-bottom:var(--space-6)">The pool has been cleaned successfully.</p>
+        <button class="btn btn-primary btn-block" onclick="document.getElementById('demo-modal').style.display='none'">Done</button>
+      </div>
+    </div>
+  </div>
+  <!-- Demo bottom sheet -->
+  <div id="demo-sheet-bg" class="bottom-sheet-overlay" style="display:none" onclick="document.getElementById('demo-sheet').style.display='none';this.style.display='none'"></div>
+  <div id="demo-sheet" class="bottom-sheet" style="display:none">
+    <div class="bottom-sheet-handle"></div>
+    <div style="padding:0 var(--space-4) var(--space-6)">
+      <h3 style="font-size:var(--text-lg);font-weight:var(--font-bold);margin-bottom:var(--space-4)">Choose Action</h3>
+      <div class="list-item" onclick="document.getElementById('demo-sheet').style.display='none';document.getElementById('demo-sheet-bg').style.display='none'"><span style="font-size:1.3rem">&#x1F4F7;</span><div class="list-item-content"><div class="list-item-title">Take Photo</div></div></div>
+      <div class="list-item" onclick="document.getElementById('demo-sheet').style.display='none';document.getElementById('demo-sheet-bg').style.display='none'"><span style="font-size:1.3rem">&#x1F5BC;</span><div class="list-item-content"><div class="list-item-title">Choose from Gallery</div></div></div>
+      <div class="list-item" onclick="document.getElementById('demo-sheet').style.display='none';document.getElementById('demo-sheet-bg').style.display='none'"><span style="font-size:1.3rem">&#x1F4C4;</span><div class="list-item-content"><div class="list-item-title">Upload Document</div></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ LOADING ═══ -->
+<section class="ds-section" id="loading">
+  <h2>Loading States</h2>
+  <div class="ds-demo">
+    <div class="ds-row" style="margin-bottom:var(--space-6)">
+      <div class="spinner spinner-sm"></div>
+      <div class="spinner"></div>
+      <div class="spinner spinner-lg"></div>
+    </div>
+    <div style="max-width:300px;margin-bottom:var(--space-6)">
+      <div class="progress-bar"><div class="progress-bar-fill" style="width:65%"></div></div>
+    </div>
+    <div style="max-width:300px;display:flex;flex-direction:column;gap:var(--space-3)">
+      <div class="skeleton" style="width:60%;height:20px"></div>
+      <div class="skeleton" style="width:100%;height:14px"></div>
+      <div class="skeleton" style="width:80%;height:14px"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ CHAT BUBBLES ═══ -->
+<section class="ds-section" id="chat">
+  <h2>Chat Bubbles</h2>
+  <div class="ds-demo" style="background:var(--color-gray-100)">
+    <div style="display:flex;flex-direction:column;gap:var(--space-3);max-width:400px">
+      <div class="bubble bubble-theirs">Can you clean the pool today?</div>
+      <div class="bubble bubble-mine">Got it, I'll start now &#x1F44D;</div>
+      <div class="bubble bubble-theirs">Great! Guests arriving at 3pm<br><span style="font-size:var(--text-xs);opacity:.6;font-style:italic">&#x1F30D; ยอดเยี่ยม! แขกมาถึงตอนบ่าย 3</span></div>
+      <div class="bubble bubble-system">Today, 10:30 AM</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ ICONS ═══ -->
+<section class="ds-section" id="icons">
+  <h2>Icons (Lucide)</h2>
+  <p class="desc">We use Lucide icons — free, open-source, consistent. 24px default. Available at <a href="https://lucide.dev/icons" target="_blank" style="color:var(--color-primary-500)">lucide.dev/icons</a></p>
+  <div class="ds-demo">
+    <div style="display:flex;gap:var(--space-6);flex-wrap:wrap;align-items:center">
+      <div style="text-align:center"><i data-lucide="home" style="width:24px;height:24px"></i><div class="text-xs text-muted" style="margin-top:4px">home</div></div>
+      <div style="text-align:center"><i data-lucide="user" style="width:24px;height:24px"></i><div class="text-xs text-muted" style="margin-top:4px">user</div></div>
+      <div style="text-align:center"><i data-lucide="message-circle" style="width:24px;height:24px"></i><div class="text-xs text-muted" style="margin-top:4px">message</div></div>
+      <div style="text-align:center"><i data-lucide="check-circle" style="width:24px;height:24px"></i><div class="text-xs text-muted" style="margin-top:4px">check</div></div>
+      <div style="text-align:center"><i data-lucide="map-pin" style="width:24px;height:24px"></i><div class="text-xs text-muted" style="margin-top:4px">map-pin</div></div>
+      <div style="text-align:center"><i data-lucide="camera" style="width:24px;height:24px"></i><div class="text-xs text-muted" style="margin-top:4px">camera</div></div>
+      <div style="text-align:center"><i data-lucide="bell" style="width:24px;height:24px"></i><div class="text-xs text-muted" style="margin-top:4px">bell</div></div>
+      <div style="text-align:center"><i data-lucide="settings" style="width:24px;height:24px"></i><div class="text-xs text-muted" style="margin-top:4px">settings</div></div>
+      <div style="text-align:center"><i data-lucide="calendar" style="width:24px;height:24px"></i><div class="text-xs text-muted" style="margin-top:4px">calendar</div></div>
+      <div style="text-align:center"><i data-lucide="clock" style="width:24px;height:24px"></i><div class="text-xs text-muted" style="margin-top:4px">clock</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ USAGE ═══ -->
+<section class="ds-section" id="usage">
+  <h2>Usage Guidelines</h2>
+  <div class="ds-demo">
+    <h3 style="font-weight:var(--font-bold);margin-bottom:var(--space-3)">Brand Voice</h3>
+    <ul style="list-style:none;display:flex;flex-direction:column;gap:var(--space-2)">
+      <li><span class="badge badge-success">DO</span> Friendly, warm, encouraging</li>
+      <li><span class="badge badge-success">DO</span> Simple language (many users are non-native English)</li>
+      <li><span class="badge badge-success">DO</span> Use emojis sparingly for warmth</li>
+      <li><span class="badge badge-danger">DON'T</span> Corporate or cold tone</li>
+      <li><span class="badge badge-danger">DON'T</span> Technical jargon</li>
+      <li><span class="badge badge-danger">DON'T</span> Assume English fluency</li>
+    </ul>
+    <h3 style="font-weight:var(--font-bold);margin:var(--space-6) 0 var(--space-3)">Accessibility</h3>
+    <ul style="list-style:none;display:flex;flex-direction:column;gap:var(--space-2)">
+      <li>Minimum touch target: 44x44px (Apple standard)</li>
+      <li>Text contrast: 4.5:1 minimum (WCAG AA)</li>
+      <li>Focus states visible on all interactive elements</li>
+      <li>All images have alt text</li>
+      <li>Support right-to-left for Arabic</li>
+    </ul>
+  </div>
+</section>
+
+<div style="text-align:center;padding:var(--space-12) 0;color:var(--color-gray-500);font-size:var(--text-sm)">
+  BaanTask Design System v1.0 &mdash; Built with care for household staff worldwide
+</div>
+
+</main>
+</div>
+
+<script>
+lucide.createIcons();
+function copyColor(hex) {
+  navigator.clipboard.writeText(hex).then(function() { showDemoToast('Copied: ' + hex); });
+}
+function showDemoToast(msg) {
+  var t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg || 'Toast notification!';
+  document.body.appendChild(t);
+  setTimeout(function() { t.remove(); }, 2500);
+}
+</script>
+</body>
+</html>

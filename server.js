@@ -42,6 +42,9 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Quick health ping
 app.get('/api/ping', (req, res) => res.json({ ok: true, ts: Date.now() }));
 
+// Design system page
+app.get('/design-system', (req, res) => res.sendFile(path.join(__dirname, 'public', 'design-system.html')));
+
 const LANGUAGES = ['English','Thai','Russian','Filipino','Myanmar','Chinese','German','French','Arabic','Indonesian'];
 
 console.log('[STARTUP] BaanTask server starting...');
