@@ -720,6 +720,15 @@ app.post('/api/worker/remove', async (req, res) => {
 // ══════════════════════════════════════
 
 // Worker check-in with GPS
+// GPS distance helper (meters between two coordinates)
+function gpsDistance(lat1, lng1, lat2, lng2) {
+  var R = 6371000; // earth radius in meters
+  var dLat = (lat2 - lat1) * Math.PI / 180;
+  var dLng = (lng2 - lng1) * Math.PI / 180;
+  var a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLng/2) * Math.sin(dLng/2);
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
 app.post('/api/attendance/checkin', async (req, res) => {
   const { propertyId, workerId, lat, lng } = req.body;
   if (!propertyId || !workerId) return res.json({ ok: false, error: 'Missing fields' });
@@ -727,7 +736,18 @@ app.post('/api/attendance/checkin', async (req, res) => {
     const now = new Date();
     const date = now.toISOString().split('T')[0];
     const existing = await Attendance.findOne({ propertyId, workerId, date });
-    if (existing && existing.checkInTime) return res.json({ ok: false, error: 'Already checked in today' });
+    if (existing && existing.checkInTime) return res.json({ ok: false, error: 'Already checked in today', attendance: existing });
+
+    // Verify GPS distance from property (if property has coords)
+    const prop = await Property.findById(propertyId);
+    let distance = null;
+    if (prop && prop.lat && prop.lng && lat && lng) {
+      distance = Math.round(gpsDistance(lat, lng, prop.lat, prop.lng));
+      if (distance > 500) { // 500m radius
+        console.log(`[ATTENDANCE] Too far: ${distance}m from property`);
+        return res.json({ ok: false, error: 'You are ' + distance + 'm from the property. Please check in at the property location.', distance });
+      }
+    }
 
     // Determine if late
     const wp = await WorkerProfile.findOne({ userId: workerId, propertyId });
@@ -741,23 +761,27 @@ app.post('/api/attendance/checkin', async (req, res) => {
       { upsert: true, new: true }
     );
     const timeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-    console.log(`[ATTENDANCE] ${workerId} checked in at ${timeStr} (${isLate ? 'LATE' : 'on time'})`);
-    res.json({ ok: true, attendance: record, isLate, time: timeStr, expected });
+    const user = await User.findById(workerId, 'name');
+    console.log(`[ATTENDANCE] ${user ? user.name : workerId} checked in at ${timeStr} (${isLate ? 'LATE' : 'on time'})${distance !== null ? ' ' + distance + 'm from property' : ''}`);
+    res.json({ ok: true, attendance: record, isLate, time: timeStr, expected, distance });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
 // Worker check-out
 app.post('/api/attendance/checkout', async (req, res) => {
-  const { propertyId, workerId } = req.body;
+  const { propertyId, workerId, lat, lng } = req.body;
   if (!propertyId || !workerId) return res.json({ ok: false, error: 'Missing fields' });
   try {
     const date = new Date().toISOString().split('T')[0];
     const record = await Attendance.findOne({ propertyId, workerId, date });
     if (!record || !record.checkInTime) return res.json({ ok: false, error: 'Not checked in' });
+    if (record.checkOutTime) return res.json({ ok: false, error: 'Already checked out' });
     record.checkOutTime = new Date();
     record.hoursWorked = Math.round((record.checkOutTime - record.checkInTime) / 3600000 * 10) / 10;
     await record.save();
-    res.json({ ok: true, attendance: record });
+    const timeStr = record.checkOutTime.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    console.log(`[ATTENDANCE] ${workerId} checked out at ${timeStr}, worked ${record.hoursWorked}h`);
+    res.json({ ok: true, attendance: record, time: timeStr, hoursWorked: record.hoursWorked });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 

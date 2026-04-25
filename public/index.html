@@ -748,6 +748,16 @@ body{font-family:'Nunito','DM Sans',sans-serif;height:100vh;height:100dvh;displa
       </div>
     </div>
 
+    <!-- CHECK IN / OUT BUTTON -->
+    <div style="padding:16px 16px 8px;text-align:center">
+      <div id="checkin-card" style="background:#fff;border-radius:18px;padding:20px;box-shadow:0 2px 12px rgba(0,0,0,.08)">
+        <div id="checkin-status" style="font-size:.78rem;color:#9CA3AF;font-weight:700;margin-bottom:12px">Loading status...</div>
+        <button id="checkin-btn" onclick="doCheckInOut()" style="width:90px;height:90px;border-radius:50%;border:none;font-size:2rem;cursor:pointer;margin:0 auto;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#E65100,#BF360C);color:#fff;box-shadow:0 4px 16px rgba(230,81,0,.35);-webkit-tap-highlight-color:transparent">📍</button>
+        <div id="checkin-label" style="font-size:.88rem;font-weight:900;color:#1F2937;margin-top:10px">Check In</div>
+        <div id="checkin-time" style="font-size:.72rem;color:#9CA3AF;font-weight:600;margin-top:4px"></div>
+      </div>
+    </div>
+
     <!-- My Tasks Today -->
     <div class="sh"><span data-i18n="my_tasks">My Tasks</span> <span class="sa" onclick="goScreen('s-worker-tasks')" data-i18n="see_all">See all →</span></div>
     <div id="wh-tasks-list" style="padding:0 0 8px"></div>
@@ -2426,6 +2436,131 @@ async function loadWorkerDashboard() {
       }
     } catch(e) {}
   }
+  // Load today's attendance status
+  loadCheckinStatus();
+}
+
+// ══════════════════════════════════════
+//  GPS ATTENDANCE CHECK-IN / CHECK-OUT
+// ══════════════════════════════════════
+var todayAttendance = null;
+
+async function loadCheckinStatus() {
+  if (!me || !me.propertyId) return;
+  var statusEl = document.getElementById('checkin-status');
+  var btnEl = document.getElementById('checkin-btn');
+  var labelEl = document.getElementById('checkin-label');
+  var timeEl = document.getElementById('checkin-time');
+  if (!statusEl) return;
+
+  try {
+    var r = await fetch('/api/attendance/today/' + me.propertyId + '/' + me.id);
+    var d = await r.json();
+    todayAttendance = d.attendance;
+
+    if (todayAttendance && todayAttendance.checkOutTime) {
+      // Already checked out
+      var hrs = todayAttendance.hoursWorked || 0;
+      statusEl.textContent = '✅ Shift complete';
+      btnEl.style.background = 'linear-gradient(135deg,#43A047,#2E7D32)';
+      btnEl.innerHTML = '✅';
+      labelEl.textContent = 'Done for today';
+      var inT = new Date(todayAttendance.checkInTime).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+      var outT = new Date(todayAttendance.checkOutTime).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+      timeEl.textContent = inT + ' — ' + outT + ' · ' + hrs + 'h worked';
+    } else if (todayAttendance && todayAttendance.checkInTime) {
+      // Checked in, not out yet
+      var inTime = new Date(todayAttendance.checkInTime).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+      var late = todayAttendance.status === 'late';
+      statusEl.textContent = late ? '⏰ Checked in late' : '✅ Checked in · On time';
+      statusEl.style.color = late ? '#E65100' : '#2E7D32';
+      btnEl.style.background = 'linear-gradient(135deg,#1565C0,#0D47A1)';
+      btnEl.innerHTML = '🏁';
+      labelEl.textContent = 'Check Out';
+      timeEl.textContent = 'Checked in at ' + inTime;
+    } else {
+      // Not checked in
+      statusEl.textContent = 'Not checked in yet';
+      statusEl.style.color = '#9CA3AF';
+      btnEl.style.background = 'linear-gradient(135deg,#E65100,#BF360C)';
+      btnEl.innerHTML = '📍';
+      labelEl.textContent = 'Check In';
+      timeEl.textContent = 'Tap to start your shift';
+    }
+  } catch(e) {
+    statusEl.textContent = 'Could not load status';
+  }
+}
+
+async function doCheckInOut() {
+  if (!me || !me.propertyId) return;
+  var btnEl = document.getElementById('checkin-btn');
+  var labelEl = document.getElementById('checkin-label');
+
+  if (todayAttendance && todayAttendance.checkOutTime) {
+    // Already done for today
+    return;
+  }
+
+  if (todayAttendance && todayAttendance.checkInTime) {
+    // CHECK OUT
+    btnEl.innerHTML = '⏳';
+    labelEl.textContent = 'Checking out...';
+    try {
+      var r = await fetch('/api/attendance/checkout', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ propertyId:me.propertyId, workerId:me.id }) });
+      var d = await r.json();
+      if (d.ok) {
+        loadCheckinStatus();
+      } else {
+        labelEl.textContent = d.error || 'Checkout failed';
+        setTimeout(loadCheckinStatus, 2000);
+      }
+    } catch(e) { labelEl.textContent = 'Network error'; setTimeout(loadCheckinStatus, 2000); }
+    return;
+  }
+
+  // CHECK IN — get GPS first
+  btnEl.innerHTML = '⏳';
+  labelEl.textContent = 'Getting location...';
+
+  if (!navigator.geolocation) {
+    labelEl.textContent = 'GPS not available';
+    setTimeout(loadCheckinStatus, 2000);
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    async function(pos) {
+      var lat = pos.coords.latitude;
+      var lng = pos.coords.longitude;
+      var acc = pos.coords.accuracy;
+      console.log('[CHECKIN] GPS:', lat, lng, 'accuracy:', acc + 'm');
+
+      if (acc > 100) {
+        labelEl.textContent = 'GPS too inaccurate (' + Math.round(acc) + 'm). Move outdoors and try again.';
+        setTimeout(loadCheckinStatus, 3000);
+        return;
+      }
+
+      labelEl.textContent = 'Checking in...';
+      try {
+        var r = await fetch('/api/attendance/checkin', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ propertyId:me.propertyId, workerId:me.id, lat:lat, lng:lng }) });
+        var d = await r.json();
+        if (d.ok) {
+          loadCheckinStatus();
+        } else {
+          labelEl.textContent = d.error || 'Check-in failed';
+          setTimeout(loadCheckinStatus, 3000);
+        }
+      } catch(e) { labelEl.textContent = 'Network error'; setTimeout(loadCheckinStatus, 2000); }
+    },
+    function(err) {
+      console.log('[CHECKIN] GPS error:', err.message);
+      labelEl.textContent = 'Please enable location to check in';
+      setTimeout(loadCheckinStatus, 3000);
+    },
+    { enableHighAccuracy: true, timeout: 15000 }
+  );
 }
 
 // ══════════════════════════════════════
