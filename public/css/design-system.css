@@ -124,7 +124,7 @@ body{font-family:var(--font-sans);color:var(--color-gray-900);line-height:var(--
 
 /* Loading state */
 .btn-loading{pointer-events:none;opacity:.7}
-.btn-loading::after{content:'';width:16px;height:16px;border:2px solid transparent;border-top-color:currentColor;border-radius:50%;animation:btn-spin .6s linear infinite;margin-left:var(--space-2)}
+.btn-loading::after{content:'';display:inline-block;width:16px;height:16px;border:2.5px solid rgba(255,255,255,.3);border-top-color:currentColor;border-radius:50%;animation:btn-spin .6s linear infinite;margin-left:var(--space-2);flex-shrink:0;vertical-align:middle}
 @keyframes btn-spin{to{transform:rotate(360deg)}}
 
 /* ══════════════════════
@@ -271,3 +271,26 @@ body{font-family:var(--font-sans);color:var(--color-gray-900);line-height:var(--
 .shadow-md{box-shadow:var(--shadow-md)}
 .bg-white{background:var(--color-white)}
 .bg-gray-50{background:var(--color-gray-50)}
+
+/* ══════════════════════
+   DARK MODE
+   ══════════════════════ */
+[data-theme="dark"]{
+  --color-white:    #1a1a2e;
+  --color-gray-50:  #16213e;
+  --color-gray-100: #1a2540;
+  --color-gray-200: #2a3550;
+  --color-gray-300: #3a4560;
+  --color-gray-500: #8899aa;
+  --color-gray-700: #c0cdd8;
+  --color-gray-900: #e8edf2;
+  --color-black:    #ffffff;
+  --shadow-sm:  0 1px 2px rgba(0,0,0,0.3);
+  --shadow-md:  0 4px 6px rgba(0,0,0,0.4);
+  --shadow-lg:  0 10px 15px rgba(0,0,0,0.5);
+  --shadow-xl:  0 20px 25px rgba(0,0,0,0.6);
+}
+[data-theme="dark"] body{background:#0f0f23}
+[data-theme="dark"] .card{background:var(--color-gray-50)}
+[data-theme="dark"] .input-text,[data-theme="dark"] .input-search,[data-theme="dark"] .input-textarea,[data-theme="dark"] .input-select{background:var(--color-gray-100);color:var(--color-gray-900);border-color:var(--color-gray-200)}
+[data-theme="dark"] .bubble-theirs{background:var(--color-gray-200);color:var(--color-gray-900)}

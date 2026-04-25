@@ -34,9 +34,12 @@
 
 <!-- Sidebar -->
 <nav class="ds-sidebar">
-  <div style="padding:0 var(--space-6) var(--space-6)">
-    <div style="font-size:var(--text-xl);font-weight:var(--font-extrabold)">BaanTask</div>
-    <div style="font-size:var(--text-xs);color:var(--color-gray-500);margin-top:2px">Design System v1.0</div>
+  <div style="padding:0 var(--space-6) var(--space-6);display:flex;align-items:center;justify-content:space-between">
+    <div>
+      <div style="font-size:var(--text-xl);font-weight:var(--font-extrabold)">BaanTask</div>
+      <div style="font-size:var(--text-xs);color:var(--color-gray-500);margin-top:2px">Design System v1.0</div>
+    </div>
+    <button onclick="toggleDarkMode()" id="dark-toggle" style="width:36px;height:36px;border-radius:50%;border:none;background:rgba(255,255,255,.1);color:#fff;font-size:1.1rem;cursor:pointer" title="Toggle dark mode">&#x1F319;</button>
   </div>
   <h3>Foundation</h3>
   <a href="#colors">Colors</a>
@@ -182,7 +185,7 @@
     <div class="ds-row">
       <button class="btn btn-primary" disabled>Disabled</button>
       <button class="btn btn-primary btn-loading">Loading</button>
-      <button class="btn btn-primary btn-block" style="max-width:300px">Block Button</button>
+      <button class="btn btn-primary btn-block" style="max-width:300px">Full Width Button</button>
     </div>
   </div>
   <div class="ds-code">&lt;button class="btn btn-primary"&gt;Primary&lt;/button&gt;
@@ -334,7 +337,7 @@
       <div class="avatar avatar-sm" style="background:var(--color-primary-500)">R</div>
       <div class="avatar avatar-md" style="background:var(--color-accent-500)">NL</div>
       <div class="avatar avatar-lg" style="background:var(--color-info)">DM</div>
-      <div class="avatar avatar-lg" style="background:var(--color-gray-300);font-size:1.5rem">&#x1F464;</div>
+      <div class="avatar avatar-lg" style="background:var(--color-gray-300)"><i data-lucide="user" style="width:28px;height:28px;color:var(--color-white)"></i></div>
     </div>
   </div>
 </section>
@@ -398,10 +401,19 @@
   <h2>Chat Bubbles</h2>
   <div class="ds-demo" style="background:var(--color-gray-100)">
     <div style="display:flex;flex-direction:column;gap:var(--space-3);max-width:400px">
-      <div class="bubble bubble-theirs">Can you clean the pool today?</div>
+      <div style="font-size:var(--text-xs);font-weight:var(--font-semibold);color:var(--color-gray-500);margin-bottom:2px">Russel (Owner)</div>
+      <div class="bubble bubble-theirs">Can you clean the pool today?
+        <div style="border-top:1px solid var(--color-gray-200);margin-top:6px;padding-top:6px;font-size:var(--text-xs);color:var(--color-gray-500);font-style:italic">&#x1F30D; วันนี้ช่วยทำความสะอาดสระให้หน่อยได้ไหมครับ</div>
+      </div>
+      <div style="font-size:10px;color:var(--color-gray-500);margin-bottom:8px">10:28 AM</div>
       <div class="bubble bubble-mine">Got it, I'll start now &#x1F44D;</div>
-      <div class="bubble bubble-theirs">Great! Guests arriving at 3pm<br><span style="font-size:var(--text-xs);opacity:.6;font-style:italic">&#x1F30D; ยอดเยี่ยม! แขกมาถึงตอนบ่าย 3</span></div>
-      <div class="bubble bubble-system">Today, 10:30 AM</div>
+      <div style="font-size:10px;color:var(--color-gray-500);text-align:right;margin-bottom:8px">10:30 AM</div>
+      <div style="font-size:var(--text-xs);font-weight:var(--font-semibold);color:var(--color-gray-500);margin-bottom:2px">Russel (Owner)</div>
+      <div class="bubble bubble-theirs">Great! Guests arriving at 3pm
+        <div style="border-top:1px solid var(--color-gray-200);margin-top:6px;padding-top:6px;font-size:var(--text-xs);color:var(--color-gray-500);font-style:italic">&#x1F30D; ดีเลย! แขกมาถึงตอนบ่าย 3</div>
+      </div>
+      <div style="font-size:10px;color:var(--color-gray-500);margin-bottom:8px">10:31 AM</div>
+      <div class="bubble bubble-system">Today, 10:28 AM</div>
     </div>
   </div>
 </section>
@@ -459,6 +471,26 @@
 
 <script>
 lucide.createIcons();
+
+function toggleDarkMode() {
+  var html = document.documentElement;
+  var btn = document.getElementById('dark-toggle');
+  if (html.getAttribute('data-theme') === 'dark') {
+    html.removeAttribute('data-theme');
+    btn.innerHTML = '&#x1F319;';
+    localStorage.setItem('ds-theme', 'light');
+  } else {
+    html.setAttribute('data-theme', 'dark');
+    btn.innerHTML = '&#x2600;';
+    localStorage.setItem('ds-theme', 'dark');
+  }
+}
+// Restore saved theme
+if (localStorage.getItem('ds-theme') === 'dark') {
+  document.documentElement.setAttribute('data-theme', 'dark');
+  document.getElementById('dark-toggle').innerHTML = '&#x2600;';
+}
+
 function copyColor(hex) {
   navigator.clipboard.writeText(hex).then(function() { showDemoToast('Copied: ' + hex); });
 }
